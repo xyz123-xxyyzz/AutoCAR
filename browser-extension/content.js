@@ -1,0 +1,122 @@
+// AutoCAR Çoklu Platform Veri Çekme Motoru (Scraper)
+function extractCarData() {
+  const url = window.location.href;
+  
+  // Çekilecek saf veri iskeleti
+  let data = {
+    url: url,
+    title: '',
+    price: '',
+    description: '',
+    specs: {},
+    images: [],
+    platform: ''
+  };
+
+  try {
+    if (url.includes('sahibinden.com')) {
+      data.platform = 'Sahibinden';
+      const titleEl = document.querySelector('.classifiedDetailTitle h1');
+      if (titleEl) data.title = titleEl.innerText.trim();
+
+      const priceEl = document.querySelector('.classifiedInfo h3');
+      if (priceEl) data.price = priceEl.innerText.trim();
+      
+      const descEl = document.querySelector('#classifiedDescription');
+      if (descEl) data.description = descEl.innerText.trim();
+      
+      const specEls = document.querySelectorAll('.classifiedInfoList li');
+      specEls.forEach(li => {
+        const keyEl = li.querySelector('strong');
+        const valEl = li.querySelector('span');
+        if (keyEl && valEl) {
+          const key = keyEl.innerText.replace(':', '').trim();
+          data.specs[key] = valEl.innerText.trim();
+        }
+      });
+
+      const imgEls = document.querySelectorAll('.mega-photo-nav label img, .rsImg');
+      imgEls.forEach(img => {
+        let src = img.src || img.dataset.src;
+        if (src && !data.images.includes(src)) {
+          src = src.replace('thmb_', ''); 
+          data.images.push(src);
+        }
+      });
+    } 
+    else if (url.includes('arabam.com')) {
+      data.platform = 'Arabam';
+      const titleEl = document.querySelector('.product-name, h1');
+      if (titleEl) data.title = titleEl.innerText.trim();
+
+      const priceEl = document.querySelector('.color-red4.font-default-plus, .product-price');
+      if (priceEl) data.price = priceEl.innerText.trim();
+      
+      const descEl = document.querySelector('.property-item-text.desc-text, .product-description');
+      if (descEl) data.description = descEl.innerText.trim();
+      
+      const specEls = document.querySelectorAll('.property-item');
+      specEls.forEach(li => {
+        const parts = li.innerText.split(':');
+        if (parts.length >= 2) {
+          const key = parts[0].trim();
+          const value = parts.slice(1).join(':').trim();
+          data.specs[key] = value;
+        }
+      });
+
+      const imgEls = document.querySelectorAll('.gallery-container img, .product-images img');
+      imgEls.forEach(img => {
+        let src = img.src || img.dataset.src;
+        if (src && !data.images.includes(src)) {
+          data.images.push(src);
+        }
+      });
+    }
+    else if (url.includes('letgo.com') || url.includes('otoplus.com')) {
+      data.platform = 'Letgo/Otoplus';
+      const titleEl = document.querySelector('[data-aut-id="itemTitle"], h1');
+      if (titleEl) data.title = titleEl.innerText.trim();
+
+      const priceEl = document.querySelector('[data-aut-id="itemPrice"]');
+      if (priceEl) data.price = priceEl.innerText.trim();
+      
+      const descEl = document.querySelector('[data-aut-id="itemDescription"]');
+      if (descEl) data.description = descEl.innerText.trim();
+      
+      const specEls = document.querySelectorAll('[data-aut-id="itemParams"] div, .parameters span');
+      specEls.forEach(el => {
+        // Letgo often formats specs weirdly, grab raw text
+        const text = el.innerText.trim();
+        if (text && text.includes(':')) {
+           const parts = text.split(':');
+           data.specs[parts[0].trim()] = parts.slice(1).join(':').trim();
+        } else if (text) {
+           data.specs["Feature"] = text;
+        }
+      });
+
+      const imgEls = document.querySelectorAll('img');
+      imgEls.forEach(img => {
+        let src = img.src;
+        if (src && src.includes('images') && !data.images.includes(src)) {
+          data.images.push(src);
+        }
+      });
+    }
+  } catch (error) {
+    console.error("AutoCAR Eklenti Hatası:", error);
+  }
+
+  return data;
+}
+
+// Background script'ten gelen komutu dinle
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "extract_data") {
+    const scrapedData = extractCarData();
+    console.log(`AutoCAR ${scrapedData.platform} Verisi Çekildi:`, scrapedData);
+    sendResponse(scrapedData);
+  }
+  return true;
+});

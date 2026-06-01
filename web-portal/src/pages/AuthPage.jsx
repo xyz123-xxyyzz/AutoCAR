@@ -1,0 +1,165 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Mail, Lock, ArrowRight, Loader2, AlertCircle, ShieldCheck } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+
+export default function AuthPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [ip, setIp] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  const navigate = useNavigate();
+
+  // Fetch IP automatically on mount
+  useEffect(() => {
+    fetch('https://api.ipify.org?format=json')
+      .then(res => res.json())
+      .then(data => setIp(data.ip))
+      .catch(err => {
+        console.error("IP Fetch Error:", err);
+        setIp('Unknown-IP');
+      });
+  }, []);
+
+  const handleAuth = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Supabase Authentication (try sign in, if user not found, sign up)
+      // Since this is a mockup for both login/register, we will try sign in first.
+      let { data, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (authError && authError.message.includes('Invalid login credentials')) {
+        // If user doesn't exist, try to sign up
+        const signupRes = await supabase.auth.signUp({
+          email,
+          password
+        });
+        data = signupRes.data;
+        authError = signupRes.error;
+      }
+
+      if (authError) throw authError;
+
+      // Ensure we have a user
+      if (data?.user) {
+        // Mock role logic for demo
+        const demoRole = email.includes('admin') ? 'Sahip' : email.includes('premium') ? 'Premium' : 'Kullanıcı';
+        
+        // Record device IP and Role to user_devices table
+        const { error: dbError } = await supabase
+          .from('user_devices')
+          .insert([
+            { user_id: data.user.id, email: email, device_ip: ip, role: demoRole }
+          ]);
+        
+        if (dbError && dbError.code !== 'PGRST204') { // Ignore if table doesn't exist yet for mockup
+          console.warn("Device logging warning:", dbError);
+        }
+        localStorage.setItem('userRole', demoRole);
+
+        // Redirect based on role
+        if (demoRole === 'Sahip') navigate('/sahip');
+        else if (demoRole === 'Premium') navigate('/satin-alan');
+        else navigate('/kullanici');
+      }
+
+    } catch (err) {
+      setError(err.message || 'Giriş yapılırken bir hata oluştu.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F0F2F5] text-black font-sans flex flex-col items-center justify-center p-6 selection:bg-black selection:text-white">
+      <div className="w-full max-w-md">
+        
+        <div className="text-center mb-10">
+          <div className="font-display font-black text-4xl tracking-[0.2em] uppercase mb-4">AutoCAR</div>
+          <p className="text-black/50 font-bold tracking-widest text-xs uppercase">Geleceğin Otomobil Analizi</p>
+        </div>
+
+        <div className="bg-white rounded-[2.5rem] p-10 shadow-embossed border border-white relative overflow-hidden">
+          {/* Security Badge */}
+          <div className="absolute top-0 right-0 bg-[#F5F5F7] px-4 py-2 rounded-bl-2xl flex items-center gap-2 shadow-inner-embossed">
+            <ShieldCheck size={12} className="text-black" />
+            <span className="text-[8px] font-bold tracking-[0.2em] uppercase text-black/50">Cihaz Koruması Aktif</span>
+          </div>
+
+          <h2 className="text-3xl font-display font-black tracking-tight mb-8 mt-4 text-center">Giriş Yap / Kaydol</h2>
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl flex items-center gap-3 text-sm font-bold shadow-inner-embossed border border-red-100">
+              <AlertCircle size={16} />
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleAuth} className="space-y-6">
+            
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold tracking-[0.2em] uppercase text-black/50 ml-4">E-posta</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
+                  <Mail className="text-black/30" size={16} />
+                </div>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-14 pr-6 py-5 bg-[#F5F5F7] border-none rounded-full text-black font-bold focus:outline-none focus:ring-2 focus:ring-black/10 transition-all shadow-inner-embossed"
+                  placeholder="ornek@mail.com"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold tracking-[0.2em] uppercase text-black/50 ml-4">Şifre</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
+                  <Lock className="text-black/30" size={16} />
+                </div>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-14 pr-6 py-5 bg-[#F5F5F7] border-none rounded-full text-black font-bold focus:outline-none focus:ring-2 focus:ring-black/10 transition-all shadow-inner-embossed"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+
+            <button 
+              type="submit"
+              disabled={loading}
+              className="w-full py-5 mt-4 bg-black text-white font-display font-black tracking-[0.2em] text-[10px] uppercase rounded-full hover:bg-black/80 transition-colors flex items-center justify-center gap-3 shadow-embossed hover:shadow-embossed-hover disabled:opacity-70"
+            >
+              {loading ? (
+                <><Loader2 size={16} className="animate-spin" /> Bekleniyor...</>
+              ) : (
+                <>Sisteme Gir <ArrowRight size={14} strokeWidth={3} /></>
+              )}
+            </button>
+
+          </form>
+
+          <p className="text-center text-[10px] text-black/30 font-bold mt-8 tracking-widest leading-relaxed uppercase">
+            Hesabınız yoksa otomatik olarak oluşturulacaktır.<br/>
+            Güvenliğiniz için mevcut cihaz IP'niz sisteme kaydedilmektedir.
+          </p>
+
+        </div>
+      </div>
+    </div>
+  );
+}
