@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, TrendingUp, Zap, CheckCircle, Star, Settings, Shield, Gauge, Maximize, AlertTriangle, AlertCircle, XCircle, Minus, HelpCircle, Trophy, Target, Sparkles, ArrowRight, Table2, Image as ImageIcon } from 'lucide-react';
 
 export default function AnalysisReport() {
@@ -170,7 +170,6 @@ export default function AnalysisReport() {
   const [cars, setCars] = useState([]);
   
   // Supabase Veritabanından Veri Çekme Simülasyonu (Eklenti -> AI -> React döngüsü)
-  import { useEffect } from 'react';
   useEffect(() => {
     // Gerçekte burada: supabase.from('analyzed_cars').select('*').eq('user_id', currentUser) çalışacak.
     // Şimdilik API anahtarları girilmediği için Simülasyon modunda testimizi yapıyoruz.
