@@ -213,6 +213,8 @@ export default function AnalysisReport() {
     }
   };
 
+  const currentCar = currentIndex > 0 && cars.length > 0 ? cars[currentIndex - 1] : null;
+
   return (
     <div className="min-h-screen bg-[#F0F2F5] text-black overflow-hidden font-sans relative selection:bg-black selection:text-white pt-10 pb-20">
       <div className="flex flex-col h-full items-center justify-center relative max-w-7xl mx-auto">
@@ -428,13 +430,10 @@ export default function AnalysisReport() {
               </div>
 
             </div>
-          ) : (
+          ) : currentCar && (
             /* TEKİL ARAÇ İNCELEME SAYFASI */
-            (function() {
-              const currentCar = cars[currentIndex - 1];
-              return (
-                <div>
-                  {/* Main Hero & Metrics */}
+            <div>
+              {/* Main Hero & Metrics */}
                   <div className="flex flex-col xl:flex-row gap-20 mb-20">
                     <div className="flex-1">
                       <h2 className="text-4xl md:text-5xl font-display font-black tracking-tighter mb-8 leading-[1.1] text-black">{currentCar.title}</h2>
@@ -626,10 +625,9 @@ export default function AnalysisReport() {
                   </div>
 
                 </div>
-              );
-            })()
           )}
         </div>
+        )}
       </div>
     </div>
   );
