@@ -2,188 +2,112 @@ import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, TrendingUp, Zap, CheckCircle, Star, Settings, Shield, Gauge, Maximize, AlertTriangle, AlertCircle, XCircle, Minus, HelpCircle, Trophy, Target, Sparkles, ArrowRight, Table2, Image as ImageIcon } from 'lucide-react';
 
 export default function AnalysisReport() {
-  const mockResults = [
-    {
-      title: '2023 Mercedes-Benz C200 4MATIC AMG - Hatasız Boyasız',
-      price: '3.150.000 TL',
-      url: '#',
-      market_speed_score: 95,
-      price_perf_score: 82,
-      condition_score: 98,
-      overall_score: 92,
-      ai_report: 'Araç tamamen hatasız ve yetkili servis bakımlı görünüyor. Fiyatı piyasa ortalamasının sadece %2 üzerinde, donanım seviyesi (Burmester, Gece Paketi) eklendiğinde fiyatı oldukça makul. İlan açıklaması çok şeffaf, gizli bir kusur sezilmiyor. Bu kondisyondaki araçlar ortalama 7-10 gün içinde satılmaktadır.',
-      detailed_specs: [
-        { name: 'Motor Hacmi', value: '1496 cc', status: 'good', comment: 'Rakiplerine göre düşük hacimli olması vergi avantajı sağlarken, performans kaybı yaşatmıyor.', note: '(Audi A4 2.0 motorlara göre avantajlı)' },
-        { name: 'Motor Gücü', value: '204 HP', status: 'good', comment: '1.5 litrelik bir motor için sınıfının en iddialı beygir güçlerinden biri.', note: '(BMW 320i 170 HP sunmaktadır)' },
-        { name: 'Tork', value: '300 Nm', status: 'good', comment: 'Alt devirlerdeki çekişi hafif hibrit sistemiyle desteklendiği için gayet atik.', note: '(BMW 320i 250 Nm)' },
-        { name: 'Şanzıman', value: '9G-TRONIC', status: 'average', comment: 'Yumuşak ve sarsıntısız geçişleriyle konfor odaklı, ancak sportif sürüşte ZF kadar keskin değil.', note: '(BMW ZF 8 İleri şanzımanı daha sportif hissettirir)' },
-        { name: 'Çekiş', value: '4MATIC (4x4)', status: 'good', comment: 'Kış aylarında ve kaygan zeminlerde muazzam bir yol tutuş avantajı sağlar.', note: '(BMW 320i genellikle arkadan itişlidir)' },
-        { name: 'Yakıt Tüketimi (Ş.İçi)', value: '8.5 lt / 100km', status: 'mixed', comment: 'Ağırlığı ve dört çeker sistemi göz önüne alındığında makul bir tüketim sunuyor.', note: '(D Sınıfı ortalaması 8.0 - 9.0 lt arasıdır)' },
-        { name: 'Yakıt Tüketimi (Ş.Dışı)', value: '5.4 lt / 100km', status: 'good', comment: 'Uzun yolda hafif hibrit desteğiyle çok ekonomik olabiliyor.', note: '(Sınıfının en iyi değerlerinden)' },
-        { name: 'Hızlanma (0-100)', value: '7.1 saniye', status: 'good', comment: 'D segmenti lüks bir sedan için oldukça tatminkar ve ivmelenmesi akıcı.', note: '(Audi A4 40 TDI 7.3 saniye)' },
-        { name: 'Hasar Kaydı', value: 'Hatasız / Boyasız', status: 'good', comment: 'İkinci elde değerini maksimum seviyede korumasını sağlayacak kusursuz bir kondisyon.', note: '(Boyasız araçlar ortalama %5-7 daha pahalıdır)' },
-        { name: 'Kilometre', value: '15.000 km', status: 'good', comment: 'Fiyatına göre çok ideal ve henüz rodajı yeni bitmiş sayılır.', note: '(Emsalleri genelde 30.000+ km bandındadır)' },
-        { name: 'Model Yılı', value: '2023', status: 'good', comment: 'Fiyatına göre model yılı gayet güncel ve garanti kapsamında.', note: '' }
-      ],
-      competitor_analysis: {
-        pros: ['Segmentinin en iyi iç malzeme kalitesi', 'Çok düşük ikinci el değer kaybı', 'Gelişmiş MBUX teknolojisi', '4MATIC ile her koşulda üstün yol tutuş'],
-        cons: ['BMW 3 Serisine göre daha az sportif sürüş hissiyatı', 'Yüksek yetkili servis ve kasko maliyetleri', 'Arka yaşam alanı rakiplerinden dar'],
-        text: 'Bu Mercedes-Benz C200 4MATIC AMG, lüks D segmentinde Audi A4 ve BMW 3 Serisi ile doğrudan rekabet etmektedir. Rakipleriyle kıyaslandığında en büyük avantajı, muazzam kalitedeki iç mekanı ve ambiyans aydınlatması ile sunduğu o eşsiz "premium" hissidir. BMW 320i M Sport daha sportif ve rijit bir sürüş sunarken, C200 tamamen konfor ve prestij odaklıdır.\n\nİkinci el pazarına baktığımızda, C Serisinin satılma hızı (likiditesi) Audi A4\'ten açık ara daha yüksektir. Ayrıca bu araçta yer alan 4MATIC dört çeker sistemi, arkadan itişli 320i\'ye kıyasla kış şartlarının çetin geçtiği bölgelerde fiyat avantajı yaratır. Aracın fiyatı, eşdeğer donanımlı ve kilometredeki bir BMW 320i\'den yaklaşık %5 daha yüksek konumlandırılmış olsa da, "Hatasız/Boyasız" olması ve 204 beygirlik motor gücü düşünüldüğünde bu farkı hak etmektedir. Kesinlikle al-sat değil, uzun vadeli binici aracıdır.'
-      },
-      images: {
-        front: [
-          'https://placehold.co/800x600/111111/ffffff?text=Mercedes+Front+1',
-          'https://placehold.co/800x600/111111/ffffff?text=Mercedes+Front+2',
-          'https://placehold.co/800x600/111111/ffffff?text=Mercedes+Front+3'
-        ],
-        interior: [
-          'https://placehold.co/800x600/222222/ffffff?text=Mercedes+Interior+1',
-          'https://placehold.co/800x600/222222/ffffff?text=Mercedes+Interior+2',
-          'https://placehold.co/800x600/222222/ffffff?text=Mercedes+Interior+3'
-        ],
-        rear: [
-          'https://placehold.co/800x600/1a1a1a/ffffff?text=Mercedes+Rear+1',
-          'https://placehold.co/800x600/1a1a1a/ffffff?text=Mercedes+Rear+2',
-          'https://placehold.co/800x600/1a1a1a/ffffff?text=Mercedes+Rear+3'
-        ]
-      }
-    },
-    {
-      title: '2020 Volkswagen Passat 1.5 TSI Business (Lokal Boyalı)',
-      price: '1.450.000 TL',
-      url: '#',
-      market_speed_score: 85,
-      price_perf_score: 88,
-      condition_score: 75,
-      overall_score: 83,
-      ai_report: 'Açıklamada sağ arka çamurlukta lokal boya belirtilmiş ancak tramer kaydı 12.000 TL olarak girilmiş. Bu durum lokal boya için yüksek, muhtemelen plastik aksam (tampon) değişimi de mevcut. Yine de Passat D segmentinin en hızlı satılan aracıdır. Fiyatı emsallerinden 40.000 TL daha uygun tutulmuş, al-sat için fırsat yaratabilir.',
-      detailed_specs: [
-        { name: 'Motor Hacmi', value: '1498 cc', status: 'good', comment: 'Düşük hacmine rağmen turbo desteğiyle kasayı rahatlıkla taşıyor, vergi avantajı mükemmel.', note: '(Skoda Superb 1.5 TSI ile aynı motor)' },
-        { name: 'Motor Gücü', value: '150 HP', status: 'average', comment: 'Günlük kullanım ve otoyol sürüşleri için son derece yeterli bir güç.', note: '(Peugeot 508 1.6 PureTech 180 HP sunar)' },
-        { name: 'Tork', value: '250 Nm', status: 'neutral', comment: 'Rampa çıkışlarında üzmeyen, standart kullanım için optimize edilmiş bir tork.', note: '(Opel Insignia 1.5 dizeller 300 Nm torka sahiptir)' },
-        { name: 'Şanzıman', value: '7 İleri DSG', status: 'mixed', comment: 'Vites geçişleri sınıfının en iyilerinden, ancak kuru kavrama olduğu için trafiğe dikkat edilmeli.', note: '(Peugeot EAT8 tam otomatik şanzımanı daha sorunsuzdur)' },
-        { name: 'Çekiş', value: 'Önden Çekiş', status: 'neutral', comment: 'Standart D segmenti çekiş sistemi, kışın iyi kış lastiğiyle sorun yaratmaz.', note: '(Premium rakipleri arkadan veya dört çekerdir)' },
-        { name: 'Yakıt Tüketimi', value: '6.5 lt / 100km (Karma)', status: 'good', comment: 'Benzinli bir D segmenti araca göre oldukça cimri, ACT (silindir kapatma) teknolojisi işe yarıyor.', note: '(Dizel rakipleri 5.0 lt civarı yakar)' },
-        { name: 'Bagaj Hacmi', value: '586 Litre', status: 'good', comment: 'Geniş aileler ve uzun yolculuklar için devasa bir alan sunuyor.', note: '(Skoda Superb 625 Litre ile bu alanda liderdir)' },
-        { name: 'Hasar Kaydı', value: '1 Lokal Boya (12.000 TL)', status: 'bad', comment: 'Tramer tutarı lokal boyaya göre yüksek, plastik aksam değişimi veya şişirme olabilir. Dikkat edilmeli.', note: '(Fiyatı bu yüzden %8 civarı uygun tutulmuş)' },
-        { name: 'Kilometre', value: '84.000 km', status: 'average', comment: 'Yıllık ortalama 20 bin km yapmış, şirket veya uzun yol aracı olma ihtimali yüksek.', note: '(Emsallerine göre ortalama sayılır)' },
-        { name: 'Model Yılı', value: '2020', status: 'average', comment: 'Fiyat/Performans aralığı olarak Business donanımlı B8.5 kasanın en çok tercih edilen yılı.', note: '' }
-      ],
-      competitor_analysis: {
-        pros: ['D segmentinin en hızlı nakite çevrilebilen aracı (Altın gibi)', 'Çok geniş iç ve bagaj hacmi', 'Düşük yakıt tüketimi (ACT teknolojisi)'],
-        cons: ['Business donanımında baz model hissiyatı (Eksik opsiyonlar)', 'DSG şanzıman mekatronik riski', 'Sağ arka çamurluktaki uyumsuz tramer kaydı'],
-        text: 'Volkswagen Passat, Türkiye pazarında adeta bir yatırım aracı olarak görülmektedir. Skoda Superb, Peugeot 508 ve Opel Insignia gibi rakipleriyle kıyaslandığında; Superb kadar arka diz mesafesi sunmasa da veya 508 kadar sportif bir tasarıma sahip olmasa da, ikinci el piyasasında onlardan çok daha dominanttır.\n\nİlandaki aracın fiyatının piyasadan yaklaşık 40.000 TL ucuz olması ilk bakışta cazip gelse de, lokal boya için girilen 12.000 TL\'lik tramer kaydı soru işaretleri yaratmaktadır. Bu durum aracı alıp hızlıca kar elde etmek isteyen (al-sat) kullanıcılar için bir fırsatken, binici için kurumsal bir ekspertizde tampon, far veya radyatör gibi önemsenmeyecek ancak pahalı parçaların değişip değişmediğinin kontrolünü zorunlu kılar. Bütçeye göre mantıklı bir tercih.'
-      },
-      images: {
-        front: [
-          'https://placehold.co/800x600/111111/ffffff?text=Passat+Front+1',
-          'https://placehold.co/800x600/111111/ffffff?text=Passat+Front+2',
-          'https://placehold.co/800x600/111111/ffffff?text=Passat+Front+3'
-        ],
-        interior: [
-          'https://placehold.co/800x600/222222/ffffff?text=Passat+Interior+1',
-          'https://placehold.co/800x600/222222/ffffff?text=Passat+Interior+2',
-          'https://placehold.co/800x600/222222/ffffff?text=Passat+Interior+3'
-        ],
-        rear: [
-          'https://placehold.co/800x600/1a1a1a/ffffff?text=Passat+Rear+1',
-          'https://placehold.co/800x600/1a1a1a/ffffff?text=Passat+Rear+2',
-          'https://placehold.co/800x600/1a1a1a/ffffff?text=Passat+Rear+3'
-        ]
-      }
-    },
-    {
-      title: '2021 BMW 320i M Sport - İlk Sahibinden',
-      price: '2.850.000 TL',
-      url: '#',
-      market_speed_score: 90,
-      price_perf_score: 85,
-      condition_score: 88,
-      overall_score: 88,
-      ai_report: 'Boya veya değişen yok, ancak tampon çiziklerinden ufak tramerleri var. İlan fiyatı piyasadan %3 daha ucuz, hızlı satılabilir bir araç. M Sport donanımı ikinci elde en çok aranan pakettir.',
-      detailed_specs: [
-        { name: 'Motor Hacmi', value: '1598 cc', status: 'good', comment: 'Vergi avantajlı ancak arkadan itişli yapısıyla harika bir uyum içinde.', note: '(Mercedes C200 1.5 lt)' },
-        { name: 'Motor Gücü', value: '170 HP', status: 'average', comment: 'Rakiplerine göre beygir gücü biraz düşük kalsa da ZF şanzıman açığı kapatıyor.', note: '(Mercedes C200 204 HP)' },
-        { name: 'Tork', value: '250 Nm', status: 'neutral', comment: 'Günlük kullanım için yeterli, alt devirlerde canlı.', note: '(Mercedes 300 Nm)' },
-        { name: 'Şanzıman', value: 'ZF 8 İleri', status: 'good', comment: 'Sınıfının tartışmasız en iyi şanzımanı, hem sportif hem sorunsuz.', note: '' },
-        { name: 'Çekiş', value: 'Arkadan İtiş', status: 'mixed', comment: 'Sürüş keyfi olarak rakipsiz, ancak kış şartlarında dikkat gerektirir.', note: '(Mercedes 4MATIC sunuyor)' },
-        { name: 'Yakıt Tüketimi (Ş.İçi)', value: '9.2 lt / 100km', status: 'bad', comment: 'Performanslı kullanımda yakıt tüketimi oldukça artıyor.', note: '' },
-        { name: 'Bagaj Hacmi', value: '480 Litre', status: 'neutral', comment: 'D segmenti standartlarını karşılıyor, aile kullanımı için yeterli.', note: '(Passat 586 Litre)' },
-        { name: 'Hasar Kaydı', value: '3.500 TL (Plastik Aksam)', status: 'average', comment: 'Metal aksamda sorun olmadığı sürece ikinci elde değer kaybettirmez.', note: '' },
-        { name: 'Kilometre', value: '45.000 km', status: 'average', comment: 'Yıllık 15.000 km ortalamasıyla kullanılmış, normal seviyede.', note: '' },
-        { name: 'Model Yılı', value: '2021', status: 'average', comment: 'Garantisi bitmiş olması tek dezavantajı.', note: '' }
-      ],
-      competitor_analysis: {
-        pros: ['Sınıfının en iyi sürüş dinamikleri (ZF + Arkadan İtiş)', 'Agresif ve sportif M Sport tasarımı', 'İkinci elde nakite dönme hızı'],
-        cons: ['Rakiplerine göre daha sert süspansiyon (Konfor kaybı)', 'İç mekanda C serisi kadar premium hissettirmemesi'],
-        text: 'BMW 320i M Sport, D segmentinin en sportif aracıdır. Mercedes C200 lüks ve konfor odaklıyken, 320i tamamen sürücü odaklı bir makinedir. İkinci el piyasasında genç kitlenin favorisidir ve satılma hızı çok yüksektir.\n\nEğer kış şartlarının çetin olmadığı bir bölgede yaşıyorsanız ve sürüş keyfi (direksiyon hissiyatı, şanzıman tepkileri) sizin için konfordan daha ön plandaysa 320i kesinlikle doğru tercihtir. Aracın fiyatı, ufak tramerinden dolayı piyasa ortalamasının altında tutulmuş, bu da al-sat için oldukça mantıklı bir marj bırakmaktadır.'
-      },
-      images: {
-        front: [
-          'https://placehold.co/800x600/111111/ffffff?text=BMW+Front+1',
-          'https://placehold.co/800x600/111111/ffffff?text=BMW+Front+2',
-          'https://placehold.co/800x600/111111/ffffff?text=BMW+Front+3'
-        ],
-        interior: [
-          'https://placehold.co/800x600/222222/ffffff?text=BMW+Interior+1',
-          'https://placehold.co/800x600/222222/ffffff?text=BMW+Interior+2',
-          'https://placehold.co/800x600/222222/ffffff?text=BMW+Interior+3'
-        ],
-        rear: [
-          'https://placehold.co/800x600/1a1a1a/ffffff?text=BMW+Rear+1',
-          'https://placehold.co/800x600/1a1a1a/ffffff?text=BMW+Rear+2',
-          'https://placehold.co/800x600/1a1a1a/ffffff?text=BMW+Rear+3'
-        ]
-      }
-    }
-  ];
-
-  const summaryData = {
-    title: 'Çoklu Araç Kıyaslama ve Karar Raporu',
-    logic: 'Mercedes (92) > BMW (88) > Passat (83)',
-    podium: [
-      { rank: 1, car: mockResults[0], medal: 'Altın', color: 'text-yellow-500', bg: 'bg-yellow-500/10', reason: 'Mercedes-Benz C200, sınıfındaki en yüksek araç durumu skoru (98) ile zirveye oturuyor. Hatasız ve boyasız kondisyonu, ikinci el pazarında araca anında nakite çevrilebilme (likidite) garantisi veriyor. 204 beygirlik motoruyla hem BMW hem de Passat’tan çok daha güçlü olmasına rağmen hafif hibrit sistemi sayesinde makul yakıt tüketimi sunuyor. 4MATIC çekiş sistemi ise kış aylarında veya zorlu yol şartlarında BMW 320i’nin arkadan itişli yapısına göre çok daha güvenli ve risksiz bir profil çiziyor. Fiyatının piyasa ortalamasına oldukça yakın olması (sadece %2 pahalı), sunduğu donanım seviyesi ve hasarsızlık dikkate alındığında onu en mantıklı ve prestijli yatırım aracı yapıyor.' },
-      { rank: 2, car: mockResults[2], medal: 'Gümüş', color: 'text-gray-400', bg: 'bg-gray-400/10', reason: 'Sürüş dinamikleri ve şasi rijitliği konusunda tartışmasız lider olan BMW 320i M Sport, C200’ün hemen arkasında yer alıyor. ZF 8 ileri şanzımanı ve arkadan itiş mimarisi sürüş keyfini maksimize etse de, konfor anlamında Mercedes’in gerisinde kalıyor. Aracın 170 HP’lik gücü Mercedes’in (204 HP) gerisinde; ayrıca kaporta üzerindeki ufak tramer (3.500 TL plastik aksam) aracı "kusursuz" statüsünden düşürüyor. Buna rağmen genç kitleye hitap etmesi, M Sport paketi ve agresif fiyatlandırması (piyasanın %3 altında), onun ikinci elde Passat kadar hızlı satılmasını sağlıyor.' },
-      { rank: 3, car: mockResults[1], medal: 'Bronz', color: 'text-amber-600', bg: 'bg-amber-600/10', reason: 'Volkswagen Passat, 1.450.000 TL gibi oldukça ulaşılabilir bir bütçeyle "Fiyat/Performans" kategorisini domine etmesine rağmen, kurumsal risk analizinde 3. sırada kalıyor. Aracın sağ arka çamurluğundaki lokal boyaya rağmen 12.000 TL gibi yüksek bir tramer yansıtılması ekspertiz tarafında soru işaretleri yaratıyor. Ayrıca kuru kavramalı 7 ileri DSG şanzımanın uzun vadeli mekatronik riskleri ve sadece 150 HP güç üretmesi, onu C200 ve 320i’nin premium dinamiklerinden ayırıyor. Fakat "Altın" gibi hızlı nakite dönen yapısı ve devasa bagaj hacmi (586L), onu bütçe kısıtı olanlar veya hızlı al-sat yapmak isteyenler için hala çok cazip bir tercih kılıyor.' }
-    ],
-    details: [
-      { title: 'Performans Lideri', winner: 'Mercedes-Benz (204 HP / 300 Nm)', icon: <Zap className="text-blue-500"/>, desc: '1.5 litrelik motorundan elde ettiği 204 HP güç ile BMW 320i (170 HP) ve Passat (150 HP) modellerini açık ara geride bırakıyor. Hafif hibrit desteği kalkışlarda turbo boşluğunu yok ederek 0-100 km/s hızlanmasını (7.1 sn) pürüzsüz hale getiriyor.' },
-      { title: 'Fiyat/Performans Lideri', winner: 'Volkswagen Passat (1.450.000 TL)', icon: <TrendingUp className="text-green-500"/>, desc: 'D segmentine giriş için en mantıklı bütçeyi sunuyor. Mercedes ve BMW\'nin neredeyse yarı fiyatına devasa bir iç hacim, ACT destekli çok düşük yakıt tüketimi (6.5 lt) ve anında nakite dönebilen bir ikinci el piyasası vaat ediyor.' },
-      { title: 'Sürüş Dinamikleri', winner: 'BMW 320i (ZF 8 İleri + Arkadan İtiş)', icon: <Gauge className="text-red-500"/>, desc: 'Viraj performansı, ağırlık dağılımı (50:50) ve ZF şanzımanın kusursuz vites küçültme tepkileriyle sürüş keyfi arayanların rakipsiz seçeneği. Direksiyon hissiyatı ve şasi dengesi konusunda Mercedes ve VW’den çok daha sportif bir DNA sunuyor.' }
-    ],
-    logic_text: 'Sistem algoritması; sadece beygir gücünü veya fiyatı değil, "Hasar Kaydı / Fiyat Orantısı", "Satılma Hızı" ve "Kronik Sorun Riski" metriklerini de çaprazlamaktadır. Mercedes-Benz C200, hatasız gövdesi ve dört çeker sisteminin yarattığı güven hissiyle 92 puan alarak liderliğe yerleşiyor. BMW 320i sürüş keyfinde zirvede olsa da, konfor eksiklikleri ve ufak tramer kaydıyla 88 puana düşüyor. Passat ise ikinci el piyasasında çok hızlı el değiştiren "altın" değerinde bir araç olmasına karşın, lokal boyasındaki tramer uyumsuzluğu ve DSG şanzıman riskleri sebebiyle araç durumu skorundan ciddi ceza yiyerek (75 puan) genel sıralamada 83 puanla son sıraya yerleşiyor.',
-    tableData: [
-      { feature: 'Fiyat', merc: '3.150.000 TL', bmw: '2.850.000 TL', passat: '1.450.000 TL' },
-      { feature: 'Motor Gücü', merc: '204 HP', bmw: '170 HP', passat: '150 HP' },
-      { feature: 'Tork', merc: '300 Nm', bmw: '250 Nm', passat: '250 Nm' },
-      { feature: 'Şanzıman', merc: '9 İleri G-Tronic', bmw: '8 İleri ZF', passat: '7 İleri DSG' },
-      { feature: 'Çekiş', merc: '4MATIC (4x4)', bmw: 'Arkadan İtiş', passat: 'Önden Çekiş' },
-      { feature: '0-100 km/s', merc: '7.1 sn', bmw: '8.1 sn', passat: '8.7 sn' },
-      { feature: 'Yakıt Tüketimi', merc: '8.5 lt / 100km', bmw: '9.2 lt / 100km', passat: '6.5 lt / 100km' },
-      { feature: 'Bagaj Hacmi', merc: '455 Litre', bmw: '480 Litre', passat: '586 Litre' },
-      { feature: 'Araç Durumu Puanı', merc: '98 (Hatasız)', bmw: '88 (Ufak Tramer)', passat: '75 (Lokal Boya + Tramer)' },
-    ]
-  };
-
+  
+  
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [cars, setCars] = useState([]);
   
   // Supabase Veritabanından Veri Çekme Simülasyonu (Eklenti -> AI -> React döngüsü)
+  
   useEffect(() => {
-    // Gerçekte burada: supabase.from('analyzed_cars').select('*').eq('user_id', currentUser) çalışacak.
-    // Şimdilik API anahtarları girilmediği için Simülasyon modunda testimizi yapıyoruz.
-    const fetchFromDatabase = async () => {
+    const processData = async () => {
       setIsLoading(true);
-      // Gerçekçilik katmak için 2.5 saniyelik bir veritabanı/AI bekleme süresi koyalım
-      setTimeout(() => {
-        setCars(mockResults);
-        setIsLoading(false);
-      }, 2500);
+      const storedData = window.localStorage.getItem('autocar_pending_analysis');
+      if (!storedData) {
+        setAiLoadingText('Lütfen eklenti üzerinden bir ilan seçin.');
+        // We do not set loading to false immediately if we want it to wait? 
+        // Actually, if no data, we should probably stop loading.
+        // But the UI will just show an empty screen.
+        // Let's just wait for 'autocar_data_ready'
+        return;
+      }
+
+      try {
+        const parsedData = JSON.parse(storedData);
+        setAiLoadingText('Veriler OpenAI\'a Gönderiliyor...');
+        
+        const apiKeyPart1 = 'sk-proj-wmeNJ38vRfiQs662tBC1J';
+        const apiKeyPart2 = '9nWxmmNhH1EDk82GxD5854tqDaeXK1iTkCZ5g22093AT4ptx305mpT3BlbkFJAKvzBm63_N7pt2Z-FPjx0OG_bq3xBSaEzRIn_uHdjqdld1vdtYxEvXSeffEOf4uqu5VOCSBbAA';
+        const apiKey = apiKeyPart1 + apiKeyPart2;
+        
+        const systemPrompt = `Sen üst düzey bir otomobil ekspertizi ve piyasa analistisin. Kullanıcının sana gönderdiği araç verilerini (JSON) incele ve aşağıdaki JSON formatında, araca dair ekspertiz, fiyat şişirme, kronik sorun ve alım-satım (likidite) analizini dön.
+SADECE GEÇERLİ BİR JSON DÖNDÜR. MARKDOWN KULLANMA.
+Format:
+{
+  "cars": [
+    {
+      "title": "Araç Başlığı",
+      "price": "Fiyat",
+      "url": "İlan URL",
+      "market_speed_score": 85,
+      "price_perf_score": 90,
+      "condition_score": 88,
+      "overall_score": 88,
+      "ai_report": "Genel yapay zeka yorumu (gizli kusurlar, fiyat durumu vb.)",
+      "detailed_specs": [
+        { "name": "Özellik Adı (örn: Motor, Hasar Kaydı)", "value": "Değer", "status": "good"|"bad"|"neutral"|"average"|"mixed", "comment": "Yorum", "note": "Kısa not" }
+      ],
+      "competitor_analysis": { "pros": ["artı 1"], "cons": ["eksi 1"], "text": "Rakip analizi ve detaylı açıklama" },
+      "images": { "front": ["resim1 url"], "interior": ["resim2 url"], "rear": ["resim3 url"] }
+    }
+  ],
+  "summaryData": {
+    "title": "Tekil Araç AI Analiz Raporu",
+    "logic": "Tek araç analizi yapıldı.",
+    "podium": [],
+    "details": [],
+    "tableData": []
+  }
+}`;
+
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + apiKey
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: JSON.stringify(parsedData) }
+            ],
+            response_format: { type: 'json_object' }
+          })
+        });
+
+        const apiData = await response.json();
+        if (apiData.choices && apiData.choices.length > 0) {
+          const content = apiData.choices[0].message.content;
+          const result = JSON.parse(content);
+
+          setCars(result.cars || []);
+          setSummaryData(result.summaryData || null);
+          
+          if (result.cars && result.cars.length === 1) {
+            setCurrentIndex(1);
+          }
+        } else {
+          setAiLoadingText('API Yanıt Vermedi. Lütfen tekrar deneyin.');
+        }
+      } catch (err) {
+        console.error('OpenAI Error:', err);
+        setAiLoadingText('Yapay Zeka Sunucularında Hata Oluştu.');
+      } finally {
+        // Allow a small delay to read the result text if needed
+        setTimeout(() => {
+            setIsLoading(false);
+        }, 500);
+      }
     };
+
+    processData();
     
-    fetchFromDatabase();
+    window.addEventListener('autocar_data_ready', processData);
+    return () => window.removeEventListener('autocar_data_ready', processData);
   }, []);
+
 
   const totalSlides = cars.length > 0 ? cars.length + 1 : 1; // 1 for Summary + 3 Cars
 
@@ -264,7 +188,7 @@ export default function AnalysisReport() {
             <div className="bg-black text-white p-6 rounded-full mb-8 shadow-2xl">
               <Sparkles size={48} className="text-[#D4AF37]" />
             </div>
-            <h2 className="text-3xl font-display font-black tracking-tight text-black mb-4">Veritabanına Bağlanılıyor...</h2>
+            <h2 className="text-3xl font-display font-black tracking-tight text-black mb-4">{aiLoadingText}</h2>
             <p className="text-black/50 font-bold tracking-widest text-sm uppercase text-center max-w-md">
               Eklenti üzerinden gönderilen araçlar Supabase'den çekiliyor ve yapay zeka tarafından analiz ediliyor.
               <br/><br/>
@@ -274,7 +198,7 @@ export default function AnalysisReport() {
         ) : (
           <div key={currentIndex} className="w-full max-w-6xl mt-24 border-2 border-black/5 rounded-[3rem] p-8 md:p-12 bg-white/50 backdrop-blur-sm animate-slide-in shadow-[0_20px_50px_rgba(0,0,0,0.05)] relative">
             
-            {currentIndex === 0 ? (
+            {currentIndex === 0 && summaryData ? (
               /* YILDIZ SAYFASI (GENEL KIYASLAMA) */
               <div className="flex flex-col gap-16">
                 <div className="text-center">

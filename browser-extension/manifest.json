@@ -14,14 +14,16 @@
     "*://*.arabam.com/*",
     "*://*.letgo.com/*",
     "http://localhost:5173/*",
-    "http://localhost:5174/*"
+    "http://localhost:5174/*",
+    "https://auto-car-gold.vercel.app/*"
   ],
   "action": {
     "default_popup": "popup.html",
     "default_title": "AutoCAR"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "scripts": ["background.js"]
   },
   "browser_specific_settings": {
     "gecko": {

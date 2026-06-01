@@ -1,45 +1,54 @@
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'analyze_tabs') {
-    const tabs = request.tabs;
-    let results = [];
-    let completedCount = 0;
+let processedTabs = new Set();
 
-    tabs.forEach(tab => {
-      // Content script enjekte edip veri topla
-      chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        files: ['content.js']
-      }, () => {
-        if (chrome.runtime.lastError) {
-          console.error(chrome.runtime.lastError);
-          checkCompletion();
-        } else {
-          chrome.tabs.sendMessage(tab.id, { action: "extract_data" }, (response) => {
-            if (response && response.title) {
-              results.push(response);
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === 'complete' && tab.url) {
+    // Sadece sahibinden veya arabam.com ilan detay sayfalarında çalışsın
+    if (tab.url.includes('sahibinden.com/ilan/') || tab.url.includes('arabam.com/ilan/')) {
+      
+      chrome.storage.local.get(['autocar_running'], (res) => {
+        if (res.autocar_running && !processedTabs.has(tabId)) {
+          // Bu sekmeyi işlendi olarak işaretle
+          processedTabs.add(tabId);
+          
+          // Content script'i enjekte et ve veriyi çek
+          chrome.scripting.executeScript({
+            target: { tabId: tabId },
+            files: ['content.js']
+          }, () => {
+            if (chrome.runtime.lastError) {
+              console.error(chrome.runtime.lastError);
+            } else {
+              // Biraz bekle (sayfanın DOM tam otursun diye)
+              setTimeout(() => {
+                chrome.tabs.sendMessage(tabId, { action: "extract_data" }, (response) => {
+                  if (response && response.title) {
+                    // Veriyi çektik, Vercel portalını aç
+                    openPortalWithData([response]);
+                    
+                    // İsteğe bağlı: Bir kere çalıştıktan sonra eklentiyi "Durdur" moduna al
+                    // ki kullanıcı sayfada gezerken sürekli popup açılmasın
+                    chrome.storage.local.set({ autocar_running: false });
+                  }
+                });
+              }, 1000);
             }
-            checkCompletion();
           });
         }
       });
-    });
-
-    function checkCompletion() {
-      completedCount++;
-      if (completedCount === tabs.length) {
-        processResults(results);
-        sendResponse({ success: true });
-      }
     }
-    
-    return true; // Asenkron yanıt için
   }
 });
 
-function processResults(results) {
-  // Web Portalına yönlendir ve verileri LocalStorage üzerinden aktar (geçici çözüm)
-  // Prod ortamında veriler önce DB'ye yazılıp analiz ID'si ile portal açılabilir.
-  const portalUrl = "http://localhost:5174/analysis";
+// Eski manuel analiz isteği için fallback (eğer popup'tan tetiklenirse diye)
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'analyze_tabs') {
+    // (Manuel kullanım artık pek olmayacak ama kalabilir)
+    sendResponse({ success: true });
+  }
+});
+
+function openPortalWithData(results) {
+  const portalUrl = "https://auto-car-gold.vercel.app/analiz";
   
   chrome.tabs.create({ url: portalUrl }, (tab) => {
     // Sayfanın yüklenmesini bekleyip veriyi enjekte et
@@ -50,7 +59,7 @@ function processResults(results) {
           target: { tabId: tab.id },
           func: (data) => {
             window.localStorage.setItem('autocar_pending_analysis', JSON.stringify(data));
-            // Sayfada bir custom event tetikle ki React uygulaması hemen algılasın
+            // React uygulamasının veriyi alması için event fırlat
             window.dispatchEvent(new Event('autocar_data_ready'));
           },
           args: [results]
@@ -59,3 +68,8 @@ function processResults(results) {
     });
   });
 }
+
+// Sekme kapandığında processed set'inden temizle
+chrome.tabs.onRemoved.addListener((tabId) => {
+  processedTabs.delete(tabId);
+});
