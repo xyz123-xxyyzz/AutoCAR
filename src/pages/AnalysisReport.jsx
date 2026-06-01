@@ -7,31 +7,37 @@ export default function AnalysisReport() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [cars, setCars] = useState([]);
+  const [summaryData, setSummaryData] = useState(null);
+  const [aiLoadingText, setAiLoadingText] = useState('Analiz Bekleniyor...');
+  const [progress, setProgress] = useState(0);
   
   // Supabase Veritabanından Veri Çekme Simülasyonu (Eklenti -> AI -> React döngüsü)
   
   useEffect(() => {
     const processData = async () => {
       setIsLoading(true);
+      setProgress(0);
       const storedData = window.localStorage.getItem('autocar_pending_analysis');
       if (!storedData) {
         setAiLoadingText('Lütfen eklenti üzerinden bir ilan seçin.');
-        // We do not set loading to false immediately if we want it to wait? 
-        // Actually, if no data, we should probably stop loading.
-        // But the UI will just show an empty screen.
-        // Let's just wait for 'autocar_data_ready'
         return;
       }
 
+      // İlerleme çubuğunu başlat (0'dan 90'a kadar)
+      const progressInterval = setInterval(() => {
+        setProgress(p => (p < 90 ? p + (Math.random() * 3) : p));
+      }, 500);
+
       try {
         const parsedData = JSON.parse(storedData);
-        setAiLoadingText('Veriler OpenAI\'a Gönderiliyor...');
+        setAiLoadingText('Yapay Zeka Verileri İşliyor ve Kıyaslıyor...');
         
         const apiKeyPart1 = 'sk-proj-wmeNJ38vRfiQs662tBC1J';
         const apiKeyPart2 = '9nWxmmNhH1EDk82GxD5854tqDaeXK1iTkCZ5g22093AT4ptx305mpT3BlbkFJAKvzBm63_N7pt2Z-FPjx0OG_bq3xBSaEzRIn_uHdjqdld1vdtYxEvXSeffEOf4uqu5VOCSBbAA';
         const apiKey = apiKeyPart1 + apiKeyPart2;
         
-        const systemPrompt = `Sen üst düzey bir otomobil ekspertizi ve piyasa analistisin. Kullanıcının sana gönderdiği araç verilerini (JSON) incele ve aşağıdaki JSON formatında, araca dair ekspertiz, fiyat şişirme, kronik sorun ve alım-satım (likidite) analizini dön.
+        const systemPrompt = `Sen üst düzey bir otomobil ekspertizi ve piyasa analistisin. Sana birden fazla araç ilanı veriyorum (veya tek bir araç). 
+EĞER BİRDEN FAZLA ARAÇ VERİLMİŞSE, ONLARI BİRBİRİYLE KIYASLA (Fiyat, performans, hız) ve Genel Kıyaslama Raporu oluştur. 
 SADECE GEÇERLİ BİR JSON DÖNDÜR. MARKDOWN KULLANMA.
 Format:
 {
@@ -95,10 +101,11 @@ Format:
         console.error('OpenAI Error:', err);
         setAiLoadingText('Yapay Zeka Sunucularında Hata Oluştu.');
       } finally {
-        // Allow a small delay to read the result text if needed
+        clearInterval(progressInterval);
+        setProgress(100);
         setTimeout(() => {
             setIsLoading(false);
-        }, 500);
+        }, 1500);
       }
     };
 
@@ -184,16 +191,27 @@ Format:
         `}</style>
 
         {isLoading ? (
-          <div className="w-full max-w-6xl mt-24 border-2 border-black/5 rounded-[3rem] p-16 md:p-32 bg-white/50 backdrop-blur-sm shadow-[0_20px_50px_rgba(0,0,0,0.05)] flex flex-col items-center justify-center animate-pulse-slow">
-            <div className="bg-black text-white p-6 rounded-full mb-8 shadow-2xl">
-              <Sparkles size={48} className="text-[#D4AF37]" />
+          <div className="w-full max-w-4xl mt-24 border-2 border-black/5 rounded-[3rem] p-16 md:p-32 bg-white shadow-2xl flex flex-col items-center justify-center relative overflow-hidden">
+            <div className="relative z-10 flex flex-col items-center w-full">
+              <div className="bg-black text-white p-6 rounded-full mb-8 shadow-2xl animate-pulse">
+                <Sparkles size={48} className="text-[#D4AF37]" />
+              </div>
+              <h2 className="text-3xl font-display font-black tracking-tight text-black mb-12 text-center">{aiLoadingText}</h2>
+              
+              {/* Progress Bar Container */}
+              <div className="w-full max-w-2xl bg-gray-100 rounded-full h-8 mb-4 overflow-hidden relative shadow-inner">
+                <div 
+                  className="bg-black h-8 rounded-full transition-all duration-300 ease-out flex items-center justify-end pr-4" 
+                  style={{ width: \`\${Math.max(15, progress)}%\` }}
+                >
+                  <span className="text-white text-sm font-bold">{Math.round(progress)}%</span>
+                </div>
+              </div>
+
+              <p className="text-black/50 font-bold tracking-widest text-sm uppercase text-center mt-8">
+                Lütfen bekleyin, veriler yapay zeka süzgecinden geçiriliyor...
+              </p>
             </div>
-            <h2 className="text-3xl font-display font-black tracking-tight text-black mb-4">{aiLoadingText}</h2>
-            <p className="text-black/50 font-bold tracking-widest text-sm uppercase text-center max-w-md">
-              Eklenti üzerinden gönderilen araçlar Supabase'den çekiliyor ve yapay zeka tarafından analiz ediliyor.
-              <br/><br/>
-              (Sistem Simülasyon Modunda Test Ediliyor)
-            </p>
           </div>
         ) : (
           <div key={currentIndex} className="w-full max-w-6xl mt-24 border-2 border-black/5 rounded-[3rem] p-8 md:p-12 bg-white/50 backdrop-blur-sm animate-slide-in shadow-[0_20px_50px_rgba(0,0,0,0.05)] relative">
