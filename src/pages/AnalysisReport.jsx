@@ -8,111 +8,36 @@ export default function AnalysisReport() {
   const [isLoading, setIsLoading] = useState(true);
   const [cars, setCars] = useState([]);
   const [summaryData, setSummaryData] = useState(null);
-  const [aiLoadingText, setAiLoadingText] = useState('Analiz Bekleniyor...');
-  const [progress, setProgress] = useState(0);
-  
-  // Supabase Veritabanından Veri Çekme Simülasyonu (Eklenti -> AI -> React döngüsü)
+  const [aiLoadingText, setAiLoadingText] = useState('Veriler Yükleniyor...');
   
   useEffect(() => {
-    const processData = async () => {
-      setIsLoading(true);
-      setProgress(0);
-      const storedData = window.localStorage.getItem('autocar_pending_analysis');
+    const processData = () => {
+      const storedData = window.localStorage.getItem('autocar_ai_result');
       if (!storedData) {
-        setAiLoadingText('Lütfen eklenti üzerinden bir ilan seçin.');
+        setAiLoadingText('Eklentiden Rapor Bekleniyor...');
         return;
       }
 
-      // İlerleme çubuğunu başlat (0'dan 90'a kadar)
-      const progressInterval = setInterval(() => {
-        setProgress(p => (p < 90 ? p + (Math.random() * 3) : p));
-      }, 500);
-
       try {
-        const parsedData = JSON.parse(storedData);
-        setAiLoadingText('Yapay Zeka Verileri İşliyor ve Kıyaslıyor...');
+        const result = JSON.parse(storedData);
+        setCars(result.cars || []);
+        setSummaryData(result.summaryData || null);
         
-        const apiKeyPart1 = 'sk-proj-wmeNJ38vRfiQs662tBC1J';
-        const apiKeyPart2 = '9nWxmmNhH1EDk82GxD5854tqDaeXK1iTkCZ5g22093AT4ptx305mpT3BlbkFJAKvzBm63_N7pt2Z-FPjx0OG_bq3xBSaEzRIn_uHdjqdld1vdtYxEvXSeffEOf4uqu5VOCSBbAA';
-        const apiKey = apiKeyPart1 + apiKeyPart2;
-        
-        const systemPrompt = `Sen üst düzey bir otomobil ekspertizi ve piyasa analistisin. Sana birden fazla araç ilanı veriyorum (veya tek bir araç). 
-EĞER BİRDEN FAZLA ARAÇ VERİLMİŞSE, ONLARI BİRBİRİYLE KIYASLA (Fiyat, performans, hız) ve Genel Kıyaslama Raporu oluştur. 
-SADECE GEÇERLİ BİR JSON DÖNDÜR. MARKDOWN KULLANMA.
-Format:
-{
-  "cars": [
-    {
-      "title": "Araç Başlığı",
-      "price": "Fiyat",
-      "url": "İlan URL",
-      "market_speed_score": 85,
-      "price_perf_score": 90,
-      "condition_score": 88,
-      "overall_score": 88,
-      "ai_report": "Genel yapay zeka yorumu (gizli kusurlar, fiyat durumu vb.)",
-      "detailed_specs": [
-        { "name": "Özellik Adı (örn: Motor, Hasar Kaydı)", "value": "Değer", "status": "good"|"bad"|"neutral"|"average"|"mixed", "comment": "Yorum", "note": "Kısa not" }
-      ],
-      "competitor_analysis": { "pros": ["artı 1"], "cons": ["eksi 1"], "text": "Rakip analizi ve detaylı açıklama" },
-      "images": { "front": ["resim1 url"], "interior": ["resim2 url"], "rear": ["resim3 url"] }
-    }
-  ],
-  "summaryData": {
-    "title": "Tekil Araç AI Analiz Raporu",
-    "logic": "Tek araç analizi yapıldı.",
-    "podium": [],
-    "details": [],
-    "tableData": []
-  }
-}`;
-
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + apiKey
-          },
-          body: JSON.stringify({
-            model: 'gpt-4o',
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: JSON.stringify(parsedData) }
-            ],
-            response_format: { type: 'json_object' }
-          })
-        });
-
-        const apiData = await response.json();
-        if (apiData.choices && apiData.choices.length > 0) {
-          const content = apiData.choices[0].message.content;
-          const result = JSON.parse(content);
-
-          setCars(result.cars || []);
-          setSummaryData(result.summaryData || null);
-          
-          if (result.cars && result.cars.length === 1) {
-            setCurrentIndex(1);
-          }
-        } else {
-          setAiLoadingText('API Yanıt Vermedi. Lütfen tekrar deneyin.');
+        if (result.cars && result.cars.length === 1) {
+          setCurrentIndex(1);
         }
+        
+        setIsLoading(false);
       } catch (err) {
-        console.error('OpenAI Error:', err);
-        setAiLoadingText('Yapay Zeka Sunucularında Hata Oluştu.');
-      } finally {
-        clearInterval(progressInterval);
-        setProgress(100);
-        setTimeout(() => {
-            setIsLoading(false);
-        }, 1500);
+        console.error('Data Load Error:', err);
+        setAiLoadingText('Veri Yükleme Hatası Oluştu.');
       }
     };
 
     processData();
     
-    window.addEventListener('autocar_data_ready', processData);
-    return () => window.removeEventListener('autocar_data_ready', processData);
+    window.addEventListener('autocar_report_ready', processData);
+    return () => window.removeEventListener('autocar_report_ready', processData);
   }, []);
 
 
@@ -197,19 +122,8 @@ Format:
                 <Sparkles size={48} className="text-[#D4AF37]" />
               </div>
               <h2 className="text-3xl font-display font-black tracking-tight text-black mb-12 text-center">{aiLoadingText}</h2>
-              
-              {/* Progress Bar Container */}
-              <div className="w-full max-w-2xl bg-gray-100 rounded-full h-8 mb-4 overflow-hidden relative shadow-inner">
-                <div 
-                  className="bg-black h-8 rounded-full transition-all duration-300 ease-out flex items-center justify-end pr-4" 
-                  style={{ width: \`\${Math.max(15, progress)}%\` }}
-                >
-                  <span className="text-white text-sm font-bold">{Math.round(progress)}%</span>
-                </div>
-              </div>
-
               <p className="text-black/50 font-bold tracking-widest text-sm uppercase text-center mt-8">
-                Lütfen bekleyin, veriler yapay zeka süzgecinden geçiriliyor...
+                Lütfen bekleyin, veriler ekrandan okunuyor...
               </p>
             </div>
           </div>
