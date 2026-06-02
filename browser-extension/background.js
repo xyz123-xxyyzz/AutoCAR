@@ -154,10 +154,10 @@ Format:
     "pros": ["Güçlü yön 1", "Güçlü yön 2"],
     "cons": ["Zayıf yön 1", "Zayıf yön 2"]
   },
-  "market_speed_score": 85,
-  "price_perf_score": 90,
-  "condition_score": 88,
-  "overall_score": 88,
+  "market_speed_score": "[1-100 arası mantıklı bir sayı (Örn: 82)]",
+  "price_perf_score": "[1-100 arası mantıklı bir sayı (Örn: 91)]",
+  "condition_score": "[1-100 arası mantıklı bir sayı (Örn: 75)]",
+  "overall_score": "[DİĞER ÜÇ PUANIN ORTALAMASI OLAN SAYI (Örn: 83)]",
   "data_report": "Bu araç hakkında derinlemesine, uzun ve kapsamlı bir özet rapor yaz. Sadece 1-2 cümle olmasın.",
   "detailed_specs": [
     { "name": "Özellik Adı", "value": "Değer", "status": "good", "comment": "Çok detaylı ve profesyonel bir açıklama yaz.", "note": "Kısa not" }

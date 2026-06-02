@@ -283,7 +283,10 @@ export default function AnalysisReport() {
 
             <div className="flex flex-col xl:flex-row gap-20 mb-20">
               <div className="flex-1">
-                <h2 className="text-4xl md:text-5xl font-display font-black tracking-tighter mb-8 leading-[1.1] text-black">{currentCar.title}</h2>
+                <h2 className="text-4xl md:text-5xl font-display font-black tracking-tighter mb-2 leading-[1.1] text-black">{currentCar.title}</h2>
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-black/5 rounded-full text-xs font-bold text-black/60 uppercase tracking-widest mb-8">
+                  Analiz {totalCarsInGroup}'te {currentCarIndex + 1}
+                </div>
                 <div className="text-3xl font-display font-black tracking-tight text-black mb-16">
                   {currentCar.price}
                 </div>
@@ -371,7 +374,7 @@ export default function AnalysisReport() {
             {/* Section 3: Kıyaslama ve Rakip Analizi */}
             <div className="mb-20">
               <h3 className="text-2xl font-display font-black tracking-tight text-black mb-8 flex items-center gap-4">
-                <Maximize className="text-black/30" /> Rakiplerine Göre Analiz (Grup İçi)
+                <Maximize className="text-black/30" /> Rakiplerine Göre Analiz {currentCar.competitor_analysis?.competitors ? `(${currentCar.competitor_analysis.competitors.join(', ')})` : ''}
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-8">
