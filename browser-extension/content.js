@@ -35,6 +35,18 @@ function extractCarData() {
         }
       });
 
+      // Ayrıca "Donanım" ve "Teknik Özellikler" sekmelerini (varsa) topla
+      const propertyEls = document.querySelectorAll('#classifiedProperties ul li.selected');
+      if (propertyEls.length > 0) {
+        let donanimListesi = [];
+        propertyEls.forEach(li => {
+          donanimListesi.push(li.innerText.trim());
+        });
+        if (donanimListesi.length > 0) {
+          data.specs["Ek Donanımlar"] = donanimListesi.join(', ');
+        }
+      }
+
       const imgEls = document.querySelectorAll('.mega-photo-nav label img, .rsImg, .classifiedDetailMainPhoto img, .classifiedDetailThumbList img, .photo-nav img');
       imgEls.forEach(img => {
         let src = img.src || img.dataset.src || img.getAttribute('data-src');
