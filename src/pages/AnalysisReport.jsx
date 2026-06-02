@@ -426,17 +426,27 @@ export default function AnalysisReport() {
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {Array.isArray(currentCar.images) && currentCar.images.slice(0, 3).map((imgSrc, idx) => (
-                  <div key={idx} onClick={() => openLightbox(currentCar.images, idx)} className="bg-white p-2 rounded-2xl shadow-embossed group cursor-pointer">
-                    <div className="rounded-xl overflow-hidden relative">
-                      <img src={imgSrc} alt="Araç Görseli" className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500" />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center text-white font-bold tracking-widest text-xs uppercase">
-                        <Maximize className="mb-2" size={32} />
-                        Tam Ekran İncele
+                {(() => {
+                  const imgs = currentCar.images || [];
+                  if (!Array.isArray(imgs) || imgs.length === 0) return null;
+                  
+                  let selectedImgs = [];
+                  if (imgs.length === 1) selectedImgs = [imgs[0]];
+                  else if (imgs.length === 2) selectedImgs = [imgs[0], imgs[1]];
+                  else selectedImgs = [imgs[0], imgs[Math.floor(imgs.length / 2)], imgs[imgs.length - 1]];
+
+                  return selectedImgs.map((imgSrc, idx) => (
+                    <div key={idx} onClick={() => openLightbox(imgs, imgs.indexOf(imgSrc))} className="bg-white p-2 rounded-2xl shadow-embossed group cursor-pointer">
+                      <div className="rounded-xl overflow-hidden relative">
+                        <img src={imgSrc} alt="Araç Görseli" className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500" />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center text-white font-bold tracking-widest text-xs uppercase">
+                          <Maximize className="mb-2" size={32} />
+                          Tam Ekran İncele
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ));
+                })()}
               </div>
               
               <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4 mb-12">

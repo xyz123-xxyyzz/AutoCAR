@@ -148,6 +148,11 @@ async function analyzeDataOnly(carData) {
 SADECE GEÇERLİ BİR JSON DÖNDÜR.
 Format:
 {
+  "competitor_analysis": {
+    "text": "Bu aracın piyasa durumu ve rakip kıyaslaması.",
+    "pros": ["Güçlü yön 1", "Güçlü yön 2"],
+    "cons": ["Zayıf yön 1", "Zayıf yön 2"]
+  },
   "market_speed_score": 85,
   "price_perf_score": 90,
   "condition_score": 88,
@@ -158,6 +163,7 @@ Format:
   ]
 }
 Kurallar:
+- "competitor_analysis" içindeki text kısmında bu aracın piyasadaki en büyük 2 veya 3 rakibinin ismini parantez içinde AÇIKÇA belirt (Örn: En büyük rakibi Skoda Superb...).
 - "detailed_specs" dizisine araçla ilgili BULABİLDİĞİN TÜM ÖNEMLİ ÖZELLİKLERİ (en az 15-20 özellik) ekle ve yorum kısımlarını çok detaylı tut.
 - overall_score, diğer üç skorun aritmetik ortalaması olmalı ve KESİNLİKLE TAM SAYI (virgülsüz) olmalıdır. Eğer küsurat çıkarsa yuvarla.
 `;
@@ -294,20 +300,21 @@ Format:
     { "medal": "bronze", "title": "3. Araç (Grubun Başlığı)", "reason": "Neden 3. oldu?", "score": 75, "color": "text-[#CD7F32]", "images": ["url1", "url2", "url3"] }
   ],
   "details": [
-    { "icon": "info", "title": "Rakipleri Neler?", "desc": "Bu araçları yenebilecek alternatif modeller nelerdir?" },
+    { "icon": "info", "title": "Rakipleri Neler?", "desc": "Volkswagen Passat: Rakibi Skoda Superb. Audi A3: Rakibi Mercedes A Serisi... şeklinde her aracın rakibini yaz." },
     { "icon": "check", "title": "Kıyaslama Ekseni", "desc": "Neylerle kıyaslanması lazım? (Hız, Konfor, Şehir İçi vb.)" },
     { "icon": "info", "title": "Bütçe ve Kitle", "desc": "Hangi bütçeye ve hangi kitleye hitap ediyor?" }
   ],
   "tableData": [
-    { "feature": "Özellik Adı (Model Yılı, Bagaj, vb.)", "Gold": "✅", "Silver": "❓", "Bronze": "❌" }
+    { "feature": "Özellik Adı (Model Yılı, Bagaj, vb.)", "Gold": "2015 ✅", "Silver": "2015 ⚪", "Bronze": "2012 ❌" }
   ]
 }
 Kurallar:
 - "score" alanlarına kafandan puan uydurma! Sana verilen verideki O GRUBUN "overall_score" değeri neyse BİREBİR aynısını yaz.
 - Eğer sana sadece 2 farklı grup gönderildiyse, sadece 2 madalya (gold, silver) ver.
-- "tableData" (Teknik Özellik Kıyaslama) kısmında SÜTUN BAŞLIKLARI KESİNLİKLE "Gold", "Silver", "Bronze" olmalıdır. Asla Grup 1, Grup 2 yazma!
-- Kıyaslama tablosunda yazılar yazma; sadece emojiler kullan (✅ Üstün, ❓ Denk/Orta, ❌ Geri planda).
-- "tableData" kısmını ÇOK UZUN tut, en az 10-15 kıyaslama kriteri (Model Yılı, Motor, Şanzıman, Tork, Tüketim, Bagaj, Teknolojik Donanım vb.) ekle.
+- "details" bölümündeki "Rakipleri Neler?" kısmına her bir aracın rakibini net olarak alt alta yaz.
+- "tableData" kısmında SÜTUN BAŞLIKLARI KESİNLİKLE "Gold", "Silver", "Bronze" olmalıdır. Asla Grup 1, Grup 2 yazma!
+- "tableData" değerlerine SADECE EMOJİ DEĞİL, muhakkak **Veri + Emoji** yazmalısın. Örneğin: "2015 ✅", "500 Litre ⚪", "Yok ❌" gibi. Üstün olanlara ✅, denk/ortalama olanlara ⚪ (gri çember), zayıf olanlara ❌ koy.
+- "tableData" kısmını ÇOK UZUN tut, en az 10-15 kıyaslama kriteri ekle.
 - "images" dizisi için sana verilen verideki o araca ait 'images' dizisinden en az 3 URL koymayı UNUTMA. Bu çok önemlidir.
 `;
 
