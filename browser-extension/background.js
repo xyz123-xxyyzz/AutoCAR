@@ -167,7 +167,10 @@ Kurallar:
 - "competitor_analysis" kısmında "competitors" array'ine bu aracın gerçek piyasadaki EN BÜYÜK 2 VEYA 3 RAKİBİNİ (Örn: "Toyota Corolla", "Ford Focus") ekle. Analiz metnini (text) bu gerçek rakiplerle kıyaslayarak yaz.
 - "detailed_specs" dizisine araçla ilgili BULABİLDİĞİN TÜM ÖNEMLİ ÖZELLİKLERİ (en az 15-20 özellik) ekle ve yorum kısımlarını çok detaylı tut.
 - overall_score, diğer üç skorun aritmetik ortalaması olmalı ve KESİNLİKLE TAM SAYI (virgülsüz) olmalıdır. Eğer küsurat çıkarsa yuvarla.
-- Puanlama yaparken: Gerçekçi ol, matematiksel hesaplamalar yap ve bütün oranlara (fiyat, kilometre, hasar kaydı vb.) göre çok ince hesaplayarak doğru bir puanlama yap.
+- Puanlamaları (1-100 arası) yaparken şu 3 kurala GÖRE AYRI AYRI HESAPLAMA YAP:
+  1. market_speed_score (Satış Hızı): Aracın marka/modelinin Türkiye pazarındaki popülaritesini baz al. Popüler ve hızlı satılan araçlara (Egea, Megane vb.) yüksek, lüks veya zor satılanlara düşük puan ver.
+  2. price_perf_score (Fiyat/Performans): İstenen fiyat ile aracın donanımı/yılı/km'sini kıyasla. Fiyatı piyasaya göre uygunsa yüksek, şişirilmişse düşük puan ver.
+  3. condition_score (Araç Durumu): Hasar kaydı, değişen/boya ve kilometreyi baz al. Ağır hasar/pert kaydı yoksa sırf km yüksek diye puanı dibe çekme, mantıklı bir oran kur.
 `;
   const dataForAi = { ...carData };
   delete dataForAi.images;
