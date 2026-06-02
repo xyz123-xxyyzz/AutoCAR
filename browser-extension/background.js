@@ -193,7 +193,7 @@ async function fetchImageAsBase64(url) {
 }
 
 async function analyzeImagesOnly(carData) {
-  const systemPrompt = `Sen bir görsel oto ekspertiz yapay zekasın. Gönderilen 3 araç resmini (ön, iç, arka) detaylıca incele. Dış kasa, boya, jant, lastik ve iç mekandaki aşınmaları, kusurları veya olumlu yanları raporla.
+  const expertPrompt = `Sen bir görsel oto ekspertiz yapay zekasın. Gönderilen 10 araç resmini detaylıca incele. Dış kasa, boya, jant, lastik ve iç mekandaki aşınmaları, kusurları veya olumlu yanları raporla.
 SADECE GEÇERLİ BİR JSON DÖNDÜR.
 Format:
 {
@@ -201,46 +201,95 @@ Format:
   "defects": ["sağ çamurluk çizik", "koltukta yırtık"],
   "positives": ["jantlar temiz", "boya parlak"]
 }`;
-  // 50 fotoğraf yerine, homojen dağılmış 10 fotoğraf seçiyoruz (Ön, Yanlar, İç, Arka vs.)
-  const targetImageCount = 10;
-  let imagesToAnalyze = [];
-  
-  if (carData.images && carData.images.length > 0) {
-    if (carData.images.length <= targetImageCount) {
-      imagesToAnalyze = [...carData.images];
-    } else {
-      const step = carData.images.length / targetImageCount;
-      for (let i = 0; i < targetImageCount; i++) {
-        imagesToAnalyze.push(carData.images[Math.floor(i * step)]);
-      }
-    }
-  }
-  
-  if (imagesToAnalyze.length === 0) {
+
+  if (!carData.images || carData.images.length === 0) {
     return { vision_report: "Resim bulunamadı.", defects: [], positives: [] };
   }
 
-  let userContent = [
-    { type: 'text', text: 'Bu aracın resimlerini (dış kasa ve iç mekan) detaylıca incele ve ekspertiz yap.' }
-  ];
-  
-  // Resimleri indirip Base64 formatında OpenAI'a gönderiyoruz (Bot engelini aşmak için)
-  for (const url of imagesToAnalyze) {
-    const base64Url = await fetchImageAsBase64(url);
-    if (base64Url) {
-      userContent.push({
-        type: 'image_url',
-        image_url: { url: base64Url }
-      });
+  // Adım 1: Galeriden homojen olarak max 30 fotoğraf al (Aşırı RAM tüketimini ve token bloat'u önlemek için)
+  const maxPoolSize = 30;
+  let poolUrls = [];
+  if (carData.images.length <= maxPoolSize) {
+    poolUrls = [...carData.images];
+  } else {
+    const step = carData.images.length / maxPoolSize;
+    for (let i = 0; i < maxPoolSize; i++) {
+      poolUrls.push(carData.images[Math.floor(i * step)]);
     }
   }
 
-  // Eğer hiçbir resim dönüştürülemediyse hata dön
-  if (userContent.length === 1) {
+  // Resimleri Base64 formatına çevir (Sadece 1 kere indirilecek)
+  const base64Images = [];
+  for (const url of poolUrls) {
+    const b64 = await fetchImageAsBase64(url);
+    if (b64) base64Images.push(b64);
+  }
+
+  if (base64Images.length === 0) {
     return { vision_report: "Resimler Sahibinden sunucularından çekilemedi.", defects: [], positives: [] };
   }
 
-  return await callOpenAI(systemPrompt, userContent, true, 'gpt-4o-mini');
+  // Adım 2: Eğer resim sayısı çok azsa filtrelemeye gerek yok, direkt Expert AI'a yolla
+  let selectedBase64Images = base64Images;
+  
+  if (base64Images.length > 10) {
+    // Adım 3: Seçici (Filter) AI'a gönder (Low Detail)
+    const filterPrompt = `Sen bir Seçici Yapay Zekasın (Filter AI). Aşağıda sana bir aracın galerisinden ${base64Images.length} adet fotoğraf gönderilmiştir. Görevin bu fotoğrafları inceleyip, aracın her açısını (Ön, Arka, Yanlar, İç Mekan, Koltuklar, Hasarlı kısımlar) en iyi özetleyen tam 10 benzersiz fotoğrafı seçmektir.
+SADECE GEÇERLİ BİR JSON ARRAY DÖNDÜR. Array içine seçtiğin fotoğrafların indeks numaralarını (0'dan ${base64Images.length - 1}'e kadar) koy.
+Örnek Çıktı: [0, 3, 5, 8, 12, 15, 21, 23, 27, 29]`;
+
+    let filterContent = [{ type: 'text', text: 'En iyi 10 fotoğrafın indeksini JSON array olarak dön.' }];
+    base64Images.forEach((b64) => {
+      filterContent.push({ type: 'image_url', image_url: { url: b64, detail: "low" } });
+    });
+
+    try {
+      const filterResponse = await callOpenAI(filterPrompt, filterContent, false, 'gpt-4o-mini');
+      let parsedIndices = [];
+      const match = filterResponse.match(/\[.*\]/s);
+      if (match) {
+        parsedIndices = JSON.parse(match[0]);
+      } else {
+        parsedIndices = JSON.parse(filterResponse);
+      }
+      
+      if (Array.isArray(parsedIndices) && parsedIndices.length > 0) {
+        selectedBase64Images = parsedIndices
+          .filter(idx => idx >= 0 && idx < base64Images.length)
+          .map(idx => base64Images[idx])
+          .slice(0, 10);
+          
+        if (selectedBase64Images.length === 0) {
+          throw new Error("Geçerli index bulunamadı.");
+        }
+      } else {
+        throw new Error("Dönen format Array değil.");
+      }
+    } catch (e) {
+      console.error("Filter AI hatası, homojen yedeğe geçiliyor:", e);
+      // Hata olursa matematiksel homojen seçimi yedek olarak kullan
+      selectedBase64Images = [];
+      const step = base64Images.length / 10;
+      for (let i = 0; i < 10; i++) {
+        selectedBase64Images.push(base64Images[Math.floor(i * step)]);
+      }
+    }
+  }
+
+  // Adım 4: Ekspertiz (Expert) AI'ın Analizi
+  let expertContent = [
+    { type: 'text', text: 'Bu aracın resimlerini (dış kasa ve iç mekan) detaylıca incele ve ekspertiz yap.' }
+  ];
+  
+  selectedBase64Images.forEach(b64 => {
+    expertContent.push({
+      type: 'image_url',
+      // Expert AI yüksek detayda bakar (opsiyonel: detail "high" veya bırakılabilir, varsayılan auto)
+      image_url: { url: b64 } 
+    });
+  });
+
+  return await callOpenAI(expertPrompt, expertContent, true, 'gpt-4o-mini');
 }
 
 async function consolidateGroup(groupName, ai1Results, ai2Results, originalCars) {
