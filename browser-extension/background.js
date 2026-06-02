@@ -166,6 +166,26 @@ Kurallar:
   return await callOpenAI(systemPrompt, dataForAi);
 }
 
+// Resim URL'sini Base64'e çeviren yardımcı fonksiyon
+async function fetchImageAsBase64(url) {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const buffer = await blob.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
+    const mimeType = blob.type || 'image/jpeg';
+    return `data:${mimeType};base64,${base64}`;
+  } catch (err) {
+    console.error("Image to Base64 failed for:", url, err);
+    return null;
+  }
+}
+
 async function analyzeImagesOnly(carData) {
   const systemPrompt = `Sen bir görsel oto ekspertiz yapay zekasın. Gönderilen 3 araç resmini (ön, iç, arka) detaylıca incele. Dış kasa, boya, jant, lastik ve iç mekandaki aşınmaları, kusurları veya olumlu yanları raporla.
 SADECE GEÇERLİ BİR JSON DÖNDÜR.
@@ -187,12 +207,21 @@ Format:
     { type: 'text', text: 'Bu aracın resimlerini incele ve ekspertiz yap.' }
   ];
   
-  imagesToAnalyze.forEach(url => {
-    userContent.push({
-      type: 'image_url',
-      image_url: { url: url }
-    });
-  });
+  // Resimleri indirip Base64 formatında OpenAI'a gönderiyoruz (Bot engelini aşmak için)
+  for (const url of imagesToAnalyze) {
+    const base64Url = await fetchImageAsBase64(url);
+    if (base64Url) {
+      userContent.push({
+        type: 'image_url',
+        image_url: { url: base64Url }
+      });
+    }
+  }
+
+  // Eğer hiçbir resim dönüştürülemediyse hata dön
+  if (userContent.length === 1) {
+    return { vision_report: "Resimler Sahibinden sunucularından çekilemedi.", defects: [], positives: [] };
+  }
 
   return await callOpenAI(systemPrompt, userContent, true, 'gpt-4o-mini');
 }
