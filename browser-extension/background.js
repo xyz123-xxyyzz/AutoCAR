@@ -152,14 +152,14 @@ Format:
   "price_perf_score": 90,
   "condition_score": 88,
   "overall_score": 88,
-  "data_report": "Sadece verilere dayalı genel yorum.",
+  "data_report": "Bu araç hakkında derinlemesine, uzun ve kapsamlı bir özet rapor yaz. Sadece 1-2 cümle olmasın.",
   "detailed_specs": [
     { "name": "Özellik Adı", "value": "Değer", "status": "good", "comment": "Çok detaylı ve profesyonel bir açıklama yaz.", "note": "Kısa not" }
   ]
 }
 Kurallar:
 - "detailed_specs" dizisine araçla ilgili BULABİLDİĞİN TÜM ÖNEMLİ ÖZELLİKLERİ (en az 15-20 özellik) ekle ve yorum kısımlarını çok detaylı tut.
-- overall_score, diğer üç skorun aritmetik ortalamasına çok yakın veya eşit olmalıdır.
+- overall_score, diğer üç skorun aritmetik ortalaması olmalı ve KESİNLİKLE TAM SAYI (virgülsüz) olmalıdır. Eğer küsurat çıkarsa yuvarla.
 `;
   const dataForAi = { ...carData };
   delete dataForAi.images;
@@ -258,22 +258,27 @@ SADECE GEÇERLİ BİR JSON DÖNDÜR.
 Format:
 {
   "title": "Master AI Derinlemesine Kıyaslama Raporu",
-  "logic": "Hangi aracın neden 1., 2. veya 3. seçildiğine dair çok detaylı, ikna edici ve profesyonel bir analiz yaz. Kullanıcı 'gerçekten bu daha iyiymiş' demeli.",
+  "logic": "Hangi aracın neden 1., 2. veya 3. seçildiğine dair çok detaylı, ikna edici ve profesyonel bir analiz yaz.",
   "podium": [
-    { "medal": "gold", "title": "1. Araç", "reason": "Neden altın madalya aldı? Detaylıca açıkla.", "score": 95, "color": "text-[#D4AF37]", "images": ["url1", "url2", "url3"] },
-    { "medal": "silver", "title": "2. Araç", "reason": "Neden 2. oldu?", "score": 85, "color": "text-[#C0C0C0]", "images": ["url1", "url2", "url3"] },
-    { "medal": "bronze", "title": "3. Araç", "reason": "Neden 3. oldu?", "score": 75, "color": "text-[#CD7F32]", "images": ["url1", "url2", "url3"] }
+    { "medal": "gold", "title": "1. Araç (Grubun Başlığı)", "reason": "Neden altın madalya aldı? Detaylıca açıkla.", "score": 95, "color": "text-[#D4AF37]", "images": ["url1", "url2", "url3"] },
+    { "medal": "silver", "title": "2. Araç (Grubun Başlığı)", "reason": "Neden 2. oldu?", "score": 85, "color": "text-[#C0C0C0]", "images": ["url1", "url2", "url3"] },
+    { "medal": "bronze", "title": "3. Araç (Grubun Başlığı)", "reason": "Neden 3. oldu?", "score": 75, "color": "text-[#CD7F32]", "images": ["url1", "url2", "url3"] }
   ],
   "details": [
-    { "icon": "info", "title": "Piyasa ve Segment Özeti", "desc": "Gruplar arası genel durum" }
+    { "icon": "info", "title": "Rakipleri Neler?", "desc": "Bu araçları yenebilecek alternatif modeller nelerdir?" },
+    { "icon": "check", "title": "Kıyaslama Ekseni", "desc": "Neylerle kıyaslanması lazım? (Hız, Konfor, Şehir İçi vb.)" },
+    { "icon": "info", "title": "Bütçe ve Kitle", "desc": "Hangi bütçeye ve hangi kitleye hitap ediyor?" }
   ],
   "tableData": [
-    { "feature": "Özellik Adı", "grup1": "değer", "grup2": "değer" }
+    { "feature": "Özellik Adı (Model Yılı, Bagaj, vb.)", "Gold": "✅", "Silver": "❓", "Bronze": "❌" }
   ]
 }
 Kurallar:
-- Eğer sana sadece 2 farklı araç gönderildiyse, sadece 2 madalya (gold, silver) ver. Zorla 3. araç uydurma.
-- "tableData" (Teknik Özellik Kıyaslama) kısmını ÇOK UZUN tut, en az 10-15 kıyaslama kriteri (Motor, Şanzıman, Tork, Tüketim, Bagaj vb.) ekle.
+- "score" alanlarına kafandan puan uydurma! Sana verilen verideki O GRUBUN "overall_score" değeri neyse BİREBİR aynısını yaz.
+- Eğer sana sadece 2 farklı grup gönderildiyse, sadece 2 madalya (gold, silver) ver.
+- "tableData" (Teknik Özellik Kıyaslama) kısmında SÜTUN BAŞLIKLARI KESİNLİKLE "Gold", "Silver", "Bronze" olmalıdır. Asla Grup 1, Grup 2 yazma!
+- Kıyaslama tablosunda yazılar yazma; sadece emojiler kullan (✅ Üstün, ❓ Denk/Orta, ❌ Geri planda).
+- "tableData" kısmını ÇOK UZUN tut, en az 10-15 kıyaslama kriteri (Model Yılı, Motor, Şanzıman, Tork, Tüketim, Bagaj, Teknolojik Donanım vb.) ekle.
 - "images" dizisi için sana verilen verideki o araca ait 'images' dizisinden en az 3 URL koymayı UNUTMA. Bu çok önemlidir.
 `;
 

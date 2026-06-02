@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, TrendingUp, Zap, CheckCircle, Star, Settings, Shield, Gauge, Maximize, AlertTriangle, AlertCircle, XCircle, Minus, HelpCircle, Trophy, Target, Sparkles, ArrowRight, Table2, Image as ImageIcon, Users } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp, Zap, CheckCircle, Star, Settings, Shield, Gauge, Maximize, AlertTriangle, AlertCircle, XCircle, Minus, HelpCircle, Trophy, Target, Sparkles, ArrowRight, Table2, Image as ImageIcon, Users, X } from 'lucide-react';
 
 export default function AnalysisReport() {
   const [isLoading, setIsLoading] = useState(true);
@@ -10,6 +10,12 @@ export default function AnalysisReport() {
   // -1 = Summary (Master AI), 0, 1, 2... = Group index
   const [activeTab, setActiveTab] = useState(-1);
   const [currentCarIndex, setCurrentCarIndex] = useState(0);
+
+  // Lightbox State
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImages, setLightboxImages] = useState([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
 
   useEffect(() => {
     const processData = () => {
@@ -79,6 +85,28 @@ export default function AnalysisReport() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const openLightbox = (images, index) => {
+    const validImages = Array.isArray(images) ? images : [];
+    if (validImages.length === 0) return;
+    setLightboxImages(validImages);
+    setLightboxIndex(index || 0);
+    setLightboxOpen(true);
+  };
+
+  const closeLightbox = () => {
+    setLightboxOpen(false);
+  };
+
+  const nextLightboxImage = (e) => {
+    e.stopPropagation();
+    setLightboxIndex((prev) => (prev + 1) % lightboxImages.length);
+  };
+
+  const prevLightboxImage = (e) => {
+    e.stopPropagation();
+    setLightboxIndex((prev) => (prev - 1 + lightboxImages.length) % lightboxImages.length);
+  };
+
   return (
     <div className="min-h-screen bg-[#F0F2F5] text-black overflow-hidden font-sans relative selection:bg-black selection:text-white pt-6 pb-20">
       
@@ -137,7 +165,12 @@ export default function AnalysisReport() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {[...(summaryData?.podium || [])].sort((a, b) => (b.score || 0) - (a.score || 0)).map((item, idx) => (
+              {[...(summaryData?.podium || [])].map((item) => {
+                // Skoru zorla gruptan al
+                const realGroup = groups.find(g => g.groupName.toLowerCase().includes(item.title.toLowerCase().substring(0, 10)) || item.title.toLowerCase().includes(g.groupName.toLowerCase()));
+                const realScore = realGroup ? realGroup.cars[0]?.overall_score : item.score;
+                return { ...item, realScore: Math.round(realScore || 0) };
+              }).sort((a, b) => b.realScore - a.realScore).map((item, idx) => (
                 <div key={idx} className="bg-white rounded-[2rem] p-8 border border-black/5 shadow-embossed relative overflow-hidden group hover:shadow-embossed-hover transition-all duration-500 flex flex-col">
                   <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-150 group-hover:rotate-12 transition-transform duration-700">
                     <Trophy size={80} className={item.color || 'text-[#C0C0C0]'} />
@@ -158,7 +191,7 @@ export default function AnalysisReport() {
                     <span className="font-display font-black text-2xl">{item.rank || idx + 1}</span>
                   </div>
                   <h3 className="text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase mb-2">
-                    {item.medal} Madalya — {item.score || '?'} Puan
+                    {item.medal} Madalya — {item.realScore} Puan
                   </h3>
                   <h4 className="text-xl font-display font-black tracking-tight text-black mb-4 pr-12 line-clamp-2">
                     {item.title || 'Bilinmeyen Araç'}
@@ -268,8 +301,8 @@ export default function AnalysisReport() {
               <div className="w-full xl:w-[350px] flex flex-col gap-4">
                 <div className="bg-[#F5F5F7] rounded-[2rem] p-10 text-center relative overflow-hidden group shadow-inner-embossed flex flex-col justify-center min-h-[220px]">
                   <div className="text-black/40 font-bold text-[10px] tracking-[0.2em] uppercase mb-2">Genel Skor</div>
-                  <div className="text-7xl lg:text-[7rem] leading-none font-display font-black tracking-tighter text-black w-full overflow-hidden text-ellipsis whitespace-nowrap px-2">
-                    {currentCar.overall_score}
+                  <div className="text-7xl lg:text-[7rem] leading-none font-display font-black tracking-tighter text-black w-full overflow-hidden px-2">
+                    {Math.round(currentCar.overall_score || 0)}
                   </div>
                 </div>
 
@@ -279,21 +312,21 @@ export default function AnalysisReport() {
                       <div className="p-2 bg-[#F5F5F7] rounded-full shadow-inner-embossed"><Zap className="text-black" size={16} strokeWidth={2} /></div>
                       <span className="font-bold tracking-widest text-[10px] text-black uppercase">Satış Hızı</span>
                     </div>
-                    <div className="text-2xl font-display font-black tracking-tighter text-black">{currentCar.market_speed_score}</div>
+                    <div className="text-2xl font-display font-black tracking-tighter text-black">{Math.round(currentCar.market_speed_score || 0)}</div>
                   </div>
                   <div className="bg-white border border-black/5 rounded-[1.5rem] p-6 flex justify-between items-center shadow-embossed hover:shadow-embossed-hover transition-all duration-500">
                     <div className="flex items-center gap-4">
                       <div className="p-2 bg-[#F5F5F7] rounded-full shadow-inner-embossed"><TrendingUp className="text-black" size={16} strokeWidth={2} /></div>
                       <span className="font-bold tracking-widest text-[10px] text-black uppercase">Fiyat / Perf.</span>
                     </div>
-                    <div className="text-2xl font-display font-black tracking-tighter text-black">{currentCar.price_perf_score}</div>
+                    <div className="text-2xl font-display font-black tracking-tighter text-black">{Math.round(currentCar.price_perf_score || 0)}</div>
                   </div>
                   <div className="bg-white border border-black/5 rounded-[1.5rem] p-6 flex justify-between items-center shadow-embossed hover:shadow-embossed-hover transition-all duration-500">
                     <div className="flex items-center gap-4">
                       <div className="p-2 bg-[#F5F5F7] rounded-full shadow-inner-embossed"><Shield className="text-black" size={16} strokeWidth={2} /></div>
                       <span className="font-bold tracking-widest text-[10px] text-black uppercase">Araç Durumu</span>
                     </div>
-                    <div className="text-2xl font-display font-black tracking-tighter text-black">{currentCar.condition_score}</div>
+                    <div className="text-2xl font-display font-black tracking-tighter text-black">{Math.round(currentCar.condition_score || 0)}</div>
                   </div>
                 </div>
               </div>
@@ -393,41 +426,25 @@ export default function AnalysisReport() {
               </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-2 rounded-2xl shadow-embossed group cursor-pointer">
-                  <div className="rounded-xl overflow-hidden relative">
-                    <img src={Array.isArray(currentCar.images) ? currentCar.images[0] : currentCar.images?.front?.[0] || 'https://via.placeholder.com/400x300?text=Görsel+Yok'} alt="Ön Görünüm" className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500" />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center text-white font-bold tracking-widest text-xs uppercase">
-                      <Maximize className="mb-2" size={32} />
-                      Önden Görünüm
+                {Array.isArray(currentCar.images) && currentCar.images.slice(0, 3).map((imgSrc, idx) => (
+                  <div key={idx} onClick={() => openLightbox(currentCar.images, idx)} className="bg-white p-2 rounded-2xl shadow-embossed group cursor-pointer">
+                    <div className="rounded-xl overflow-hidden relative">
+                      <img src={imgSrc} alt="Araç Görseli" className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500" />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center text-white font-bold tracking-widest text-xs uppercase">
+                        <Maximize className="mb-2" size={32} />
+                        Tam Ekran İncele
+                      </div>
                     </div>
                   </div>
-                </div>
-                
-                <div className="bg-white p-2 rounded-2xl shadow-embossed group cursor-pointer">
-                  <div className="rounded-xl overflow-hidden relative">
-                    <img src={Array.isArray(currentCar.images) ? currentCar.images[1] : currentCar.images?.interior?.[0] || 'https://via.placeholder.com/400x300?text=Görsel+Yok'} alt="İç Mekan" className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500" />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center text-white font-bold tracking-widest text-xs uppercase">
-                      <Maximize className="mb-2" size={32} />
-                      İç Mekan
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-white p-2 rounded-2xl shadow-embossed group cursor-pointer">
-                  <div className="rounded-xl overflow-hidden relative">
-                    <img src={Array.isArray(currentCar.images) ? currentCar.images[2] : currentCar.images?.rear?.[0] || 'https://via.placeholder.com/400x300?text=Görsel+Yok'} alt="Arka Görünüm" className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500" />
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center text-white font-bold tracking-widest text-xs uppercase">
-                      <Maximize className="mb-2" size={32} />
-                      Arkadan Görünüm
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
               
               <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4 mb-12">
-                <button className="bg-[#F5F5F7] text-black px-10 py-5 rounded-full font-bold tracking-widest text-xs uppercase hover:bg-black hover:text-white transition-all duration-300 shadow-inner-embossed border border-black/5 hover:shadow-2xl hover:shadow-black/20 flex items-center justify-center gap-3">
-                  <ImageIcon size={18} /> Daha Fazla Görsel Göster
-                </button>
+                {Array.isArray(currentCar.images) && currentCar.images.length > 0 && (
+                  <button onClick={() => openLightbox(currentCar.images, 0)} className="bg-[#F5F5F7] text-black px-10 py-5 rounded-full font-bold tracking-widest text-xs uppercase hover:bg-black hover:text-white transition-all duration-300 shadow-inner-embossed border border-black/5 hover:shadow-2xl hover:shadow-black/20 flex items-center justify-center gap-3">
+                    <ImageIcon size={18} /> Daha Fazla Görsel Göster ({currentCar.images.length})
+                  </button>
+                )}
                 <a href={currentCar.url} target="_blank" rel="noopener noreferrer" className="bg-[#FFCC00] text-black px-10 py-5 rounded-full font-bold tracking-widest text-xs uppercase hover:scale-105 transition-all duration-300 shadow-xl shadow-[#FFCC00]/20 flex items-center justify-center gap-3">
                   İlan Linkine Git <ArrowRight size={18} />
                 </a>
@@ -471,6 +488,36 @@ export default function AnalysisReport() {
           </div>
         ) : null}
       </div>
+
+      {/* Lightbox Modal */}
+      {lightboxOpen && lightboxImages.length > 0 && (
+        <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center animation-fade-in" onClick={closeLightbox}>
+          <div className="absolute top-6 right-6 flex gap-4">
+            <div className="bg-white/10 text-white px-4 py-2 rounded-full font-bold tracking-widest text-xs">
+              {lightboxIndex + 1} / {lightboxImages.length}
+            </div>
+            <button onClick={closeLightbox} className="bg-white/10 hover:bg-white text-white hover:text-black p-2 rounded-full transition-colors">
+              <X size={24} />
+            </button>
+          </div>
+          
+          <button onClick={prevLightboxImage} className="absolute left-6 p-4 bg-white/10 hover:bg-white text-white hover:text-black rounded-full transition-colors">
+            <ChevronLeft size={32} />
+          </button>
+          
+          <img 
+            src={lightboxImages[lightboxIndex]} 
+            alt="Tam Ekran Görsel" 
+            className="max-w-[90vw] max-h-[85vh] object-contain select-none"
+            onClick={(e) => e.stopPropagation()} 
+          />
+          
+          <button onClick={nextLightboxImage} className="absolute right-6 p-4 bg-white/10 hover:bg-white text-white hover:text-black rounded-full transition-colors">
+            <ChevronRight size={32} />
+          </button>
+        </div>
+      )}
+
     </div>
   );
 }
