@@ -383,7 +383,8 @@ Kurallar:
   (b) Bütçe ve Fiyat/Performans Kıyaslaması
   (c) Kime Hitap Ettikleri (Hedef Kitle)
 - "tableData" kısmında SÜTUN BAŞLIKLARI KESİNLİKLE "Gold", "Silver", "Bronze" olmalıdır. Asla Grup 1, Grup 2 yazma!
-- **ÇOK ÖNEMLİ MATEMATİK KURALI:** "tableData" hücrelerine "Veri + Emoji" koyacaksın (Örn: "2015 ✅"). Ancak emojileri koyarken **DİKKAT KESİL!** Sayısal verilerde (Model yılı, beygir gücü, bagaj hacmi vb.) daima matematiksel kıyaslama yap. Örneğin 2021 model olan araç ✅, 2015 olan ⚪, 2014 olan ❌ almalıdır. Hatalı semboloji kullanmak KESİNLİKLE YASAKTIR.
+- **ÇOK ÖNEMLİ MATEMATİK KURALI:** "tableData" hücrelerine "Veri + Emoji" koyacaksın (Örn: "2015 ✅"). Ancak emojileri koyarken **DİKKAT KESİL!** Sayısal verilerde daima matematiksel kıyaslama yap.
+- HÜCRE İÇİNE SADECE BİR TANE EMOJİ KOY. ASLA "More ✅", "✅✅", "Yok ❌" gibi İngilizce veya gereksiz kelimeler yazma. Sadece net veri ve yanına TEK BİR emoji koy.
 - Emojiler şunlardır: Üstün/İyi olana ✅, denk/ortalama olana ⚪ (gri çember), zayıf/düşük olana ❌ koy.
 - "tableData" (Kıyaslama tablosu) KESİNLİKLE ÇOK UZUN OLMALIDIR. En az 15 farklı kıyaslama satırı ekle (Model Yılı, Güç, Tork, Şanzıman, Ekran, Cam Tavan, Fiyat vb.).
 - "images" dizisi için sana verilen verideki o araca ait 'images' dizisinden en az 3 URL koymayı UNUTMA.

@@ -219,9 +219,9 @@ export default function AnalysisReport() {
                     <div>
                       <div className="mb-4">{detail.icon === 'info' ? <HelpCircle/> : <CheckCircle/>}</div>
                       <div className="text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase mb-2">{detail.title}</div>
-                      <div className="text-lg font-display font-black tracking-tight text-black mb-4">{detail.winner || detail.desc}</div>
+                      {detail.winner && <div className="text-lg font-display font-black tracking-tight text-black mb-4">{detail.winner}</div>}
                     </div>
-                    {detail.winner && <div className="text-sm font-bold text-black/60">{detail.desc}</div>}
+                    <div className="text-sm font-bold text-black/60 whitespace-pre-line leading-relaxed">{detail.desc}</div>
                   </div>
                 ))}
               </div>
@@ -531,23 +531,6 @@ export default function AnalysisReport() {
             onClick={(e) => e.stopPropagation()} 
           />
           
-          {/* Thumbnails */}
-          <div 
-            className="absolute bottom-6 w-full max-w-4xl overflow-x-auto flex gap-2 px-12 pb-2 hide-scrollbar z-50"
-            onWheel={(e) => {
-              e.currentTarget.scrollBy({ left: e.deltaY < 0 ? -100 : 100 });
-            }}
-          >
-            {lightboxImages.map((img, idx) => (
-              <img 
-                key={idx} 
-                src={img} 
-                alt="Thumbnail" 
-                onClick={(e) => { e.stopPropagation(); setLightboxIndex(idx); }}
-                className={`h-16 w-24 object-cover rounded-md cursor-pointer transition-all duration-300 flex-shrink-0 ${idx === lightboxIndex ? 'ring-2 ring-white scale-110 opacity-100' : 'opacity-40 hover:opacity-100'}`}
-              />
-            ))}
-          </div>
         </div>
       )}
 
