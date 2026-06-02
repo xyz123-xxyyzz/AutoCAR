@@ -516,8 +516,12 @@ export default function AnalysisReport() {
             </button>
           </div>
           
-          <button onClick={prevLightboxImage} className="absolute left-6 p-4 bg-white/10 hover:bg-white text-white hover:text-black rounded-full transition-colors">
+          <button onClick={prevLightboxImage} className="absolute left-6 p-4 bg-white/10 hover:bg-white text-white hover:text-black rounded-full transition-colors z-50">
             <ChevronLeft size={32} />
+          </button>
+          
+          <button onClick={nextLightboxImage} className="absolute right-6 p-4 bg-white/10 hover:bg-white text-white hover:text-black rounded-full transition-colors z-50">
+            <ChevronRight size={32} />
           </button>
           
           <img 
@@ -528,14 +532,19 @@ export default function AnalysisReport() {
           />
           
           {/* Thumbnails */}
-          <div className="absolute bottom-6 w-full max-w-4xl overflow-x-auto flex gap-2 px-6 pb-2 hide-scrollbar">
+          <div 
+            className="absolute bottom-6 w-full max-w-4xl overflow-x-auto flex gap-2 px-12 pb-2 hide-scrollbar z-50"
+            onWheel={(e) => {
+              e.currentTarget.scrollBy({ left: e.deltaY < 0 ? -100 : 100 });
+            }}
+          >
             {lightboxImages.map((img, idx) => (
               <img 
                 key={idx} 
                 src={img} 
                 alt="Thumbnail" 
                 onClick={(e) => { e.stopPropagation(); setLightboxIndex(idx); }}
-                className={`h-16 w-24 object-cover rounded-md cursor-pointer transition-all duration-300 ${idx === lightboxIndex ? 'ring-2 ring-white scale-110 opacity-100' : 'opacity-40 hover:opacity-100'}`}
+                className={`h-16 w-24 object-cover rounded-md cursor-pointer transition-all duration-300 flex-shrink-0 ${idx === lightboxIndex ? 'ring-2 ring-white scale-110 opacity-100' : 'opacity-40 hover:opacity-100'}`}
               />
             ))}
           </div>

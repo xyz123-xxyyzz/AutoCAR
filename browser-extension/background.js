@@ -167,6 +167,7 @@ Kurallar:
 - "competitor_analysis" kısmında "competitors" array'ine bu aracın gerçek piyasadaki EN BÜYÜK 2 VEYA 3 RAKİBİNİ (Örn: "Toyota Corolla", "Ford Focus") ekle. Analiz metnini (text) bu gerçek rakiplerle kıyaslayarak yaz.
 - "detailed_specs" dizisine araçla ilgili BULABİLDİĞİN TÜM ÖNEMLİ ÖZELLİKLERİ (en az 15-20 özellik) ekle ve yorum kısımlarını çok detaylı tut.
 - overall_score, diğer üç skorun aritmetik ortalaması olmalı ve KESİNLİKLE TAM SAYI (virgülsüz) olmalıdır. Eğer küsurat çıkarsa yuvarla.
+- Puanlama yaparken KESİNLİKLE MANTIKLI OL. Örneğin "condition_score" (Araç Durumu) puanlarken aracın kilometresi çok yüksek olsa bile EĞER AĞIR HASAR KAYDI YOKSA çok düşük puan (Örn: 55) verme, daha insaflı ve gerçekçi (Örn: 70-80) bir puan ver. Sadece ağır hasar kayıtlıysa veya çok dökükse düşük puan ver.
 `;
   const dataForAi = { ...carData };
   delete dataForAi.images;
@@ -207,8 +208,8 @@ Format:
     return { vision_report: "Resim bulunamadı.", defects: [], positives: [] };
   }
 
-  // Adım 1: Galeriden homojen olarak max 30 fotoğraf al (Aşırı RAM tüketimini ve token bloat'u önlemek için)
-  const maxPoolSize = 30;
+  // Adım 1: Galeriden homojen olarak max 15 fotoğraf al (Sahibinden WAF Bot Engelini aşmak için)
+  const maxPoolSize = 15;
   let poolUrls = [];
   if (carData.images.length <= maxPoolSize) {
     poolUrls = [...carData.images];
@@ -224,6 +225,8 @@ Format:
   for (const url of poolUrls) {
     const b64 = await fetchImageAsBase64(url);
     if (b64) base64Images.push(b64);
+    // WAF engeline takılmamak için araya milisaniyelik gecikme koy
+    await new Promise(r => setTimeout(r, 250));
   }
 
   if (base64Images.length === 0) {
@@ -372,7 +375,10 @@ Format:
 Kurallar:
 - "score" alanlarına kafandan puan uydurma! Sana verilen verideki O GRUBUN "overall_score" değeri neyse BİREBİR aynısını yaz.
 - Eğer sana sadece 2 farklı grup gönderildiyse, sadece 2 madalya (gold, silver) ver.
-- "details" bölümündeki "Rakipleri Neler?" kısmına her bir aracın rakibini net olarak alt alta yaz.
+- "details" bölümündeki "Rakipleri Neler?" kısmına her bir aracın rakibini yazarken ŞU 3 ALT BAŞLIK ile KESİNLİKLE listeleyerek yaz:
+  (a) Hız ve Performans Kıyaslama Ekseni
+  (b) Bütçe ve Fiyat/Performans Kıyaslaması
+  (c) Kime Hitap Ettikleri (Hedef Kitle)
 - "tableData" kısmında SÜTUN BAŞLIKLARI KESİNLİKLE "Gold", "Silver", "Bronze" olmalıdır. Asla Grup 1, Grup 2 yazma!
 - **ÇOK ÖNEMLİ MATEMATİK KURALI:** "tableData" hücrelerine "Veri + Emoji" koyacaksın (Örn: "2015 ✅"). Ancak emojileri koyarken **DİKKAT KESİL!** Sayısal verilerde (Model yılı, beygir gücü, bagaj hacmi vb.) daima matematiksel kıyaslama yap. Örneğin 2021 model olan araç ✅, 2015 olan ⚪, 2014 olan ❌ almalıdır. Hatalı semboloji kullanmak KESİNLİKLE YASAKTIR.
 - Emojiler şunlardır: Üstün/İyi olana ✅, denk/ortalama olana ⚪ (gri çember), zayıf/düşük olana ❌ koy.
