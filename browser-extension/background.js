@@ -201,16 +201,27 @@ Format:
   "defects": ["sağ çamurluk çizik", "koltukta yırtık"],
   "positives": ["jantlar temiz", "boya parlak"]
 }`;
-  // 3 resim al (Ön, İç, Arka temsili)
-  const maxImages = 3;
-  const imagesToAnalyze = carData.images ? carData.images.slice(0, maxImages) : [];
+  // 50 fotoğraf yerine, homojen dağılmış 10 fotoğraf seçiyoruz (Ön, Yanlar, İç, Arka vs.)
+  const targetImageCount = 10;
+  let imagesToAnalyze = [];
+  
+  if (carData.images && carData.images.length > 0) {
+    if (carData.images.length <= targetImageCount) {
+      imagesToAnalyze = [...carData.images];
+    } else {
+      const step = carData.images.length / targetImageCount;
+      for (let i = 0; i < targetImageCount; i++) {
+        imagesToAnalyze.push(carData.images[Math.floor(i * step)]);
+      }
+    }
+  }
   
   if (imagesToAnalyze.length === 0) {
     return { vision_report: "Resim bulunamadı.", defects: [], positives: [] };
   }
 
   let userContent = [
-    { type: 'text', text: 'Bu aracın resimlerini incele ve ekspertiz yap.' }
+    { type: 'text', text: 'Bu aracın resimlerini (dış kasa ve iç mekan) detaylıca incele ve ekspertiz yap.' }
   ];
   
   // Resimleri indirip Base64 formatında OpenAI'a gönderiyoruz (Bot engelini aşmak için)
