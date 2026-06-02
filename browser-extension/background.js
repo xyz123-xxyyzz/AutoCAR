@@ -385,7 +385,10 @@ Kurallar:
 - "tableData" kısmında SÜTUN BAŞLIKLARI KESİNLİKLE "Gold", "Silver", "Bronze" olmalıdır. Asla Grup 1, Grup 2 yazma!
 - **ÇOK ÖNEMLİ MATEMATİK KURALI:** "tableData" hücrelerine "Veri + Emoji" koyacaksın (Örn: "2015 ✅"). Ancak emojileri koyarken **DİKKAT KESİL!** Sayısal verilerde daima matematiksel kıyaslama yap.
 - HÜCRE İÇİNE SADECE BİR TANE EMOJİ KOY. ASLA "More ✅", "✅✅", "Yok ❌" gibi İngilizce veya gereksiz kelimeler yazma. Sadece net veri ve yanına TEK BİR emoji koy.
-- Emojiler şunlardır: Üstün/İyi olana ✅, denk/ortalama olana ⚪ (gri çember), zayıf/düşük olana ❌ koy.
+- SADECE ŞU 3 SİMGEYİ KULLANABİLİRSİN, BAŞKA HİÇBİR EMOJİ VEYA HARF YASAKTIR: 
+  1. Çarpı (❌): Zayıf, yetersiz, düşük donanım veya eski model
+  2. Tik (✅): Üstün, çok iyi, güçlü donanım veya yeni model
+  3. Daire (⚪): Ortalama, nötr, orta seviye
 - "tableData" (Kıyaslama tablosu) KESİNLİKLE ÇOK UZUN OLMALIDIR. En az 15 farklı kıyaslama satırı ekle (Model Yılı, Güç, Tork, Şanzıman, Ekran, Cam Tavan, Fiyat vb.).
 - "images" dizisi için sana verilen verideki o araca ait 'images' dizisinden en az 3 URL koymayı UNUTMA.
 `;
