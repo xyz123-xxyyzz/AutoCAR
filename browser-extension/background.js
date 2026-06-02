@@ -167,7 +167,7 @@ Kurallar:
 - "competitor_analysis" kısmında "competitors" array'ine bu aracın gerçek piyasadaki EN BÜYÜK 2 VEYA 3 RAKİBİNİ (Örn: "Toyota Corolla", "Ford Focus") ekle. Analiz metnini (text) bu gerçek rakiplerle kıyaslayarak yaz.
 - "detailed_specs" dizisine araçla ilgili BULABİLDİĞİN TÜM ÖNEMLİ ÖZELLİKLERİ (en az 15-20 özellik) ekle ve yorum kısımlarını çok detaylı tut.
 - overall_score, diğer üç skorun aritmetik ortalaması olmalı ve KESİNLİKLE TAM SAYI (virgülsüz) olmalıdır. Eğer küsurat çıkarsa yuvarla.
-- Puanlama yaparken KESİNLİKLE MANTIKLI OL. Örneğin "condition_score" (Araç Durumu) puanlarken aracın kilometresi çok yüksek olsa bile EĞER AĞIR HASAR KAYDI YOKSA çok düşük puan (Örn: 55) verme, daha insaflı ve gerçekçi (Örn: 70-80) bir puan ver. Sadece ağır hasar kayıtlıysa veya çok dökükse düşük puan ver.
+- Puanlama yaparken: Gerçekçi ol, matematiksel hesaplamalar yap ve bütün oranlara (fiyat, kilometre, hasar kaydı vb.) göre çok ince hesaplayarak doğru bir puanlama yap.
 `;
   const dataForAi = { ...carData };
   delete dataForAi.images;
