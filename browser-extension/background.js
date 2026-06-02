@@ -144,7 +144,7 @@ function groupTabsByModel(readyData) {
 }
 
 async function analyzeDataOnly(carData) {
-  const systemPrompt = `Sen bir veri analisti yapay zekasın. Sadece aracın teknik verilerini, fiyatını ve hasar kaydını inceleyip analiz et.
+  const systemPrompt = `Sen bir veri analisti yapay zekasın. Aracın teknik verilerini, fiyatını ve hasar kaydını inceleyip detaylı analiz et.
 SADECE GEÇERLİ BİR JSON DÖNDÜR.
 Format:
 {
@@ -154,24 +154,29 @@ Format:
   "overall_score": 88,
   "data_report": "Sadece verilere dayalı genel yorum.",
   "detailed_specs": [
-    { "name": "Özellik Adı", "value": "Değer", "status": "good", "comment": "Yorum", "note": "Kısa not" }
+    { "name": "Özellik Adı", "value": "Değer", "status": "good", "comment": "Çok detaylı ve profesyonel bir açıklama yaz.", "note": "Kısa not" }
   ]
-}`;
+}
+Kurallar:
+- "detailed_specs" dizisine en az 5-6 farklı özellik ekle ve yorum kısımlarını (comment) detaylı tut.
+- overall_score, diğer üç skorun aritmetik ortalamasına çok yakın veya eşit olmalıdır.
+`;
   const dataForAi = { ...carData };
   delete dataForAi.images;
   return await callOpenAI(systemPrompt, dataForAi);
 }
 
 async function analyzeImagesOnly(carData) {
-  const systemPrompt = `Sen bir görsel oto ekspertiz yapay zekasın. Gönderilen araç resimlerini incele. Dış kasa, boya, jant, lastik ve iç mekandaki aşınmaları, kusurları veya olumlu yanları raporla.
+  const systemPrompt = `Sen bir görsel oto ekspertiz yapay zekasın. Gönderilen 3 araç resmini (ön, iç, arka) detaylıca incele. Dış kasa, boya, jant, lastik ve iç mekandaki aşınmaları, kusurları veya olumlu yanları raporla.
 SADECE GEÇERLİ BİR JSON DÖNDÜR.
 Format:
 {
-  "vision_report": "Resimlere dayalı ekspertiz yorumu.",
+  "vision_report": "Resimlere dayalı ekspertiz yorumu. Tüm detayları uzun ve profesyonelce belirt.",
   "defects": ["sağ çamurluk çizik", "koltukta yırtık"],
   "positives": ["jantlar temiz", "boya parlak"]
 }`;
-  const maxImages = 5;
+  // 3 resim al (Ön, İç, Arka temsili)
+  const maxImages = 3;
   const imagesToAnalyze = carData.images ? carData.images.slice(0, maxImages) : [];
   
   if (imagesToAnalyze.length === 0) {
@@ -201,19 +206,29 @@ Format:
   "group_logic": "Bu gruptaki araçlar hakkında genel değerlendirme.",
   "cars": [
     {
-       "title": "Araç Başlığı",
+       "title": "Volkswagen Passat 2015 Model (Bunun gibi REKLAM İÇERMEYEN, TEMİZ ve sadece marka/model/yıl barındıran bir isim uydur)",
        "price": "Fiyat",
        "url": "Link",
        "market_speed_score": 85,
+       "price_perf_score": 90,
+       "condition_score": 88,
        "overall_score": 88,
-       "ai_report": "Veri ve Görsel analizlerin birleştirilmiş nihai araç yorumu",
+       "ai_report": "Veri ve Görsel analizlerin birleştirilmiş detaylı nihai araç yorumu",
+       "vision_report": "Görsel yapay zekanın (AI-2) yazdığı yorumu buraya koy.",
+       "defects": ["kusur 1"],
+       "positives": ["olumlu 1"],
        "detailed_specs": [
          { "name": "Özellik", "value": "Değer", "status": "good", "comment": "Yorum", "note": "Not" }
        ],
        "competitor_analysis": { "pros": ["artı 1"], "cons": ["eksi 1"], "text": "Bu aracın gruptaki diğer araçlara göre durumu" }
     }
   ]
-}`;
+}
+Kurallar:
+- "title" alanını mutlaka "Marka Model Yıl" yap. "Hatasız boyasız 2015 Caddy" yerine "Volkswagen Caddy 2015 Model" yaz.
+- "overall_score" alanını diğer 3 skorun ortalaması olarak hesapla.
+- "detailed_specs" dizisini AI-1'den gelen verilerle uzun ve zengin tut.
+`;
 
   let inputData = [];
   for(let i=0; i<originalCars.length; i++) {

@@ -82,26 +82,28 @@ export default function AnalysisReport() {
   return (
     <div className="min-h-screen bg-[#F0F2F5] text-black overflow-hidden font-sans relative selection:bg-black selection:text-white pt-6 pb-20">
       
-      {/* Top Tab Navigation */}
+      {/* Top Navigation Panel */}
       {!isLoading && (
-        <div className="w-full flex justify-center gap-4 mb-4 px-4 overflow-x-auto max-w-7xl mx-auto">
-          {summaryData && (
+        <div className="w-full flex justify-center mb-12 px-4 max-w-7xl mx-auto z-50 relative mt-4">
+          <div className="bg-white rounded-[2rem] shadow-embossed border border-black/5 flex items-center p-2 gap-4">
             <button 
-              onClick={() => handleTabChange(-1)}
-              className={`px-6 py-3 rounded-full font-bold text-xs uppercase tracking-widest transition-all shrink-0 flex items-center gap-2 ${activeTab === -1 ? 'bg-black text-white shadow-xl shadow-black/20' : 'bg-white text-black/60 hover:bg-black/5'}`}
+              onClick={() => handleTabChange(activeTab > -1 ? activeTab - 1 : groups.length - 1)}
+              className="p-3 bg-[#F5F5F7] rounded-full hover:bg-black hover:text-white transition-all duration-300"
             >
-              <Trophy size={16} /> Genel Podyum
+              <ChevronLeft size={24} />
             </button>
-          )}
-          {groups.map((g, idx) => (
+            
+            <div className="px-6 text-[11px] md:text-xs font-bold tracking-[0.2em] uppercase text-black w-[250px] text-center">
+              {activeTab === -1 ? 'Master AI Kıyaslama Raporu' : activeGroup?.groupName || ''}
+            </div>
+
             <button 
-              key={idx}
-              onClick={() => handleTabChange(idx)}
-              className={`px-6 py-3 rounded-full font-bold text-xs uppercase tracking-widest transition-all shrink-0 flex items-center gap-2 ${activeTab === idx ? 'bg-black text-white shadow-xl shadow-black/20' : 'bg-white text-black/60 hover:bg-black/5'}`}
+              onClick={() => handleTabChange(activeTab < groups.length - 1 ? activeTab + 1 : -1)}
+              className="p-3 bg-[#F5F5F7] rounded-full hover:bg-black hover:text-white transition-all duration-300"
             >
-              <Users size={16} /> {g.groupName}
+              <ChevronRight size={24} />
             </button>
-          ))}
+          </div>
         </div>
       )}
 
@@ -127,21 +129,15 @@ export default function AnalysisReport() {
              ==================================================== */
           <div className="w-full animation-fade-in">
             <div className="text-center mb-20 relative">
-              <div className="absolute -top-10 left-1/2 -translate-x-1/2 text-black/[0.03] text-[150px] font-display font-black whitespace-nowrap pointer-events-none select-none">
-                AUTO CAR
+              <div className="bg-white rounded-[2.5rem] border border-black/5 shadow-embossed p-10 md:p-16 mb-12 inline-block mx-auto">
+                <h1 className="text-4xl md:text-6xl font-display font-black tracking-tighter leading-[1.1] text-black">
+                  {summaryData.title}
+                </h1>
               </div>
-              <div className="inline-flex items-center gap-3 bg-white px-6 py-3 rounded-full shadow-embossed border border-black/5 mb-8 relative z-10">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-ping"></div>
-                <div className="w-2 h-2 bg-green-500 rounded-full absolute"></div>
-                <span className="text-[10px] font-bold tracking-[0.2em] text-black/60 uppercase">Master AI Kıyaslama Raporu</span>
-              </div>
-              <h1 className="text-5xl md:text-7xl font-display font-black tracking-tighter mb-8 leading-[0.9] text-black relative z-10">
-                {summaryData.title}
-              </h1>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {summaryData?.podium?.map((item, idx) => (
+              {[...(summaryData?.podium || [])].sort((a, b) => (b.score || 0) - (a.score || 0)).map((item, idx) => (
                 <div key={idx} className="bg-white rounded-[2rem] p-8 border border-black/5 shadow-embossed relative overflow-hidden group hover:shadow-embossed-hover transition-all duration-500 flex flex-col">
                   <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-150 group-hover:rotate-12 transition-transform duration-700">
                     <Trophy size={80} className={item.color || 'text-[#C0C0C0]'} />
@@ -279,6 +275,20 @@ export default function AnalysisReport() {
                     </div>
                     <div className="text-2xl font-display font-black tracking-tighter text-black">{currentCar.market_speed_score}</div>
                   </div>
+                  <div className="bg-white border border-black/5 rounded-[1.5rem] p-6 flex justify-between items-center shadow-embossed hover:shadow-embossed-hover transition-all duration-500">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 bg-[#F5F5F7] rounded-full shadow-inner-embossed"><TrendingUp className="text-black" size={16} strokeWidth={2} /></div>
+                      <span className="font-bold tracking-widest text-[10px] text-black uppercase">Fiyat / Perf.</span>
+                    </div>
+                    <div className="text-2xl font-display font-black tracking-tighter text-black">{currentCar.price_perf_score}</div>
+                  </div>
+                  <div className="bg-white border border-black/5 rounded-[1.5rem] p-6 flex justify-between items-center shadow-embossed hover:shadow-embossed-hover transition-all duration-500">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 bg-[#F5F5F7] rounded-full shadow-inner-embossed"><Shield className="text-black" size={16} strokeWidth={2} /></div>
+                      <span className="font-bold tracking-widest text-[10px] text-black uppercase">Araç Durumu</span>
+                    </div>
+                    <div className="text-2xl font-display font-black tracking-tighter text-black">{currentCar.condition_score}</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -408,7 +418,7 @@ export default function AnalysisReport() {
                 </div>
               </div>
               
-              <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4">
+              <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4 mb-12">
                 <button className="bg-[#F5F5F7] text-black px-10 py-5 rounded-full font-bold tracking-widest text-xs uppercase hover:bg-black hover:text-white transition-all duration-300 shadow-inner-embossed border border-black/5 hover:shadow-2xl hover:shadow-black/20 flex items-center justify-center gap-3">
                   <ImageIcon size={18} /> Daha Fazla Görsel Göster
                 </button>
@@ -416,6 +426,40 @@ export default function AnalysisReport() {
                   İlan Linkine Git <ArrowRight size={18} />
                 </a>
               </div>
+
+              {/* Görsel AI Notları */}
+              {(currentCar.vision_report || (currentCar.defects && currentCar.defects.length > 0)) && (
+                <div className="bg-white rounded-[2rem] border border-black/5 shadow-embossed p-8 mb-12">
+                  <h4 className="text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase mb-4 flex items-center gap-2">
+                    <AlertCircle size={14} /> AI Görsel Ekspertiz Raporu
+                  </h4>
+                  <p className="text-sm md:text-base font-bold leading-loose text-black/80 mb-6">
+                    {currentCar.vision_report}
+                  </p>
+                  <div className="flex flex-col md:flex-row gap-8">
+                    <div className="flex-1">
+                      <div className="text-[10px] font-bold tracking-[0.2em] text-red-500 uppercase mb-3">Tespit Edilen Kusurlar</div>
+                      <ul className="space-y-2">
+                        {currentCar.defects?.map((d, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm font-bold text-black/70">
+                            <XCircle size={16} className="text-red-400 shrink-0 mt-0.5" /> {d}
+                          </li>
+                        )) || <li className="text-sm font-bold text-black/50">-</li>}
+                      </ul>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-[10px] font-bold tracking-[0.2em] text-green-600 uppercase mb-3">Olumlu Yanlar</div>
+                      <ul className="space-y-2">
+                        {currentCar.positives?.map((p, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm font-bold text-black/70">
+                            <CheckCircle size={16} className="text-green-500 shrink-0 mt-0.5" /> {p}
+                          </li>
+                        )) || <li className="text-sm font-bold text-black/50">-</li>}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
           </div>
