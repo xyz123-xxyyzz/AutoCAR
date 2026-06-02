@@ -149,7 +149,8 @@ SADECE GEÇERLİ BİR JSON DÖNDÜR.
 Format:
 {
   "competitor_analysis": {
-    "text": "Bu aracın piyasa durumu ve rakip kıyaslaması.",
+    "competitors": ["Rakip Marka Model 1", "Rakip Marka Model 2"],
+    "text": "Bu aracın piyasa durumu ve gerçek dünyadaki rakiplerine (Grup içi değil, dış piyasadaki gerçek rakipler) göre kıyaslaması.",
     "pros": ["Güçlü yön 1", "Güçlü yön 2"],
     "cons": ["Zayıf yön 1", "Zayıf yön 2"]
   },
@@ -163,7 +164,7 @@ Format:
   ]
 }
 Kurallar:
-- "competitor_analysis" içindeki text kısmında bu aracın piyasadaki en büyük 2 veya 3 rakibinin ismini parantez içinde AÇIKÇA belirt (Örn: En büyük rakibi Skoda Superb...).
+- "competitor_analysis" kısmında "competitors" array'ine bu aracın gerçek piyasadaki EN BÜYÜK 2 VEYA 3 RAKİBİNİ (Örn: "Toyota Corolla", "Ford Focus") ekle. Analiz metnini (text) bu gerçek rakiplerle kıyaslayarak yaz.
 - "detailed_specs" dizisine araçla ilgili BULABİLDİĞİN TÜM ÖNEMLİ ÖZELLİKLERİ (en az 15-20 özellik) ekle ve yorum kısımlarını çok detaylı tut.
 - overall_score, diğer üç skorun aritmetik ortalaması olmalı ve KESİNLİKLE TAM SAYI (virgülsüz) olmalıdır. Eğer küsurat çıkarsa yuvarla.
 `;
@@ -373,9 +374,10 @@ Kurallar:
 - Eğer sana sadece 2 farklı grup gönderildiyse, sadece 2 madalya (gold, silver) ver.
 - "details" bölümündeki "Rakipleri Neler?" kısmına her bir aracın rakibini net olarak alt alta yaz.
 - "tableData" kısmında SÜTUN BAŞLIKLARI KESİNLİKLE "Gold", "Silver", "Bronze" olmalıdır. Asla Grup 1, Grup 2 yazma!
-- "tableData" değerlerine SADECE EMOJİ DEĞİL, muhakkak **Veri + Emoji** yazmalısın. Örneğin: "2015 ✅", "500 Litre ⚪", "Yok ❌" gibi. Üstün olanlara ✅, denk/ortalama olanlara ⚪ (gri çember), zayıf olanlara ❌ koy.
-- "tableData" kısmını ÇOK UZUN tut, en az 10-15 kıyaslama kriteri ekle.
-- "images" dizisi için sana verilen verideki o araca ait 'images' dizisinden en az 3 URL koymayı UNUTMA. Bu çok önemlidir.
+- **ÇOK ÖNEMLİ MATEMATİK KURALI:** "tableData" hücrelerine "Veri + Emoji" koyacaksın (Örn: "2015 ✅"). Ancak emojileri koyarken **DİKKAT KESİL!** Sayısal verilerde (Model yılı, beygir gücü, bagaj hacmi vb.) daima matematiksel kıyaslama yap. Örneğin 2021 model olan araç ✅, 2015 olan ⚪, 2014 olan ❌ almalıdır. Hatalı semboloji kullanmak KESİNLİKLE YASAKTIR.
+- Emojiler şunlardır: Üstün/İyi olana ✅, denk/ortalama olana ⚪ (gri çember), zayıf/düşük olana ❌ koy.
+- "tableData" (Kıyaslama tablosu) KESİNLİKLE ÇOK UZUN OLMALIDIR. En az 15 farklı kıyaslama satırı ekle (Model Yılı, Güç, Tork, Şanzıman, Ekran, Cam Tavan, Fiyat vb.).
+- "images" dizisi için sana verilen verideki o araca ait 'images' dizisinden en az 3 URL koymayı UNUTMA.
 `;
 
   return await callOpenAI(systemPrompt, groupReports);

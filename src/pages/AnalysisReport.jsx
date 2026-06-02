@@ -405,7 +405,7 @@ export default function AnalysisReport() {
                   <Maximize size={120} />
                 </div>
                 <div className="text-[10px] font-bold tracking-[0.2em] text-white/50 uppercase mb-6 relative z-10 flex items-center gap-3">
-                  <Star size={14} className="text-[#D4AF37]" /> AI Rakip Kıyaslaması
+                  <Star size={14} className="text-[#D4AF37]" /> Rakiplerine Göre Analiz {currentCar.competitor_analysis?.competitors ? `(${currentCar.competitor_analysis.competitors.join(', ')})` : ''}
                 </div>
                 <div className="relative z-10 space-y-6">
                   {(currentCar.competitor_analysis?.text || 'Rakip analizi bulunamadı.').split('\n\n').map((paragraph, idx) => (
@@ -522,12 +522,30 @@ export default function AnalysisReport() {
             onClick={(e) => e.stopPropagation()} 
           />
           
-          <button onClick={nextLightboxImage} className="absolute right-6 p-4 bg-white/10 hover:bg-white text-white hover:text-black rounded-full transition-colors">
-            <ChevronRight size={32} />
-          </button>
+          {/* Thumbnails */}
+          <div className="absolute bottom-6 w-full max-w-4xl overflow-x-auto flex gap-2 px-6 pb-2 hide-scrollbar">
+            {lightboxImages.map((img, idx) => (
+              <img 
+                key={idx} 
+                src={img} 
+                alt="Thumbnail" 
+                onClick={(e) => { e.stopPropagation(); setLightboxIndex(idx); }}
+                className={`h-16 w-24 object-cover rounded-md cursor-pointer transition-all duration-300 ${idx === lightboxIndex ? 'ring-2 ring-white scale-110 opacity-100' : 'opacity-40 hover:opacity-100'}`}
+              />
+            ))}
+          </div>
         </div>
       )}
 
+      <style jsx>{`
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </div>
   );
 }
