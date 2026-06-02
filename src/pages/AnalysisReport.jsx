@@ -142,7 +142,19 @@ export default function AnalysisReport() {
                   <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-150 group-hover:rotate-12 transition-transform duration-700">
                     <Trophy size={80} className={item.color || 'text-[#C0C0C0]'} />
                   </div>
-                  <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl mb-6 ${item.bg || 'bg-gray-100'} ${item.color || 'text-black'}`}>
+                  
+                  {/* Master AI Görselleri */}
+                  {item.images && item.images.length > 0 && (
+                    <div className="flex gap-2 mb-6 mt-2 relative z-10">
+                      {item.images.slice(0, 3).map((imgUrl, i) => (
+                        <div key={i} className="w-1/3 aspect-[4/3] rounded-xl overflow-hidden relative border border-black/5 shadow-inner-embossed">
+                          <img src={imgUrl} alt="Araç Görseli" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl mb-6 relative z-10 ${item.bg || 'bg-gray-100'} ${item.color || 'text-black'}`}>
                     <span className="font-display font-black text-2xl">{item.rank || idx + 1}</span>
                   </div>
                   <h3 className="text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase mb-2">
@@ -163,56 +175,50 @@ export default function AnalysisReport() {
               <p className="text-white/80 mt-8 max-w-3xl mx-auto text-sm md:text-base font-bold leading-loose tracking-wide">
                 {summaryData?.logic || "Analiz tamamlandı."}
               </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
-              {summaryData?.details?.map((detail, idx) => (
-                <div key={idx} className="bg-[#F5F5F7] rounded-[2rem] p-8 shadow-inner-embossed flex flex-col justify-between">
-                  <div>
-                    <div className="mb-4">{detail.icon === 'info' ? <HelpCircle/> : <CheckCircle/>}</div>
-                    <div className="text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase mb-2">{detail.title}</div>
-                    <div className="text-lg font-display font-black tracking-tight text-black mb-4">{detail.winner || detail.desc}</div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+                {summaryData?.details?.map((detail, idx) => (
+                  <div key={idx} className="bg-[#F5F5F7] rounded-[2rem] p-8 shadow-inner-embossed flex flex-col justify-between">
+                    <div>
+                      <div className="mb-4">{detail.icon === 'info' ? <HelpCircle/> : <CheckCircle/>}</div>
+                      <div className="text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase mb-2">{detail.title}</div>
+                      <div className="text-lg font-display font-black tracking-tight text-black mb-4">{detail.winner || detail.desc}</div>
+                    </div>
+                    {detail.winner && <div className="text-sm font-bold text-black/60">{detail.desc}</div>}
                   </div>
-                  {detail.winner && <div className="text-sm font-bold text-black/60">{detail.desc}</div>}
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
 
-            <div className="mt-10">
-              <h3 className="text-2xl font-display font-black tracking-tight text-black mb-8 flex items-center gap-4">
-                <Table2 className="text-black/30" /> Teknik Özellik Kıyaslama Tablosu
-              </h3>
-              <div className="bg-white rounded-[2rem] border border-black/5 shadow-embossed overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[700px]">
-                  <thead>
-                    <tr className="bg-[#F5F5F7] border-b border-black/5">
-                      <th className="p-6 text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase rounded-tl-[2rem]">Özellik</th>
-                      {Object.keys(summaryData?.tableData?.[0] || {}).filter(k => k !== 'feature').map((col, idx) => (
-                        <th key={idx} className="p-6 text-[10px] font-bold tracking-[0.2em] text-black/80 uppercase">
-                          {col}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {summaryData?.tableData?.map((row, idx) => {
-                      const keys = Object.keys(row).filter(k => k !== 'feature');
-                      return (
-                        <tr key={idx} className="border-b border-black/5 hover:bg-black/[0.02] transition-colors">
-                          <td className="p-6 text-sm font-bold text-black/70">{row.feature}</td>
-                          {keys.map((k, cIdx) => (
-                            <td key={cIdx} className="p-6 font-display font-black text-black">
-                              {row[k] || '-'}
-                            </td>
+              {/* Master AI Detaylı Kıyaslama Tablosu */}
+              {summaryData?.tableData && summaryData.tableData.length > 0 && (
+                <div className="mt-12 bg-white rounded-[2.5rem] border border-black/5 shadow-embossed p-8 md:p-12 overflow-hidden">
+                  <h3 className="text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase mb-8 flex items-center gap-2">
+                    <TrendingUp size={16} /> Teknik Özellik ve Fiyat Performans Kıyaslaması
+                  </h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[600px]">
+                      <thead>
+                        <tr>
+                          <th className="p-4 border-b border-black/5 text-[10px] font-bold tracking-[0.2em] text-black uppercase">Özellik</th>
+                          {Object.keys(summaryData.tableData[0]).filter(k => k !== 'feature').map((key, i) => (
+                            <th key={i} className="p-4 border-b border-black/5 text-[10px] font-bold tracking-[0.2em] text-black uppercase">{key}</th>
                           ))}
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                      </thead>
+                      <tbody>
+                        {summaryData.tableData.map((row, idx) => (
+                          <tr key={idx} className="hover:bg-black/5 transition-colors group">
+                            <td className="p-4 border-b border-black/5 font-bold text-black/70 text-sm group-hover:text-black">{row.feature}</td>
+                            {Object.keys(row).filter(k => k !== 'feature').map((key, i) => (
+                              <td key={i} className="p-4 border-b border-black/5 font-bold text-black text-sm">{row[key]}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
-
           </div>
         ) : activeGroup && currentCar ? (
           
@@ -260,9 +266,9 @@ export default function AnalysisReport() {
               </div>
 
               <div className="w-full xl:w-[350px] flex flex-col gap-4">
-                <div className="bg-[#F5F5F7] rounded-[2rem] p-10 text-center relative overflow-hidden group shadow-inner-embossed">
-                  <div className="text-black/40 font-bold text-[10px] tracking-[0.2em] uppercase mb-4">Genel Skor</div>
-                  <div className="text-8xl md:text-9xl font-display font-black tracking-tighter text-black">
+                <div className="bg-[#F5F5F7] rounded-[2rem] p-10 text-center relative overflow-hidden group shadow-inner-embossed flex flex-col justify-center min-h-[220px]">
+                  <div className="text-black/40 font-bold text-[10px] tracking-[0.2em] uppercase mb-2">Genel Skor</div>
+                  <div className="text-7xl lg:text-[7rem] leading-none font-display font-black tracking-tighter text-black w-full overflow-hidden text-ellipsis whitespace-nowrap px-2">
                     {currentCar.overall_score}
                   </div>
                 </div>

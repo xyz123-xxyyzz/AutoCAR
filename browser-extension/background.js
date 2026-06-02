@@ -158,7 +158,7 @@ Format:
   ]
 }
 Kurallar:
-- "detailed_specs" dizisine en az 5-6 farklı özellik ekle ve yorum kısımlarını (comment) detaylı tut.
+- "detailed_specs" dizisine araçla ilgili BULABİLDİĞİN TÜM ÖNEMLİ ÖZELLİKLERİ (en az 15-20 özellik) ekle ve yorum kısımlarını çok detaylı tut.
 - overall_score, diğer üç skorun aritmetik ortalamasına çok yakın veya eşit olmalıdır.
 `;
   const dataForAi = { ...carData };
@@ -228,6 +228,7 @@ Kurallar:
 - "title" alanını mutlaka "Marka Model Yıl" yap. "Hatasız boyasız 2015 Caddy" yerine "Volkswagen Caddy 2015 Model" yaz.
 - "overall_score" alanını diğer 3 skorun ortalaması olarak hesapla.
 - "detailed_specs" dizisini AI-1'den gelen verilerle uzun ve zengin tut.
+- "competitor_analysis" kısmında rakipleri kıyaslarken KESİNLİKLE aynı segmenti ve fiyat klasmanını dikkate al (3 milyonluk araçla 1 milyonluk aracı donanım/lüks diye kıyaslama).
 `;
 
   let inputData = [];
@@ -252,24 +253,29 @@ Kurallar:
 }
 
 async function generateGlobalMasterReport(groupReports) {
-  const systemPrompt = `Sen sistemin 'Master AI' yöneticisisin. Tüm araç gruplarının analiz raporları sana geliyor. Bu grupları birbirleriyle kıyasla, en iyileri seç ve genel podyumu belirle.
+  const systemPrompt = `Sen sistemin 'Master AI' yöneticisisin. Tüm araç gruplarının analiz raporları sana geliyor. Bu grupları birbiriyle kıyasla, FİYAT-PERFORMANS ve SEGMENT mantığını dikkate alarak en iyileri seç ve genel podyumu belirle.
 SADECE GEÇERLİ BİR JSON DÖNDÜR.
 Format:
 {
-  "title": "Gruplar Arası Genel Kıyaslama ve Podyum",
-  "logic": "Hangi grubun/aracın neden seçildiğine dair geniş mantık.",
+  "title": "Master AI Derinlemesine Kıyaslama Raporu",
+  "logic": "Hangi aracın neden 1., 2. veya 3. seçildiğine dair çok detaylı, ikna edici ve profesyonel bir analiz yaz. Kullanıcı 'gerçekten bu daha iyiymiş' demeli.",
   "podium": [
-    { "medal": "gold", "title": "1. Araç", "reason": "Neden 1. oldu", "score": 95, "color": "text-[#D4AF37]" },
-    { "medal": "silver", "title": "2. Araç", "reason": "Neden 2. oldu", "score": 85, "color": "text-[#C0C0C0]" },
-    { "medal": "bronze", "title": "3. Araç", "reason": "Neden 3. oldu", "score": 75, "color": "text-[#CD7F32]" }
+    { "medal": "gold", "title": "1. Araç", "reason": "Neden altın madalya aldı? Detaylıca açıkla.", "score": 95, "color": "text-[#D4AF37]", "images": ["url1", "url2", "url3"] },
+    { "medal": "silver", "title": "2. Araç", "reason": "Neden 2. oldu?", "score": 85, "color": "text-[#C0C0C0]", "images": ["url1", "url2", "url3"] },
+    { "medal": "bronze", "title": "3. Araç", "reason": "Neden 3. oldu?", "score": 75, "color": "text-[#CD7F32]", "images": ["url1", "url2", "url3"] }
   ],
   "details": [
-    { "icon": "info", "title": "Piyasa Özeti", "desc": "Gruplar arası genel durum" }
+    { "icon": "info", "title": "Piyasa ve Segment Özeti", "desc": "Gruplar arası genel durum" }
   ],
   "tableData": [
     { "feature": "Özellik Adı", "grup1": "değer", "grup2": "değer" }
   ]
-}`;
+}
+Kurallar:
+- Eğer sana sadece 2 farklı araç gönderildiyse, sadece 2 madalya (gold, silver) ver. Zorla 3. araç uydurma.
+- "tableData" (Teknik Özellik Kıyaslama) kısmını ÇOK UZUN tut, en az 10-15 kıyaslama kriteri (Motor, Şanzıman, Tork, Tüketim, Bagaj vb.) ekle.
+- "images" dizisi için sana verilen verideki o araca ait 'images' dizisinden en az 3 URL koymayı UNUTMA. Bu çok önemlidir.
+`;
 
   return await callOpenAI(systemPrompt, groupReports);
 }

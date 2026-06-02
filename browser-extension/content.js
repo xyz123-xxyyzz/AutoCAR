@@ -35,14 +35,26 @@ function extractCarData() {
         }
       });
 
-      const imgEls = document.querySelectorAll('.mega-photo-nav label img, .rsImg');
+      const imgEls = document.querySelectorAll('.mega-photo-nav label img, .rsImg, .classifiedDetailMainPhoto img, .classifiedDetailThumbList img, .photo-nav img');
       imgEls.forEach(img => {
-        let src = img.src || img.dataset.src;
-        if (src && !data.images.includes(src)) {
-          src = src.replace('thmb_', ''); 
-          data.images.push(src);
+        let src = img.src || img.dataset.src || img.getAttribute('data-src');
+        if (src && !src.includes('svg') && !src.includes('icon') && !src.includes('avatar')) {
+          src = src.replace('thmb_', '').replace('/thmb/', '/mega/'); 
+          if (!data.images.includes(src)) {
+            data.images.push(src);
+          }
         }
       });
+      
+      // Fallback: if no images found, grab any large image
+      if (data.images.length === 0) {
+        document.querySelectorAll('img').forEach(img => {
+          let src = img.src || img.dataset.src;
+          if (src && src.includes('mega') && !data.images.includes(src)) {
+            data.images.push(src);
+          }
+        });
+      }
     } 
     else if (url.includes('arabam.com')) {
       data.platform = 'Arabam';
