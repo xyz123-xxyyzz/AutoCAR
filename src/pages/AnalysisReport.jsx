@@ -122,7 +122,12 @@ export default function AnalysisReport() {
             </button>
             
             <div className="px-6 text-[11px] md:text-xs font-bold tracking-[0.2em] uppercase text-black w-[250px] text-center">
-              {activeTab === -1 ? 'Master AI Kıyaslama Raporu' : activeGroup?.groupName || ''}
+              {(() => {
+                const hasMaster = summaryData?.podium?.length > 0;
+                const totalTabs = groups.length + (hasMaster ? 1 : 0);
+                const currentTabIndex = activeTab === -1 ? 1 : activeTab + (hasMaster ? 2 : 1);
+                return `${totalTabs}'te ${currentTabIndex}`;
+              })()}
             </div>
 
             <button 
@@ -283,10 +288,7 @@ export default function AnalysisReport() {
 
             <div className="flex flex-col xl:flex-row gap-20 mb-20">
               <div className="flex-1">
-                <h2 className="text-4xl md:text-5xl font-display font-black tracking-tighter mb-2 leading-[1.1] text-black">{currentCar.title}</h2>
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-black/5 rounded-full text-xs font-bold text-black/60 uppercase tracking-widest mb-8">
-                  Analiz {totalCarsInGroup}'te {currentCarIndex + 1}
-                </div>
+                <h2 className="text-4xl md:text-5xl font-display font-black tracking-tighter mb-8 leading-[1.1] text-black">{currentCar.title}</h2>
                 <div className="text-3xl font-display font-black tracking-tight text-black mb-16">
                   {currentCar.price}
                 </div>
