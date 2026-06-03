@@ -75,28 +75,18 @@ if (typeof window.AutoCAR_ContentScript_Loaded === 'undefined') {
       // Sayfanın tüm kaynak kodunu (JS verileri dahil) metin olarak al
       const htmlStr = document.documentElement.innerHTML;
       
-      // Kaynak kod içindeki shbdn.com üzerinden gelen TÜM resim URL'lerini yakalayan kurşun geçirmez Regex
-      // "ilan-fotograflari" veya "photos" klasörü fark etmeksizin her şeyi yakalar.
-      const urlRegex = /(?:https?:)?(?:\\?\/){2}[^"'\s<>]*?shbdn\.com[^"'\s<>]*?\.(?:jpg|jpeg|png|webp)[^"'\s<>]*/gi;
+      // Kaynak kod içindeki shbdn.com veya sahibinden.com üzerinden gelen TÜM resim URL'lerini yakalayan MÜKEMMEL Regex
+      const urlRegex = /(?:https?:)?(?:\\?\/){2}[^"'\s<>]*?(?:shbdn\.com|sahibinden\.com)[^"'\s<>]*?\.(?:jpg|jpeg|png|webp)[^"'\s<>]*/gi;
       const matches = htmlStr.match(urlRegex) || [];
       
       const uniqueImageIds = new Set();
       
       matches.forEach(rawSrc => {
-        // Eğer JSON formatındaysa (Ters taksimleri düzelt)
         let src = rawSrc.replace(/\\/g, '');
-        
         if (!src.includes('svg') && !src.includes('icon') && !src.includes('avatar') && !src.includes('data:image') && !src.includes('base64') && !src.includes('360') && !src.includes('video') && !src.includes('transparent') && !src.includes('blank') && !src.includes('/assets/')) {
-          
-          // Her zaman yüksek çözünürlüklü mega resimleri al
           let highResSrc = src.replace('thmb_', '').replace('/thmb/', '/mega/');
+          if (highResSrc.startsWith('//')) highResSrc = 'https:' + highResSrc;
           
-          // Başına https: ekle
-          if (highResSrc.startsWith('//')) {
-            highResSrc = 'https:' + highResSrc;
-          }
-          
-          // Resim ID'sini bulup kopya resimleri engelle (mega ve thmb versiyonları aynı resimdir)
           const idMatch = highResSrc.match(/\/(\d+)[^/]*$/);
           const uniqueId = idMatch ? idMatch[1] : highResSrc;
           
@@ -107,12 +97,15 @@ if (typeof window.AutoCAR_ContentScript_Loaded === 'undefined') {
         }
       });
       
-      // Fallback: if no images found, grab any large image
+      // Fallback: Eğer Regex hiçbir şey bulamazsa (İmkansıza yakın ama kesin çözüm için), doğrudan HTML elemanlarına saldır
       if (data.images.length === 0) {
-        document.querySelectorAll('img').forEach(img => {
-          let src = img.src || img.dataset.src;
-          if (src && src.includes('mega') && !data.images.includes(src)) {
-            data.images.push(src);
+        document.querySelectorAll('img, [data-src]').forEach(el => {
+          let src = el.src || el.getAttribute('data-src') || el.href;
+          if (src && typeof src === 'string') {
+            if (!src.includes('svg') && !src.includes('icon') && !src.includes('avatar') && !src.includes('logo') && !data.images.includes(src)) {
+              if (src.startsWith('//')) src = 'https:' + src;
+              data.images.push(src);
+            }
           }
         });
       }
