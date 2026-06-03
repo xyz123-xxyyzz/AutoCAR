@@ -1,5 +1,8 @@
 // AutoCAR Çoklu Platform Veri Çekme Motoru (Scraper)
-function extractCarData() {
+if (typeof window.AutoCAR_ContentScript_Loaded === 'undefined') {
+  window.AutoCAR_ContentScript_Loaded = true;
+
+  function extractCarData() {
   const url = window.location.href;
   
   // Çekilecek saf veri iskeleti
@@ -186,3 +189,4 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true; // Keep message channel open for async response
   }
 });
+}

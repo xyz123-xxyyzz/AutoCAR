@@ -177,8 +177,6 @@ Kurallar:
   return await callOpenAI(systemPrompt, dataForAi);
 }
 
-// Resim URL'sini Base64'e çeviren yardımcı fonksiyon
-async function fetchImageAsBase64(url) {
 async function analyzeImagesOnly(carData) {
   const expertPrompt = `Sen bir görsel oto ekspertiz yapay zekasın. Gönderilen 10 araç resmini detaylıca incele. Dış kasa, boya, jant, lastik ve iç mekandaki aşınmaları, kusurları veya olumlu yanları raporla.
 SADECE GEÇERLİ BİR JSON DÖNDÜR.
