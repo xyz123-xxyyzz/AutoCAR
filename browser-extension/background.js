@@ -121,7 +121,7 @@ async function callOpenAI(systemPrompt, userContent, useVision = false, model = 
           body: JSON.stringify({
             model: model,
             messages: messages,
-            max_tokens: 16000,
+            max_tokens: 4096,
             response_format: { type: 'json_object' }
           })
         });
@@ -356,7 +356,14 @@ async function runFullAnalysis() {
     // İşlenmiş araçları gruplarına göre tekrar ayır
     for (let g = 0; g < groupNames.length; g++) {
       const gName = groupNames[g];
-      const carsInGroup = allProcessedCars.filter(c => c.groupName === gName).map(c => c.carData);
+      const carsInGroup = allProcessedCars.filter(c => c.groupName === gName).map(c => {
+        let carDataCopy = { ...c.carData };
+        // YZ'nın kafasını karıştırmamak ve veri paketini şişirmemek için resimleri KOD ile 3'e düşür
+        if (carDataCopy.images && carDataCopy.images.length > 3) {
+          carDataCopy.images = carDataCopy.images.slice(0, 3);
+        }
+        return carDataCopy;
+      });
       
       const groupConsolidated = {
         groupName: gName,
