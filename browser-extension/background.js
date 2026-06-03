@@ -330,6 +330,7 @@ async function runFullAnalysis() {
           images: gCars[i].images,
           market_speed_score: a1.market_speed_score,
           price_perf_score: a1.price_perf_score,
+          fair_price_score: a1.fair_price_score,
           condition_score: a1.condition_score,
           overall_score: a1.overall_score,
           ai_report: a1.data_report,
