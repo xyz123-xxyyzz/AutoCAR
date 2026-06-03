@@ -176,8 +176,8 @@ function groupTabsByModel(readyData) {
 }
 
 async function analyzeDataOnly(carData) {
-const systemPrompt = `You are an expert, highly critical, and brutally realistic automotive appraiser and data analyst AI.
-Analyze the provided car data (technical specs, price, damage history, mileage).
+  const systemPrompt = `You are an expert, highly critical, and brutally realistic automotive appraiser and data analyst AI.
+Analyze the provided car data (technical specs, price, damage history, mileage) and images.
 YOU MUST RETURN ONLY VALID JSON.
 Format:
 {
@@ -194,6 +194,9 @@ Format:
   "condition_score": 40,
   "overall_score": 61,
   "data_report": "A very detailed, comprehensive summary report about the car in Turkish. YOU MUST EXPLICITLY AND TRANSPARENTLY EXPLAIN WHY YOU GAVE THE SPECIFIC SCORES for Satış Hızı, Fiyat/Performans, Uygunluk, and Araç Durumu. Break down your reasoning for each of the 4 scores. CRITICAL RULE FOR FORMATTING: Do NOT write a single flat paragraph! Write it as a structured list with exactly ONE EMPTY LINE (\n\n) between each score's explanation. Example format: 'Satış Hızı (75 Puan): [Açıklama]\n\nFiyat / Perf. (70 Puan): [Açıklama]\n\nUygunluk (50 Puan): [Açıklama]\n\nAraç Durumu (50 Puan): [Açıklama]'. Be completely objective, realistic and point out every red flag. No sugarcoating.",
+  "vision_report": "A detailed visual inspection report in Turkish based ONLY on the provided images. Look for scratches, dents, panel gaps, paint mismatches, or interior wear. If the car looks exceptionally clean, state that too.",
+  "defects": ["Görünen kusur 1", "Görünen kusur 2"],
+  "positives": ["İyi durumdaki detay 1", "İyi durumdaki detay 2"],
   "detailed_specs": [
     { "name": "Spec Name (Turkish)", "value": "Value", "status": "good", "comment": "Detailed professional comment in Turkish", "note": "Short note" }
   ],
@@ -212,6 +215,7 @@ Format:
     "sol_arka_camurluk": "orijinal",
     "bagaj": "orijinal"
   }
+}
 RULES FOR SCORING AND EXTRACTION (BE OBJECTIVE BUT FAIR):
 1. detailed_specs: YOU MUST EXTRACT EVERY SINGLE TECHNICAL SPECIFICATION available in the listing. Do NOT just put 4 specs! Extract at least 15-25 specs (e.g., HP, Torque, Engine Size, Transmission, Color, Drivetrain, Fuel type, Trim level, 0-100, Top Speed, Year, Mileage, etc.). If the data is there, extract it!
 CRITICAL RULE FOR DETAILED SPECS 'comment' FIELD: DO NOT just repeat the value! The user already sees the value. The 'comment' must be your DEEP, EXPERT AI THOUGHT/OPINION on that specific feature.
@@ -231,12 +235,29 @@ Example GOOD: "120.000 km dizel motor için ağır bakım (triger vs.) sınırı
 6. overall_score: The exact arithmetic mean of the above 4 scores (market_speed_score, price_perf_score, fair_price_score, condition_score). ALL SCORES MUST BE INTEGERS, not strings. Do not put brackets around them.
 
 - For damage_map: ONLY use "orijinal", "boyali", "lokal_boyali", "degisen", "bilinmiyor". Deduce this accurately.
+- For images: EXAMINE THE ATTACHED IMAGES CAREFULLY. Point out visible defects or positive traits. 
 - All output text MUST be in TURKISH.
 - Do NOT hallucinate data, but extract EVERYTHING provided in the data blob.
 `;
+
   const dataForAi = { ...carData };
+  const imageUrls = (dataForAi.images || []).slice(0, 3);
   delete dataForAi.images;
-  return await callOpenAI(systemPrompt, dataForAi);
+
+  let userContent = [];
+  userContent.push({
+    type: "text",
+    text: JSON.stringify(dataForAi)
+  });
+
+  imageUrls.forEach(url => {
+    userContent.push({
+      type: "image_url",
+      image_url: { url: url }
+    });
+  });
+
+  return await callOpenAI(systemPrompt, userContent, true, 'gpt-4o-mini');
 }
 
 async function generateGlobalMasterReport(groupReports) {
@@ -354,6 +375,9 @@ async function runFullAnalysis() {
               condition_score: a1.condition_score,
               overall_score: a1.overall_score,
               ai_report: a1.data_report,
+              vision_report: a1.vision_report || null,
+              defects: a1.defects || [],
+              positives: a1.positives || [],
               competitor_analysis: a1.competitor_analysis,
               detailed_specs: a1.detailed_specs,
               damage_map: a1.damage_map || null

@@ -435,13 +435,42 @@ export default function AnalysisReport() {
 
             <div className="w-full h-[1px] bg-black/10 mb-20"></div>
 
-              {/* Section 4: Araç Resimleri (Kullanıcı Talebiyle Kaldırıldı) */}
-              <div>
-              <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4 mb-12">
-                <a href={currentCar.url} target="_blank" rel="noopener noreferrer" className="bg-[#FFCC00] text-black px-10 py-5 rounded-full font-bold tracking-widest text-xs uppercase hover:scale-105 transition-all duration-300 shadow-xl shadow-[#FFCC00]/20 flex items-center justify-center gap-3">
-                  İlan Linkine Git <ArrowRight size={18} />
-                </a>
-              </div>
+              {/* Section 4: Araç Resimleri */}
+              <div className="mb-20">
+                <h3 className="text-2xl font-display font-black tracking-tight text-black mb-8 flex items-center gap-4">
+                  <ImageIcon className="text-black/30" /> Araç Resimleri
+                </h3>
+                
+                {currentCar.images && currentCar.images.length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-12">
+                    {currentCar.images.map((img, idx) => (
+                      <div 
+                        key={idx} 
+                        className="group relative aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer bg-[#F5F5F7] shadow-inner-embossed"
+                        onClick={() => openLightbox(currentCar.images, idx)}
+                      >
+                        <img 
+                          src={img} 
+                          alt={`${currentCar.title} - ${idx + 1}`} 
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
+                          <Maximize size={32} className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-lg" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-[#F5F5F7] p-8 rounded-[2rem] shadow-inner-embossed text-center mb-12 text-sm font-bold text-black/50">
+                    Görsel bulunamadı veya çekilemedi.
+                  </div>
+                )}
+
+                <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4 mb-12">
+                  <a href={currentCar.url} target="_blank" rel="noopener noreferrer" className="bg-[#FFCC00] text-black px-10 py-5 rounded-full font-bold tracking-widest text-xs uppercase hover:scale-105 transition-all duration-300 shadow-xl shadow-[#FFCC00]/20 flex items-center justify-center gap-3">
+                    İlan Linkine Git <ArrowRight size={18} />
+                  </a>
+                </div>
 
               {/* Ekspertiz Haritası */}
               <DamageMap damageMap={currentCar.damage_map} />
