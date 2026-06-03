@@ -29,43 +29,56 @@ export default function AuthPage() {
     setError(null);
 
     try {
-      // Supabase Authentication (try sign in, if user not found, sign up)
-      // Since this is a mockup for both login/register, we will try sign in first.
+      // Supabase Authentication (SADECE GİRİŞ, YENİ KAYIT YASAK)
       let { data, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
-      if (authError && authError.message.includes('Invalid login credentials')) {
-        // If user doesn't exist, try to sign up
-        const signupRes = await supabase.auth.signUp({
-          email,
-          password
-        });
-        data = signupRes.data;
-        authError = signupRes.error;
+      if (authError) {
+        throw new Error('Geçersiz e-posta veya şifre. Lütfen yöneticinizden aldığınız VIP bilgileri kontrol edin.');
       }
 
-      if (authError) throw authError;
-
-      // Ensure we have a user
       if (data?.user) {
-        // Mock role logic for demo
+        // Cihaz Kilidi (Device Fingerprinting)
+        let deviceId = localStorage.getItem('autocar_device_id');
+        if (!deviceId) {
+          deviceId = 'dev_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+          localStorage.setItem('autocar_device_id', deviceId);
+        }
+
+        // Cihazları kontrol et
+        const { data: existingDevices, error: countError } = await supabase
+          .from('user_devices')
+          .select('device_id')
+          .eq('email', email);
+          
+        if (!countError) {
+          const uniqueDevices = [...new Set((existingDevices || []).map(d => d.device_id))];
+          
+          // Eğer bu cihaz daha önce kaydedilmemişse ve zaten 2 farklı cihaz kayıtlıysa girişi reddet
+          if (!uniqueDevices.includes(deviceId) && uniqueDevices.length >= 2) {
+            // Güvenlik gereği oturumu hemen kapat
+            await supabase.auth.signOut();
+            throw new Error('Bu VIP hesap limitine ulaştı. Sadece yetkili bilgisayarlardan giriş yapabilirsiniz. İzinsiz erişim engellendi.');
+          }
+        }
+
         const demoRole = email.includes('admin') ? 'Sahip' : email.includes('premium') ? 'Premium' : 'Kullanıcı';
         
-        // Record device IP and Role to user_devices table
+        // Yeni veya mevcut cihazı kaydet
         const { error: dbError } = await supabase
           .from('user_devices')
           .insert([
-            { user_id: data.user.id, email: email, device_ip: ip, role: demoRole }
+            { user_id: data.user.id, email: email, device_id: deviceId, role: demoRole, last_login: new Date() }
           ]);
         
-        if (dbError && dbError.code !== 'PGRST204') { // Ignore if table doesn't exist yet for mockup
+        if (dbError && dbError.code !== 'PGRST204') {
           console.warn("Device logging warning:", dbError);
         }
+        
         localStorage.setItem('userRole', demoRole);
 
-        // Redirect based on role
         if (demoRole === 'Sahip') navigate('/sahip');
         else if (demoRole === 'Premium') navigate('/satin-alan');
         else navigate('/kullanici');
@@ -94,19 +107,19 @@ export default function AuthPage() {
             <span className="text-[8px] font-bold tracking-[0.2em] uppercase text-black/50">Cihaz Koruması Aktif</span>
           </div>
 
-          <h2 className="text-3xl font-display font-black tracking-tight mb-8 mt-4 text-center">Giriş Yap / Kaydol</h2>
+          <h2 className="text-3xl font-display font-black tracking-tight mb-8 mt-4 text-center">VIP Sisteme Giriş</h2>
 
           {error && (
             <div className="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl flex items-center gap-3 text-sm font-bold shadow-inner-embossed border border-red-100">
-              <AlertCircle size={16} />
-              {error}
+              <AlertCircle size={16} className="shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
           <form onSubmit={handleAuth} className="space-y-6">
             
             <div className="space-y-2">
-              <label className="text-[10px] font-bold tracking-[0.2em] uppercase text-black/50 ml-4">E-posta</label>
+              <label className="text-[10px] font-bold tracking-[0.2em] uppercase text-black/50 ml-4">VIP E-posta</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
                   <Mail className="text-black/30" size={16} />
@@ -117,7 +130,7 @@ export default function AuthPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-14 pr-6 py-5 bg-[#F5F5F7] border-none rounded-full text-black font-bold focus:outline-none focus:ring-2 focus:ring-black/10 transition-all shadow-inner-embossed"
-                  placeholder="ornek@mail.com"
+                  placeholder="vip@mail.com"
                 />
               </div>
             </div>
@@ -147,15 +160,15 @@ export default function AuthPage() {
               {loading ? (
                 <><Loader2 size={16} className="animate-spin" /> Bekleniyor...</>
               ) : (
-                <>Sisteme Gir <ArrowRight size={14} strokeWidth={3} /></>
+                <>Giriş Yap <ArrowRight size={14} strokeWidth={3} /></>
               )}
             </button>
 
           </form>
 
           <p className="text-center text-[10px] text-black/30 font-bold mt-8 tracking-widest leading-relaxed uppercase">
-            Hesabınız yoksa otomatik olarak oluşturulacaktır.<br/>
-            Güvenliğiniz için mevcut cihaz IP'niz sisteme kaydedilmektedir.
+            Sadece yöneticinizden aldığınız VIP şifre ile giriş yapabilirsiniz.<br/>
+            Güvenliğiniz için cihaz kimliğiniz kaydedilmektedir.
           </p>
 
         </div>
