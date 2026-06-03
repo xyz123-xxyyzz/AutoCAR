@@ -47,40 +47,51 @@ export default function AuthPage() {
           localStorage.setItem('autocar_device_id', deviceId);
         }
 
-        // Cihazları kontrol et
-        const { data: existingDevices, error: countError } = await supabase
-          .from('user_devices')
-          .select('device_id')
-          .eq('email', email);
-          
-        if (!countError) {
-          const uniqueDevices = [...new Set((existingDevices || []).map(d => d.device_id))];
-          
-          // Eğer bu cihaz daha önce kaydedilmemişse ve zaten 2 farklı cihaz kayıtlıysa girişi reddet
-          if (!uniqueDevices.includes(deviceId) && uniqueDevices.length >= 2) {
-            // Güvenlik gereği oturumu hemen kapat
+        // vip_users tablosundan VIP hesabı çek
+        const { data: vipUser, error: vipError } = await supabase
+          .from('vip_users')
+          .select('*')
+          .eq('email', email)
+          .single();
+
+        if (vipError || !vipUser) {
+          await supabase.auth.signOut();
+          throw new Error('Bu e-posta yetkili bir VIP hesabı değil.');
+        }
+
+        const role = vipUser.role; // 'sahip' veya 'kullanici'
+        
+        if (role === 'sahip') {
+          // Eğer giriş yapan Sahip ise
+          if (!vipUser.admin_device_id) {
+            // İlk kez giriyorsa cihazı kaydet
+            await supabase.from('vip_users').update({ admin_device_id: deviceId }).eq('email', email);
+          } else if (vipUser.admin_device_id !== deviceId) {
+            // Cihaz uyuşmuyorsa
             await supabase.auth.signOut();
-            throw new Error('Bu VIP hesap limitine ulaştı. Sadece yetkili bilgisayarlardan giriş yapabilirsiniz. İzinsiz erişim engellendi.');
+            throw new Error('Bu yönetici hesabı başka bir bilgisayara kilitlenmiştir.');
+          }
+        } else {
+          // Eğer giriş yapan Müşteri (kullanici) ise
+          // 1. Kural: Sahip bilgisayarı her zaman müşteri hesabına da girebilir!
+          if (vipUser.admin_device_id !== deviceId) {
+            // Sahip değilse, müşteri cihazını kontrol et
+            if (!vipUser.customer_device_id) {
+              // Müşteri ilk kez giriyorsa cihazını kaydet
+              await supabase.from('vip_users').update({ customer_device_id: deviceId }).eq('email', email);
+            } else if (vipUser.customer_device_id !== deviceId) {
+              // Cihaz ne müşterinin ne de sahibin cihazı değilse REDDET!
+              await supabase.auth.signOut();
+              throw new Error('İzinsiz erişim: Bu VIP hesap yalnızca Müşterinin veya Sahibin yetkili bilgisayarından açılabilir.');
+            }
           }
         }
 
-        const demoRole = email.includes('admin') ? 'Sahip' : email.includes('premium') ? 'Premium' : 'Kullanıcı';
-        
-        // Yeni veya mevcut cihazı kaydet
-        const { error: dbError } = await supabase
-          .from('user_devices')
-          .insert([
-            { user_id: data.user.id, email: email, device_id: deviceId, role: demoRole, last_login: new Date() }
-          ]);
-        
-        if (dbError && dbError.code !== 'PGRST204') {
-          console.warn("Device logging warning:", dbError);
-        }
-        
+        // Güncel rolü localStorage'a yaz
+        const demoRole = role === 'sahip' ? 'Sahip' : 'Kullanıcı';
         localStorage.setItem('userRole', demoRole);
 
         if (demoRole === 'Sahip') navigate('/sahip');
-        else if (demoRole === 'Premium') navigate('/satin-alan');
         else navigate('/kullanici');
       }
 

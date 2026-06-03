@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Puzzle, Globe, CheckCircle, AlertCircle, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
+import { supabase } from '../lib/supabase';
 
 export default function Ayarlar() {
   const role = localStorage.getItem('userRole') || 'Kullanıcı';
@@ -157,7 +158,11 @@ export default function Ayarlar() {
         {/* Logout Section */}
         <div className="mt-12 flex justify-center">
           <button 
-            onClick={() => navigate('/')}
+            onClick={async () => {
+              await supabase.auth.signOut();
+              localStorage.removeItem('userRole');
+              navigate('/');
+            }}
             className="group flex items-center gap-3 px-8 py-4 bg-white text-red-600 rounded-full shadow-embossed hover:shadow-embossed-hover transition-all duration-300 border border-transparent hover:border-red-100"
           >
             <div className="p-2 bg-red-50 rounded-full group-hover:bg-red-100 transition-colors">
