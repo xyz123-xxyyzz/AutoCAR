@@ -170,10 +170,10 @@ Kurallar:
 - "competitor_analysis" kısmında "competitors" array'ine bu aracın gerçek piyasadaki EN BÜYÜK 2 VEYA 3 RAKİBİNİ (Örn: "Toyota Corolla", "Ford Focus") ekle. Analiz metnini (text) bu gerçek rakiplerle kıyaslayarak yaz.
 - "detailed_specs" dizisine araçla ilgili BULABİLDİĞİN TÜM ÖNEMLİ ÖZELLİKLERİ (en az 15-20 özellik) ekle ve yorum kısımlarını çok detaylı tut.
 - overall_score, diğer üç skorun aritmetik ortalaması olmalı ve KESİNLİKLE TAM SAYI (virgülsüz) olmalıdır. Eğer küsurat çıkarsa yuvarla.
-- Puanlamaları (1-100 arası) yaparken şu 3 kurala GÖRE AYRI AYRI HESAPLAMA YAP:
-  1. market_speed_score (Satış Hızı): Aracın marka/modelinin Türkiye pazarındaki popülaritesini baz al. Popüler ve hızlı satılan araçlara (Egea, Megane vb.) yüksek, lüks veya zor satılanlara düşük puan ver.
-  2. price_perf_score (Fiyat/Performans): İstenen fiyat ile aracın donanımı/yılı/km'sini kıyasla. Fiyatı piyasaya göre uygunsa yüksek, şişirilmişse düşük puan ver.
-  3. condition_score (Araç Durumu): Hasar kaydı, değişen/boya ve kilometreyi baz al. Ağır hasar/pert kaydı yoksa sırf km yüksek diye puanı dibe çekme, mantıklı bir oran kur.
+- Puanlamaları (1-100 arası) yaparken ŞU 3 KURALA GÖRE AŞIRI GERÇEKÇİ HESAPLAMA YAP:
+  1. market_speed_score (Satış Hızı): Aracın Türkiye pazarındaki gerçek popülaritesini baz al. Piyasası çok hızlı olanlara (Egea, Megane) 85-95 arası, zor satılan özel serilere veya çok lükslere (Örn: Eski kasa BMW M5) 50-75 arası puan ver. Aşırı mantıklı ve gerçekçi ol.
+  2. price_perf_score (Fiyat/Performans): İstenen fiyatı, aracın yılı/km'si ve hasar durumuyla kıyasla. Piyasaya göre çok pahalıysa veya hasarına göre fiyatı yüksekse ACIKIMASIZCA düşük puan ver (Örn: 40-60). Fiyatı gerçekten mantıklıysa yüksek puan ver.
+  3. condition_score (Araç Durumu): SADECE hasar kaydı, değişen/boya ve kilometreyi baz al. Ağır hasarlıysa veya kmsi aşırı yüksekse 30-55 arası ver. Temizse 80-95 arası ver. Tamamen mantıklı ve tarafsız bir ekspertiz gibi davran.
 `;
   const dataForAi = { ...carData };
   delete dataForAi.images;
@@ -203,9 +203,11 @@ Format:
 }
 Kurallar:
 - "score" alanlarına kafandan puan uydurma! Sana verilen verideki O GRUBUN "overall_score" değeri neyse BİREBİR aynısını yaz.
+- "podium" içindeki "title" kısmına ASLA HAM İLAN BAŞLIĞINI KOPYALAMA! Sadece aracın MARKASI, MODELİ ve YILINI tertemiz bir şekilde yaz (Örn: "Volkswagen Passat 2015" veya "Ford Focus 2018"). "KASKO SİGORTAYA", "BAYİYE VERICEM" gibi ilan başlıkları KESİNLİKLE YASAKTIR.
 - Eğer sana sadece 2 farklı grup gönderildiyse, sadece 2 madalya (gold, silver) ver.
-- "details" bölümündeki "Rakipleri Neler?" kısmına her bir aracın rakibini sırayla yaz (Örn: 1. Volkswagen Passat (Rakibi: Skoda Superb) 2. BMW 520...).
-    Ardından ŞU 2 ALT BAŞLIĞI KESİNLİKLE LİSTELEYEREK YAZ:
+- "details" bölümündeki kısımlara yazacağın metinleri MADDELER HALİNDE veya \\n\\n (çift yeni satır) kullanarak ALT ALTA yaz. Asla tek bir uzun paragraf halinde birleştirme!
+- Özellikle "Rakipleri Neler?" kısmında her bir aracın rakibini sırayla yazarken şu formatı kullan (Örn: \\n\\n1. Volkswagen Passat (Rakibi: Skoda Superb) \\n\\n2. BMW 520 (Rakibi: Audi A6)...).
+    Ardından ŞU 2 ALT BAŞLIĞI YİNE \\n\\n İLE YENİ SATIRA GEÇEREK LİSTELE:
     (a) Fiyat-Performans Kıyaslaması (Hangi araç daha çok tercih ediliyor?)
     (b) Bütçe ve Kitle Sınıflandırması (Kime hitap ediyor? Örn: Megane/Egea -> Fabrika işçileri/Alt-orta gelir. Tesla -> Orta gelirli aileler. Audi A3/BMW 1 -> Kadın kullanıcılar vb.)
 - "tableData" kısmında SÜTUN BAŞLIKLARI KESİNLİKLE "Gold", "Silver", "Bronze" olmalıdır. Asla Grup 1, Grup 2 yazma!
