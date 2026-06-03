@@ -172,20 +172,21 @@ export default function AnalysisReport() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {[...(summaryData?.podium || [])].map((item) => {
-                // Skoru zorla gruptan al
+                // Skoru ve resimleri zorla gruptan al
                 const realGroup = groups.find(g => g.groupName.toLowerCase().includes(item.title.toLowerCase().substring(0, 10)) || item.title.toLowerCase().includes(g.groupName.toLowerCase()));
                 const realScore = realGroup ? (parseInt(realGroup.cars[0]?.overall_score, 10) || 0) : (parseInt(item.score, 10) || 0);
-                return { ...item, realScore: realScore };
+                const realImages = realGroup && realGroup.cars[0]?.images ? realGroup.cars[0].images.slice(0, 3) : [];
+                return { ...item, realScore: realScore, realImages: realImages };
               }).sort((a, b) => b.realScore - a.realScore).map((item, idx) => (
                 <div key={idx} className="bg-white rounded-[2rem] p-8 border border-black/5 shadow-embossed relative overflow-hidden group hover:shadow-embossed-hover transition-all duration-500 flex flex-col">
                   <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-150 group-hover:rotate-12 transition-transform duration-700">
                     <Trophy size={80} className={item.color || 'text-[#C0C0C0]'} />
                   </div>
                   
-                  {/* Master AI Görselleri */}
-                  {item.images && item.images.length > 0 && (
+                  {/* Master AI Görselleri (Eşleştirilmiş Doğrudan Veri) */}
+                  {item.realImages && item.realImages.length > 0 && (
                     <div className="flex gap-2 mb-6 mt-2 relative z-10">
-                      {item.images.slice(0, 3).map((imgUrl, i) => (
+                      {item.realImages.map((imgUrl, i) => (
                         <div key={i} className="w-1/3 aspect-[4/3] rounded-xl overflow-hidden relative border border-black/5 shadow-inner-embossed">
                           <img src={imgUrl} alt="Araç Görseli" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                         </div>

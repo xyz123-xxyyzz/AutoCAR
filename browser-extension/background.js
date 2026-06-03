@@ -242,9 +242,9 @@ Format:
   "title": "Master AI Derinlemesine Kıyaslama Raporu",
   "logic": "Hangi aracın neden 1., 2. veya 3. seçildiğine dair çok detaylı, ikna edici ve profesyonel bir analiz yaz.",
   "podium": [
-    { "medal": "gold", "title": "1. Araç (Grubun Başlığı)", "reason": "Neden altın madalya aldı? Detaylıca açıkla.", "score": 95, "color": "text-[#D4AF37]", "images": ["url1", "url2", "url3"] },
-    { "medal": "silver", "title": "2. Araç (Grubun Başlığı)", "reason": "Neden 2. oldu?", "score": 85, "color": "text-[#C0C0C0]", "images": ["url1", "url2", "url3"] },
-    { "medal": "bronze", "title": "3. Araç (Grubun Başlığı)", "reason": "Neden 3. oldu?", "score": 75, "color": "text-[#CD7F32]", "images": ["url1", "url2", "url3"] }
+    { "medal": "gold", "title": "1. Araç (Grubun Başlığı)", "reason": "Neden altın madalya aldı? Detaylıca açıkla.", "score": 95, "color": "text-[#D4AF37]" },
+    { "medal": "silver", "title": "2. Araç (Grubun Başlığı)", "reason": "Neden 2. oldu?", "score": 85, "color": "text-[#C0C0C0]" },
+    { "medal": "bronze", "title": "3. Araç (Grubun Başlığı)", "reason": "Neden 3. oldu?", "score": 75, "color": "text-[#CD7F32]" }
   ],
   "details": [
     { "icon": "info", "title": "Rakipleri Neler?", "desc": "Volkswagen Passat: Rakibi Skoda Superb. Audi A3: Rakibi Mercedes A Serisi... şeklinde her aracın rakibini yaz." },
@@ -272,10 +272,19 @@ Kurallar:
   2. Tik (✅): Üstün, çok iyi, güçlü donanım veya yeni model
   3. Daire (⚪): Ortalama, nötr, orta seviye
 - "tableData" (Kıyaslama tablosu) KESİNLİKLE ÇOK UZUN OLMALIDIR. En az 15 farklı kıyaslama satırı ekle (Model Yılı, Güç, Tork, Şanzıman, Ekran, Cam Tavan, Fiyat vb.).
-- "images" dizisi için sana verilen verideki o araca ait 'images' dizisinden SADECE İLK 3 URL'yi koy. KESİNLİKLE 3'ten fazla resim URL'si ekleme, aksi takdirde sistem çöker (JSON sınırı)!
 `;
 
-  return await callOpenAI(systemPrompt, groupReports);
+  // Master AI'a giden veriden 'images' dizilerini tamamen siliyoruz ki gereksiz yük olmasın. Görseller React tarafında eşleştirilecek.
+  const cleanGroupReports = groupReports.map(g => ({
+    groupName: g.groupName,
+    group_logic: g.group_logic,
+    cars: g.cars.map(c => {
+      const { images, ...rest } = c;
+      return rest;
+    })
+  }));
+
+  return await callOpenAI(systemPrompt, cleanGroupReports);
 }
 
 async function runFullAnalysis() {
