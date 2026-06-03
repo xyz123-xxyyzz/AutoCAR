@@ -450,23 +450,18 @@ export default function AnalysisReport() {
                 <ImageIcon className="text-black/30" /> Araç Görselleri
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 {(() => {
                   const imgs = currentCar.images || [];
-                  if (!Array.isArray(imgs) || imgs.length === 0) return null;
+                  if (!Array.isArray(imgs) || imgs.length === 0) return <div className="text-sm font-bold text-black/50 col-span-full">Görsel bulunamadı.</div>;
                   
-                  let selectedImgs = [];
-                  if (imgs.length === 1) selectedImgs = [imgs[0]];
-                  else if (imgs.length === 2) selectedImgs = [imgs[0], imgs[1]];
-                  else selectedImgs = [imgs[0], imgs[Math.floor(imgs.length / 2)], imgs[imgs.length - 1]];
-
-                  return selectedImgs.map((imgSrc, idx) => (
-                    <div key={idx} onClick={() => openLightbox(imgs, imgs.indexOf(imgSrc))} className="bg-white p-2 rounded-2xl shadow-embossed group cursor-pointer">
+                  return imgs.map((imgSrc, idx) => (
+                    <div key={idx} onClick={() => openLightbox(imgs, idx)} className="bg-white p-2 rounded-2xl shadow-embossed group cursor-pointer">
                       <div className="rounded-xl overflow-hidden relative">
-                        <img src={imgSrc} alt="Araç Görseli" className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500" />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center text-white font-bold tracking-widest text-xs uppercase">
-                          <Maximize className="mb-2" size={32} />
-                          Tam Ekran İncele
+                        <img src={imgSrc} alt={`Araç Görseli ${idx + 1}`} className="w-full h-40 object-cover group-hover:scale-110 transition-transform duration-500" />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center text-white font-bold tracking-widest text-xs uppercase text-center p-2">
+                          <Maximize className="mb-2" size={24} />
+                          Büyüt
                         </div>
                       </div>
                     </div>
@@ -475,11 +470,6 @@ export default function AnalysisReport() {
               </div>
               
               <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4 mb-12">
-                {Array.isArray(currentCar.images) && currentCar.images.length > 0 && (
-                  <button onClick={() => openLightbox(currentCar.images, 0)} className="bg-[#F5F5F7] text-black px-10 py-5 rounded-full font-bold tracking-widest text-xs uppercase hover:bg-black hover:text-white transition-all duration-300 shadow-inner-embossed border border-black/5 hover:shadow-2xl hover:shadow-black/20 flex items-center justify-center gap-3">
-                    <ImageIcon size={18} /> Daha Fazla Görsel Göster ({currentCar.images.length})
-                  </button>
-                )}
                 <a href={currentCar.url} target="_blank" rel="noopener noreferrer" className="bg-[#FFCC00] text-black px-10 py-5 rounded-full font-bold tracking-widest text-xs uppercase hover:scale-105 transition-all duration-300 shadow-xl shadow-[#FFCC00]/20 flex items-center justify-center gap-3">
                   İlan Linkine Git <ArrowRight size={18} />
                 </a>
