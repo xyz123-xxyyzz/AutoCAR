@@ -166,12 +166,28 @@ Format:
   "data_report": "A very detailed, comprehensive summary report about the car in Turkish. Go deep into its condition, price logic, and market position.",
   "detailed_specs": [
     { "name": "Spec Name (Turkish)", "value": "Value", "status": "good", "comment": "Detailed professional comment in Turkish", "note": "Short note" }
-  ]
+  ],
+  "damage_map": {
+    "kaput": "orijinal",
+    "tavan": "orijinal",
+    "on_tampon": "orijinal",
+    "arka_tampon": "orijinal",
+    "sag_on_camurluk": "orijinal",
+    "sag_on_kapi": "orijinal",
+    "sag_arka_kapi": "orijinal",
+    "sag_arka_camurluk": "orijinal",
+    "sol_on_camurluk": "orijinal",
+    "sol_on_kapi": "orijinal",
+    "sol_arka_kapi": "orijinal",
+    "sol_arka_camurluk": "orijinal",
+    "bagaj": "orijinal"
+  }
 }
 RULES FOR SCORING (BE EXTREMELY REALISTIC AND HARSH):
 1. market_speed_score (Sales Speed): Base this on the car's popularity in the Turkish market. Highly liquid cars (e.g., Fiat Egea, Renault Megane) get 85-95. Hard-to-sell, luxury, or very old cars get 40-70. Be realistic.
 2. price_perf_score (Price/Performance): Compare the asking price against the car's year, mileage, and damage. If it's overpriced for its condition, give it a brutally low score (e.g., 40-60). If the price is genuinely a good deal, score it high.
-3. condition_score (Car Condition): Focus ONLY on damage history, painted/replaced parts, and mileage. If the car is very old (e.g., 2006) OR has high mileage (e.g., 200,000+ km), it CANNOT get a high score. Give old/high-mileage cars 30-55. Only give 80-95 if it's very clean and relatively new.
+3. condition_score (Car Condition): Focus ONLY on damage history, painted/replaced parts, and mileage. If the car is very old (e.g., 2006) OR has high mileage (e.g., 200,000+ km), it CANNOT get a high score. Give old/high-mileage cars 30-55. Only give 80-95 if it's very clean and relatively new. If the roof (tavan) is painted or replaced, lower the condition score heavily.
+- For damage_map: ONLY use one of these string values: "orijinal", "boyali", "lokal_boyali", "degisen", "bilinmiyor". Deduce this accurately from the description or 'SİSTEM TARAFINDAN TESPİT EDİLEN EKSPERTİZ TABLOSU/VERİSİ'. If not mentioned, set to 'bilinmiyor' or 'orijinal' based on context.
 - All output text fields (data_report, text, pros, cons, detailed_specs) MUST be written in TURKISH.
 - Do NOT hallucinate data. If a spec is missing, deduce it intelligently or skip it.
 `;
@@ -280,7 +296,8 @@ async function runFullAnalysis() {
           overall_score: a1.overall_score,
           ai_report: a1.data_report,
           competitor_analysis: a1.competitor_analysis,
-          detailed_specs: a1.detailed_specs
+          detailed_specs: a1.detailed_specs,
+          damage_map: a1.damage_map || null
         });
       }
 

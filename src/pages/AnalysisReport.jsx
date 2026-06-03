@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, TrendingUp, Zap, CheckCircle, Star, Settings, Shield, Gauge, Maximize, AlertTriangle, AlertCircle, XCircle, Minus, HelpCircle, Trophy, Target, Sparkles, ArrowRight, Table2, Image as ImageIcon, Users, X } from 'lucide-react';
+import DamageMap from '../components/DamageMap';
 
 export default function AnalysisReport() {
   const [isLoading, setIsLoading] = useState(true);
@@ -464,6 +465,9 @@ export default function AnalysisReport() {
                   İlan Linkine Git <ArrowRight size={18} />
                 </a>
               </div>
+
+              {/* Ekspertiz Haritası */}
+              <DamageMap damageMap={currentCar.damage_map} />
 
               {/* Görsel AI Notları */}
               {(currentCar.vision_report || (currentCar.defects && currentCar.defects.length > 0)) && (

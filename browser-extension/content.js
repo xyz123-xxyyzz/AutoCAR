@@ -27,6 +27,28 @@ if (typeof window.AutoCAR_ContentScript_Loaded === 'undefined') {
       
       const descEl = document.querySelector('#classifiedDescription');
       if (descEl) data.description = descEl.innerText.trim();
+
+      // Ekspertiz / Hasar Durumu alanını kazıma (varsa)
+      const expertiseEls = document.querySelectorAll('.expertise-report, #expertiseTable, .vehicle-condition, .boya-degisen');
+      let expertiseText = "";
+      if (expertiseEls.length > 0) {
+        expertiseEls.forEach(el => {
+          expertiseText += el.innerText.trim() + "\n";
+        });
+      } else {
+         // Belki 'Ekspertiz Durumu' altındaki li veya tr öğeleri
+         const expList = document.querySelectorAll('.classifiedInfoList li, .classifiedProperties li, table tr');
+         expList.forEach(el => {
+            const text = el.innerText.toLowerCase();
+            if (text.includes('boyalı') || text.includes('değişen') || text.includes('orijinal') || text.includes('lokal')) {
+                expertiseText += el.innerText.trim() + "\n";
+            }
+         });
+      }
+      
+      if (expertiseText.length > 0) {
+        data.description += "\n\nSİSTEM TARAFINDAN TESPİT EDİLEN EKSPERTİZ TABLOSU/VERİSİ:\n" + expertiseText;
+      }
       
       const specEls = document.querySelectorAll('.classifiedInfoList li');
       specEls.forEach(li => {
