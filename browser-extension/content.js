@@ -138,46 +138,9 @@ if (typeof window.AutoCAR_ContentScript_Loaded === 'undefined') {
   return data;
 }
 
-async function fetchImageAsBase64InContent(url) {
-  try {
-    const response = await fetch(url, { cache: 'force-cache' });
-    const blob = await response.blob();
-    const bitmap = await createImageBitmap(blob, { resizeWidth: 256, resizeQuality: 'low' });
-    const canvas = document.createElement('canvas');
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(bitmap, 0, 0);
-    return canvas.toDataURL('image/jpeg', 0.6);
-  } catch (error) {
-    console.error("AutoCAR Image Fetch Error:", error);
-    return null;
+  async function extractCarDataAsync() {
+    return extractCarData();
   }
-}
-
-async function extractCarDataAsync() {
-  const data = extractCarData();
-  data.base64Images = [];
-  
-  const maxPoolSize = 10;
-  let poolUrls = [];
-  if (data.images.length <= maxPoolSize) {
-    poolUrls = [...data.images];
-  } else {
-    const step = data.images.length / maxPoolSize;
-    for (let i = 0; i < maxPoolSize; i++) {
-      poolUrls.push(data.images[Math.floor(i * step)]);
-    }
-  }
-
-  for (const url of poolUrls) {
-    const b64 = await fetchImageAsBase64InContent(url);
-    if (b64) data.base64Images.push(b64);
-    await new Promise(r => setTimeout(r, 100)); // WAF bypass delay
-  }
-  
-  return data;
-}
 
 // Background script'ten gelen komutu dinle
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

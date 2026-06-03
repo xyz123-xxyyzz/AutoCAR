@@ -180,133 +180,6 @@ Kurallar:
   return await callOpenAI(systemPrompt, dataForAi);
 }
 
-async function analyzeImagesOnly(carData) {
-  const expertPrompt = `Sen bir görsel oto ekspertiz yapay zekasın. Gönderilen 10 araç resmini detaylıca incele. Dış kasa, boya, jant, lastik ve iç mekandaki aşınmaları, kusurları veya olumlu yanları raporla.
-SADECE GEÇERLİ BİR JSON DÖNDÜR.
-Format:
-{
-  "vision_report": "Resimlere dayalı ekspertiz yorumu. Tüm detayları uzun ve profesyonelce belirt.",
-  "defects": ["sağ çamurluk çizik", "koltukta yırtık"],
-  "positives": ["jantlar temiz", "boya parlak"]
-}`;
-
-  if (!carData.base64Images || carData.base64Images.length === 0) {
-    return { vision_report: "Resim bulunamadı.", defects: [], positives: [] };
-  }
-
-  // Resimler artık içerik script'i (content.js) tarafından Sahibinden WAF engeline takılmadan tarayıcı sekmesi üzerinden Base64 olarak çekilip gönderiliyor.
-  const base64Images = carData.base64Images;
-
-  // Çift Aşamalı (Cascade) Yapay Zeka Mimarisi
-  // Aşama 1: Filtre AI (Gereksiz resimleri eler, en kritik olanları seçer)
-  let selectedBase64Images = base64Images;
-  
-  if (base64Images.length > 10) {
-    const filterPrompt = `Sen bir Seçici Yapay Zekasın (Filter AI). Aşağıda sana bir aracın galerisinden ${base64Images.length} adet fotoğraf gönderilmiştir. Görevin bu fotoğrafları inceleyip, aracın her açısını (Ön, Arka, Yanlar, İç Mekan, Koltuklar, Hasarlı kısımlar) en iyi özetleyen tam 10 benzersiz fotoğrafı seçmektir.
-SADECE GEÇERLİ BİR JSON ARRAY DÖNDÜR. Array içine seçtiğin fotoğrafların indeks numaralarını (0'dan ${base64Images.length - 1}'e kadar) koy.
-Örnek Çıktı: [0, 3, 5, 8, 12, 15, 21, 23, 27, 29]`;
-
-    let filterContent = [{ type: 'text', text: 'En iyi 10 fotoğrafın indeksini JSON array olarak dön.' }];
-    base64Images.forEach((b64) => {
-      filterContent.push({ type: 'image_url', image_url: { url: b64, detail: "low" } });
-    });
-
-    try {
-      const filterResponse = await callOpenAI(filterPrompt, filterContent, false, 'gpt-4o-mini');
-      let parsedIndices = [];
-      const match = filterResponse.match(/\[.*\]/s);
-      if (match) {
-        parsedIndices = JSON.parse(match[0]);
-      } else {
-        parsedIndices = JSON.parse(filterResponse);
-      }
-      
-      if (Array.isArray(parsedIndices) && parsedIndices.length > 0) {
-        selectedBase64Images = parsedIndices
-          .filter(idx => idx >= 0 && idx < base64Images.length)
-          .map(idx => base64Images[idx])
-          .slice(0, 10);
-      }
-    } catch (e) {
-      console.error("Filter AI hatası, homojen yedeğe geçiliyor:", e);
-      selectedBase64Images = [];
-      const step = base64Images.length / 10;
-      for (let i = 0; i < 10; i++) {
-        selectedBase64Images.push(base64Images[Math.floor(i * step)]);
-      }
-    }
-  }
-
-  // Adım 4: Ekspertiz (Expert) AI'ın Analizi
-  let expertContent = [
-    { type: 'text', text: 'Bu aracın resimlerini (dış kasa ve iç mekan) detaylıca incele ve ekspertiz yap.' }
-  ];
-  
-  selectedBase64Images.forEach(b64 => {
-    expertContent.push({
-      type: 'image_url',
-      image_url: { url: b64 } 
-    });
-  });
-
-  return await callOpenAI(expertPrompt, expertContent, true, 'gpt-4o-mini');
-}
-
-async function consolidateGroup(groupName, ai1Results, ai2Results, originalCars) {
-  const systemPrompt = `Sen '${groupName}' araçlarının uzmanısın (AI-3 Group Chef). Sana veri (AI-1) ve görsel (AI-2) analizleri verilmiş araçların birleştirilmiş raporunu hazırla.
-SADECE GEÇERLİ JSON DÖNDÜR.
-Format:
-{
-  "groupName": "${groupName}",
-  "group_logic": "Bu gruptaki araçlar hakkında genel değerlendirme.",
-  "cars": [
-    {
-       "title": "Volkswagen Passat 2015 Model (Bunun gibi REKLAM İÇERMEYEN, TEMİZ ve sadece marka/model/yıl barındıran bir isim uydur)",
-       "price": "Fiyat",
-       "url": "Link",
-       "market_speed_score": 85,
-       "price_perf_score": 90,
-       "condition_score": 88,
-       "overall_score": 88,
-       "ai_report": "Veri ve Görsel analizlerin birleştirilmiş detaylı nihai araç yorumu",
-       "vision_report": "Görsel yapay zekanın (AI-2) yazdığı yorumu buraya koy.",
-       "defects": ["kusur 1"],
-       "positives": ["olumlu 1"],
-       "detailed_specs": [
-         { "name": "Özellik", "value": "Değer", "status": "good", "comment": "Yorum", "note": "Not" }
-       ],
-       "competitor_analysis": { "pros": ["artı 1"], "cons": ["eksi 1"], "text": "Bu aracın gruptaki diğer araçlara göre durumu" }
-    }
-  ]
-}
-Kurallar:
-- "title" alanını mutlaka "Marka Model Yıl" yap. "Hatasız boyasız 2015 Caddy" yerine "Volkswagen Caddy 2015 Model" yaz.
-- "overall_score" alanını diğer 3 skorun ortalaması olarak hesapla.
-- "detailed_specs" dizisini AI-1'den gelen verilerle uzun ve zengin tut.
-- "competitor_analysis" kısmında rakipleri kıyaslarken KESİNLİKLE aynı segmenti ve fiyat klasmanını dikkate al (3 milyonluk araçla 1 milyonluk aracı donanım/lüks diye kıyaslama).
-`;
-
-  let inputData = [];
-  for(let i=0; i<originalCars.length; i++) {
-     inputData.push({
-        title: originalCars[i].title,
-        price: originalCars[i].price,
-        url: originalCars[i].url,
-        data_analysis: ai1Results[i],
-        vision_analysis: ai2Results[i]
-     });
-  }
-
-  const result = await callOpenAI(systemPrompt, inputData);
-  
-  if (result.cars && Array.isArray(result.cars)) {
-     result.cars.forEach((car, index) => {
-        car.images = originalCars[index].images;
-     });
-  }
-  return result;
-}
-
 async function generateGlobalMasterReport(groupReports) {
   const systemPrompt = `Sen sistemin 'Master AI' yöneticisisin. Tüm araç gruplarının analiz raporları sana geliyor. Bu grupları birbiriyle kıyasla, FİYAT-PERFORMANS ve SEGMENT mantığını dikkate alarak en iyileri seç ve genel podyumu belirle.
 SADECE GEÇERLİ BİR JSON DÖNDÜR.
@@ -374,28 +247,45 @@ async function runFullAnalysis() {
     for (let g = 0; g < groupNames.length; g++) {
       const gName = groupNames[g];
       const gCars = groups[gName];
-      let ai1Results = [];
-      let ai2Results = [];
+      let cars = [];
 
       for (let i = 0; i < gCars.length; i++) {
         processedCars++;
         updateState({ 
           aiStatusText: `[${gName}] Araç ${i+1}/${gCars.length} Veri Analizi Yapılıyor...`,
-          analysisProgress: 5 + Math.round((processedCars / totalCars) * 60)
+          analysisProgress: 5 + Math.round((processedCars / totalCars) * 80)
         });
         const a1 = await analyzeDataOnly(gCars[i]);
 
-        updateState({ 
-          aiStatusText: `[${gName}] Araç ${i+1}/${gCars.length} Görsel Analizi Yapılıyor...`,
+        let cleanTitle = gCars[i].title;
+        const match = cleanTitle.match(/(?:[12][0-9]{3})/);
+        if (match) {
+          cleanTitle = `${gName} ${match[0]} Model`;
+        } else {
+          cleanTitle = gName;
+        }
+
+        cars.push({
+          title: cleanTitle,
+          price: gCars[i].price,
+          url: gCars[i].url,
+          images: gCars[i].images,
+          market_speed_score: a1.market_speed_score,
+          price_perf_score: a1.price_perf_score,
+          condition_score: a1.condition_score,
+          overall_score: a1.overall_score,
+          ai_report: a1.data_report,
+          competitor_analysis: a1.competitor_analysis,
+          detailed_specs: a1.detailed_specs
         });
-        const a2 = await analyzeImagesOnly(gCars[i]);
-        
-        ai1Results.push(a1);
-        ai2Results.push(a2);
       }
 
-      updateState({ aiStatusText: `[${gName}] AI-3 Grup Şefi Verileri Birleştiriyor...` });
-      const groupConsolidated = await consolidateGroup(gName, ai1Results, ai2Results, gCars);
+      updateState({ aiStatusText: `[${gName}] Veriler Derleniyor...` });
+      const groupConsolidated = {
+        groupName: gName,
+        group_logic: `${gName} grubu için güncel piyasa ve özellik analizi tamamlandı.`,
+        cars: cars
+      };
       allGroupReports.push(groupConsolidated);
     }
 
