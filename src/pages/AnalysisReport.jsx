@@ -174,8 +174,8 @@ export default function AnalysisReport() {
               {[...(summaryData?.podium || [])].map((item) => {
                 // Skoru zorla gruptan al
                 const realGroup = groups.find(g => g.groupName.toLowerCase().includes(item.title.toLowerCase().substring(0, 10)) || item.title.toLowerCase().includes(g.groupName.toLowerCase()));
-                const realScore = realGroup ? realGroup.cars[0]?.overall_score : item.score;
-                return { ...item, realScore: Math.round(realScore || 0) };
+                const realScore = realGroup ? (parseInt(realGroup.cars[0]?.overall_score, 10) || 0) : (parseInt(item.score, 10) || 0);
+                return { ...item, realScore: realScore };
               }).sort((a, b) => b.realScore - a.realScore).map((item, idx) => (
                 <div key={idx} className="bg-white rounded-[2rem] p-8 border border-black/5 shadow-embossed relative overflow-hidden group hover:shadow-embossed-hover transition-all duration-500 flex flex-col">
                   <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-150 group-hover:rotate-12 transition-transform duration-700">
@@ -196,15 +196,15 @@ export default function AnalysisReport() {
                   <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl mb-6 relative z-10 ${item.bg || 'bg-gray-100'} ${item.color || 'text-black'}`}>
                     <span className="font-display font-black text-2xl">{item.rank || idx + 1}</span>
                   </div>
-                  <h3 className="text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase mb-2">
+                  <h3 className="text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase mb-2 text-left">
                     {item.medal} Madalya — {item.realScore} Puan
                   </h3>
-                  <h4 className="text-xl font-display font-black tracking-tight text-black mb-4 pr-12 line-clamp-2">
+                  <h4 className="text-xl font-display font-black tracking-tight text-black mb-4 pr-12 line-clamp-2 text-left">
                     {item.title || 'Bilinmeyen Araç'}
                   </h4>
-                  <p className="text-sm font-bold text-black/70 leading-relaxed relative z-10 flex-1">
+                  <div className="text-sm font-bold text-black/70 leading-relaxed relative z-10 flex-1 whitespace-pre-line text-left">
                     {item.reason}
-                  </p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -214,15 +214,27 @@ export default function AnalysisReport() {
               <p className="text-white/80 mt-8 max-w-3xl mx-auto text-sm md:text-base font-bold leading-loose tracking-wide">
                 {summaryData?.logic || "Analiz tamamlandı."}
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+              <div className="bg-[#F5F5F7] rounded-[2rem] p-8 md:p-12 shadow-inner-embossed flex flex-col gap-8 text-left mt-10">
                 {summaryData?.details?.map((detail, idx) => (
-                  <div key={idx} className="bg-[#F5F5F7] rounded-[2rem] p-8 shadow-inner-embossed flex flex-col justify-between">
-                    <div>
-                      <div className="mb-4">{detail.icon === 'info' ? <HelpCircle/> : <CheckCircle/>}</div>
-                      <div className="text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase mb-2">{detail.title}</div>
-                      {detail.winner && <div className="text-lg font-display font-black tracking-tight text-black mb-4">{detail.winner}</div>}
+                  <div key={idx} className="flex flex-col md:flex-row gap-6 border-b border-black/5 pb-8 last:border-0 last:pb-0">
+                    <div className="w-full md:w-1/4 shrink-0 border-l-4 border-black/10 pl-6">
+                      <div className="mb-4 text-black/40">
+                        {detail.icon === 'info' ? <HelpCircle size={24} /> : <CheckCircle size={24} />}
+                      </div>
+                      <div className="text-[10px] font-bold tracking-[0.2em] text-black/50 uppercase mb-2">
+                        {detail.title}
+                      </div>
+                      {detail.winner && (
+                        <div className="text-lg font-display font-black tracking-tight text-black">
+                          {detail.winner}
+                        </div>
+                      )}
                     </div>
-                    <div className="text-sm font-bold text-black/60 whitespace-pre-line leading-relaxed">{detail.desc}</div>
+                    <div className="w-full md:w-3/4">
+                      <div className="text-sm md:text-base font-bold text-black/70 whitespace-pre-line leading-loose text-left">
+                        {detail.desc}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -308,7 +320,7 @@ export default function AnalysisReport() {
                 <div className="bg-[#F5F5F7] rounded-[2rem] p-10 text-center relative overflow-hidden group shadow-inner-embossed flex flex-col justify-center min-h-[220px]">
                   <div className="text-black/40 font-bold text-[10px] tracking-[0.2em] uppercase mb-2">Genel Skor</div>
                   <div className="text-7xl lg:text-[7rem] leading-none font-display font-black tracking-tighter text-black w-full overflow-hidden px-2">
-                    {Math.round(currentCar.overall_score || 0)}
+                    {parseInt(currentCar.overall_score, 10) || 0}
                   </div>
                 </div>
 
@@ -318,21 +330,28 @@ export default function AnalysisReport() {
                       <div className="p-2 bg-[#F5F5F7] rounded-full shadow-inner-embossed"><Zap className="text-black" size={16} strokeWidth={2} /></div>
                       <span className="font-bold tracking-widest text-[10px] text-black uppercase">Satış Hızı</span>
                     </div>
-                    <div className="text-2xl font-display font-black tracking-tighter text-black">{Math.round(currentCar.market_speed_score || 0)}</div>
+                    <div className="text-2xl font-display font-black tracking-tighter text-black">{parseInt(currentCar.market_speed_score, 10) || 0}</div>
                   </div>
                   <div className="bg-white border border-black/5 rounded-[1.5rem] p-6 flex justify-between items-center shadow-embossed hover:shadow-embossed-hover transition-all duration-500">
                     <div className="flex items-center gap-4">
                       <div className="p-2 bg-[#F5F5F7] rounded-full shadow-inner-embossed"><TrendingUp className="text-black" size={16} strokeWidth={2} /></div>
                       <span className="font-bold tracking-widest text-[10px] text-black uppercase">Fiyat / Perf.</span>
                     </div>
-                    <div className="text-2xl font-display font-black tracking-tighter text-black">{Math.round(currentCar.price_perf_score || 0)}</div>
+                    <div className="text-2xl font-display font-black tracking-tighter text-black">{parseInt(currentCar.price_perf_score, 10) || 0}</div>
+                  </div>
+                  <div className="bg-white border border-black/5 rounded-[1.5rem] p-6 flex justify-between items-center shadow-embossed hover:shadow-embossed-hover transition-all duration-500">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 bg-[#F5F5F7] rounded-full shadow-inner-embossed"><Target className="text-black" size={16} strokeWidth={2} /></div>
+                      <span className="font-bold tracking-widest text-[10px] text-black uppercase">Uygunluk</span>
+                    </div>
+                    <div className="text-2xl font-display font-black tracking-tighter text-black">{parseInt(currentCar.fair_price_score, 10) || 0}</div>
                   </div>
                   <div className="bg-white border border-black/5 rounded-[1.5rem] p-6 flex justify-between items-center shadow-embossed hover:shadow-embossed-hover transition-all duration-500">
                     <div className="flex items-center gap-4">
                       <div className="p-2 bg-[#F5F5F7] rounded-full shadow-inner-embossed"><Shield className="text-black" size={16} strokeWidth={2} /></div>
                       <span className="font-bold tracking-widest text-[10px] text-black uppercase">Araç Durumu</span>
                     </div>
-                    <div className="text-2xl font-display font-black tracking-tighter text-black">{Math.round(currentCar.condition_score || 0)}</div>
+                    <div className="text-2xl font-display font-black tracking-tighter text-black">{parseInt(currentCar.condition_score, 10) || 0}</div>
                   </div>
                 </div>
               </div>

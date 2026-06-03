@@ -87,44 +87,58 @@ function updateTabStatus(tabId, status, data = null) {
 }
 
 async function callOpenAI(systemPrompt, userContent, useVision = false, model = 'gpt-4o', retries = 3) {
-  try {
-    let messages = [
-      { role: 'system', content: systemPrompt }
-    ];
-    
-    if (useVision) {
-      messages.push({ role: 'user', content: userContent });
-    } else {
-      messages.push({ role: 'user', content: JSON.stringify(userContent) });
-    }
-
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + OPENAI_API_KEY },
-      body: JSON.stringify({
-        model: model,
-        messages: messages,
-        response_format: { type: 'json_object' }
-      })
-    });
-    
-    const json = await res.json();
-    if (!res.ok) {
-      if (res.status === 429 && retries > 0) {
-        console.warn(`429 Too Many Requests. Retrying in 5 seconds... (${retries} retries left)`);
-        await new Promise(r => setTimeout(r, 6000)); // Wait 6 seconds
-        return await callOpenAI(systemPrompt, userContent, useVision, model, retries - 1);
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get(['openai_api_key'], async (resStorage) => {
+      let apiKey = resStorage.openai_api_key;
+      if (!apiKey || apiKey.trim() === '') {
+        // Fallback to hardcoded key if user hasn't provided one (even if it might be revoked)
+        apiKey = OPENAI_API_KEY;
       }
-      throw new Error(json.error ? json.error.message : 'Bilinmeyen API Hatası');
-    }
-    return JSON.parse(json.choices[0].message.content);
-  } catch (err) {
-    console.error(err);
-    if (err.message.includes('NetworkError') || err.message.includes('Failed to fetch')) {
-      throw new Error('İnternet bağlantısı koptu veya tarayıcı izin vermedi.');
-    }
-    throw err;
-  }
+
+      try {
+        let messages = [
+          { role: 'system', content: systemPrompt }
+        ];
+        
+        if (useVision) {
+          messages.push({ role: 'user', content: userContent });
+        } else {
+          messages.push({ role: 'user', content: JSON.stringify(userContent) });
+        }
+
+        const res = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+          body: JSON.stringify({
+            model: model,
+            messages: messages,
+            response_format: { type: 'json_object' }
+          })
+        });
+        
+        const json = await res.json();
+        if (!res.ok) {
+          if (res.status === 401) {
+            throw new Error('API Anahtarı eksik veya geçersiz. Lütfen Ayarlar (⚙️) kısmından geçerli bir OpenAI API Anahtarı girin.');
+          }
+          if (res.status === 429 && retries > 0) {
+            console.warn(`429 Too Many Requests. Retrying in 6 seconds... (${retries} retries left)`);
+            await new Promise(r => setTimeout(r, 6000));
+            return resolve(await callOpenAI(systemPrompt, userContent, useVision, model, retries - 1));
+          }
+          throw new Error(json.error ? json.error.message : 'Bilinmeyen API Hatası');
+        }
+        resolve(JSON.parse(json.choices[0].message.content));
+      } catch (err) {
+        console.error(err);
+        if (err.message.includes('NetworkError') || err.message.includes('Failed to fetch')) {
+          reject(new Error('İnternet bağlantısı koptu veya tarayıcı izin vermedi.'));
+        } else {
+          reject(err);
+        }
+      }
+    });
+  });
 }
 
 function groupTabsByModel(readyData) {
@@ -147,7 +161,7 @@ function groupTabsByModel(readyData) {
 }
 
 async function analyzeDataOnly(carData) {
-  const systemPrompt = `You are an expert, highly critical, and realistic automotive appraiser and data analyst AI.
+const systemPrompt = `You are an expert, highly critical, and brutally realistic automotive appraiser and data analyst AI.
 Analyze the provided car data (technical specs, price, damage history, mileage).
 YOU MUST RETURN ONLY VALID JSON.
 Format:
@@ -155,15 +169,16 @@ Format:
   "clean_title": "Cleaned up Make, Model and Year of the car (e.g., 'Volkswagen Passat 2015'). Remove any garbage advertising words from the original title.",
   "competitor_analysis": {
     "competitors": ["Competitor Make Model 1", "Competitor Make Model 2"],
-    "text": "Detailed comparison of this car against its actual real-world market competitors. Be objective and critical.",
+    "text": "Detailed comparison of this car against its actual real-world market competitors. Be objective, brutally honest and highly critical.",
     "pros": ["Strong point 1", "Strong point 2"],
     "cons": ["Weak point 1", "Weak point 2"]
   },
-  "market_speed_score": "[Integer 1-100]",
-  "price_perf_score": "[Integer 1-100]",
-  "condition_score": "[Integer 1-100]",
-  "overall_score": "[Arithmetic mean of the other 3 scores (Integer)]",
-  "data_report": "A very detailed, comprehensive summary report about the car in Turkish. Go deep into its condition, price logic, and market position.",
+  "market_speed_score": 85,
+  "price_perf_score": 60,
+  "fair_price_score": 50,
+  "condition_score": 40,
+  "overall_score": 61,
+  "data_report": "A very detailed, comprehensive summary report about the car in Turkish. YOU MUST EXPLICITLY AND TRANSPARENTLY EXPLAIN WHY YOU GAVE THE SPECIFIC SCORES for Satış Hızı, Fiyat/Performans, Uygunluk, and Araç Durumu. Break down your reasoning for each of the 4 scores so the user understands exactly why the car received those numbers. Be completely objective, realistic and point out every red flag. No sugarcoating.",
   "detailed_specs": [
     { "name": "Spec Name (Turkish)", "value": "Value", "status": "good", "comment": "Detailed professional comment in Turkish", "note": "Short note" }
   ],
@@ -182,14 +197,27 @@ Format:
     "sol_arka_camurluk": "orijinal",
     "bagaj": "orijinal"
   }
-}
-RULES FOR SCORING (BE EXTREMELY REALISTIC AND HARSH):
-1. market_speed_score (Sales Speed): Base this on the car's popularity in the Turkish market. Highly liquid cars (e.g., Fiat Egea, Renault Megane) get 85-95. Hard-to-sell, luxury, or very old cars get 40-70. Be realistic.
-2. price_perf_score (Price/Performance): Compare the asking price against the car's year, mileage, and damage. If it's overpriced for its condition, give it a brutally low score (e.g., 40-60). If the price is genuinely a good deal, score it high.
-3. condition_score (Car Condition): Focus ONLY on damage history, painted/replaced parts, and mileage. If the car is very old (e.g., 2006) OR has high mileage (e.g., 200,000+ km), it CANNOT get a high score. Give old/high-mileage cars 30-55. Only give 80-95 if it's very clean and relatively new. If the roof (tavan) is painted or replaced, lower the condition score heavily.
-- For damage_map: ONLY use one of these string values: "orijinal", "boyali", "lokal_boyali", "degisen", "bilinmiyor". Deduce this accurately from the description or 'SİSTEM TARAFINDAN TESPİT EDİLEN EKSPERTİZ TABLOSU/VERİSİ'. If not mentioned, set to 'bilinmiyor' or 'orijinal' based on context.
-- All output text fields (data_report, text, pros, cons, detailed_specs) MUST be written in TURKISH.
-- Do NOT hallucinate data. If a spec is missing, deduce it intelligently or skip it.
+RULES FOR SCORING AND EXTRACTION (BE OBJECTIVE BUT FAIR):
+1. detailed_specs: YOU MUST EXTRACT EVERY SINGLE TECHNICAL SPECIFICATION available in the listing. Do NOT just put 4 specs! Extract at least 15-25 specs (e.g., HP, Torque, Engine Size, Transmission, Color, Drivetrain, Fuel type, Trim level, 0-100, Top Speed, Year, Mileage, etc.). If the data is there, extract it!
+CRITICAL RULE FOR DETAILED SPECS 'comment' FIELD: DO NOT just repeat the value! The user already sees the value. The 'comment' must be your DEEP, EXPERT AI THOUGHT/OPINION on that specific feature.
+Example BAD: "Araç 2019 modeldir."
+Example GOOD: "2019 model olması, kronik motor sorunlarının çözüldüğü makyajlı kasaya denk gelir, bu bir avantajdır."
+Example BAD: "Araç 120.000 kilometrededir."
+Example GOOD: "120.000 km dizel motor için ağır bakım (triger vs.) sınırıdır, alırken servis geçmişine kesinlikle bakılmalı."
+
+2. market_speed_score (Satış Hızı): Evaluate how fast this car sells in the Turkish market. A great indicator is the volume of listings: if there are tons of ads for this model (like Fiat Egea, Renault Clio, VW Golf), it means it has a huge market and sells fast (give 85-95). If it's a rare, niche, or very unpopular model with few listings, it sells slowly (give 30-50).
+
+3. price_perf_score (Fiyat/Performans): Compare the asking price to the car's features. Is this the most feature-rich and capable car you can buy for this amount of money in the current market? If it offers incredible features and value for its price bracket, give it a very high score (85-95). If there are much better, more equipped cars available for this exact price, give it a lower score (40-60).
+
+4. fair_price_score (Uygunluk): Determine if the vehicle is priced strictly at its fair market value based on its specs and condition. If it is priced EXACTLY at its fair market value, give it a 50. If it is OVERPRICED (expensive), give it between 0-49. If it is UNDERPRICED (a bargain/cheap), give it between 51-100.
+
+5. condition_score (Araç Durumu): Measure how far the car is from being "Brand New" (0 km). Start at 100 for a flawless new car. Deduct points heavily based on: Year (older = lower score), Mileage (higher km = lower score), Paint/Replaced parts, Scratches, Tramer/Damage records. A 2-3 year old car with no damage might get 85-90. A 10-year-old car with 200k km and 3 painted parts should drop to 50-60. A heavily damaged old car should be 30-40.
+
+6. overall_score: The exact arithmetic mean of the above 4 scores (market_speed_score, price_perf_score, fair_price_score, condition_score). ALL SCORES MUST BE INTEGERS, not strings. Do not put brackets around them.
+
+- For damage_map: ONLY use "orijinal", "boyali", "lokal_boyali", "degisen", "bilinmiyor". Deduce this accurately.
+- All output text MUST be in TURKISH.
+- Do NOT hallucinate data, but extract EVERYTHING provided in the data blob.
 `;
   const dataForAi = { ...carData };
   delete dataForAi.images;
@@ -388,7 +416,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   
   if (request.action === 'show_report') {
     if (!finalReport) return;
-    const portalUrl = "https://auto-car-gold.vercel.app/analiz";
+    const portalUrl = CONFIG.PORTAL_URL;
     chrome.tabs.create({ url: portalUrl }, (tab) => {
       chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
         if (tabId === tab.id && info.status === 'complete') {

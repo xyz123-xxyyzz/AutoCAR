@@ -11,6 +11,31 @@ document.addEventListener('DOMContentLoaded', () => {
   const circularProgress = document.getElementById('circular-progress');
   const progressValue = document.getElementById('progress-value');
   const aiText = document.getElementById('ai-text');
+  
+  const btnSettings = document.getElementById('btn-settings');
+  const settingsView = document.getElementById('settings-view');
+  const apiKeyInput = document.getElementById('api-key-input');
+  const btnSaveSettings = document.getElementById('btn-save-settings');
+
+  // Load saved API key
+  chrome.storage.local.get(['openai_api_key'], (res) => {
+    if (res.openai_api_key) {
+      apiKeyInput.value = res.openai_api_key;
+    }
+  });
+
+  btnSettings.addEventListener('click', () => {
+    settingsView.style.display = settingsView.style.display === 'none' ? 'block' : 'none';
+  });
+
+  btnSaveSettings.addEventListener('click', () => {
+    const key = apiKeyInput.value.trim();
+    chrome.storage.local.set({ openai_api_key: key }, () => {
+      alert('API Anahtarı kaydedildi!');
+      settingsView.style.display = 'none';
+    });
+  });
+
 
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('mode') === 'window') {
@@ -45,25 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   btnAnalyze.addEventListener('click', () => {
-    // Firefox ve bazı tarayıcılarda host_permissions otomatik verilmemiş olabilir.
-    // Analiz etmeden önce izinleri kontrol et/iste.
-    if (typeof chrome !== 'undefined' && chrome.permissions) {
-      chrome.permissions.request({
-        origins: ['https://api.openai.com/*']
-      }, (granted) => {
-        if (granted || chrome.runtime.lastError) {
-          chrome.runtime.sendMessage({ action: 'start_analysis' }, () => {
-            checkState();
-          });
-        } else {
-          alert('OpenAI API erişimi için izin vermeniz gerekiyor. Lütfen izin verip tekrar deneyin.');
-        }
-      });
-    } else {
-      chrome.runtime.sendMessage({ action: 'start_analysis' }, () => {
-        checkState();
-      });
-    }
+    chrome.runtime.sendMessage({ action: 'start_analysis' }, () => {
+      checkState();
+    });
   });
 
   btnReport.addEventListener('click', () => {
