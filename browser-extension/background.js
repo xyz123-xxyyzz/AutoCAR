@@ -86,7 +86,7 @@ function updateTabStatus(tabId, status, data = null) {
   }
 }
 
-async function callOpenAI(systemPrompt, userContent, useVision = false, model = 'gpt-4o') {
+async function callOpenAI(systemPrompt, userContent, useVision = false, model = 'gpt-4o', retries = 3) {
   try {
     let messages = [
       { role: 'system', content: systemPrompt }
@@ -109,9 +109,12 @@ async function callOpenAI(systemPrompt, userContent, useVision = false, model = 
     });
     
     const json = await res.json();
-    if (res.status !== 200) {
-      if (res.status === 401) throw new Error('API Anahtarı geçersiz veya yetkisiz. (401 Unauthorized)');
-      if (res.status === 429) throw new Error('API kotası dolmuş veya çok fazla istek atıldı. (429 Too Many Requests)');
+    if (!res.ok) {
+      if (res.status === 429 && retries > 0) {
+        console.warn(`429 Too Many Requests. Retrying in 5 seconds... (${retries} retries left)`);
+        await new Promise(r => setTimeout(r, 6000)); // Wait 6 seconds
+        return await callOpenAI(systemPrompt, userContent, useVision, model, retries - 1);
+      }
       throw new Error(json.error ? json.error.message : 'Bilinmeyen API Hatası');
     }
     return JSON.parse(json.choices[0].message.content);
@@ -377,14 +380,16 @@ async function runFullAnalysis() {
       for (let i = 0; i < gCars.length; i++) {
         processedCars++;
         updateState({ 
-          aiStatusText: `[${gName}] Araç ${i+1}/${gCars.length} Veri+Görsel Analizi Yapılıyor...`,
+          aiStatusText: `[${gName}] Araç ${i+1}/${gCars.length} Veri Analizi Yapılıyor...`,
           analysisProgress: 5 + Math.round((processedCars / totalCars) * 60)
         });
+        const a1 = await analyzeDataOnly(gCars[i]);
+
+        updateState({ 
+          aiStatusText: `[${gName}] Araç ${i+1}/${gCars.length} Görsel Analizi Yapılıyor...`,
+        });
+        const a2 = await analyzeImagesOnly(gCars[i]);
         
-        const [a1, a2] = await Promise.all([
-           analyzeDataOnly(gCars[i]),
-           analyzeImagesOnly(gCars[i])
-        ]);
         ai1Results.push(a1);
         ai2Results.push(a2);
       }
