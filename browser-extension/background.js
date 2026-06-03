@@ -121,6 +121,7 @@ async function callOpenAI(systemPrompt, userContent, useVision = false, model = 
           body: JSON.stringify({
             model: model,
             messages: messages,
+            max_tokens: 16000,
             response_format: { type: 'json_object' }
           })
         });
@@ -271,7 +272,7 @@ Kurallar:
   2. Tik (✅): Üstün, çok iyi, güçlü donanım veya yeni model
   3. Daire (⚪): Ortalama, nötr, orta seviye
 - "tableData" (Kıyaslama tablosu) KESİNLİKLE ÇOK UZUN OLMALIDIR. En az 15 farklı kıyaslama satırı ekle (Model Yılı, Güç, Tork, Şanzıman, Ekran, Cam Tavan, Fiyat vb.).
-- "images" dizisi için sana verilen verideki o araca ait 'images' dizisinden en az 3 URL koymayı UNUTMA.
+- "images" dizisi için sana verilen verideki o araca ait 'images' dizisinden SADECE İLK 3 URL'yi koy. KESİNLİKLE 3'ten fazla resim URL'si ekleme, aksi takdirde sistem çöker (JSON sınırı)!
 `;
 
   return await callOpenAI(systemPrompt, groupReports);
@@ -298,52 +299,69 @@ async function runFullAnalysis() {
     
     let totalCars = readyData.length;
     let processedCars = 0;
+    
+    // TÜM ARAÇLARI AYNI ANDA (PARALEL) ANALİZ ETMEK İÇİN PROMISE DİZİSİ
+    const allAnalysisPromises = [];
 
     for (let g = 0; g < groupNames.length; g++) {
       const gName = groupNames[g];
       const gCars = groups[gName];
-      let cars = [];
 
       for (let i = 0; i < gCars.length; i++) {
-        processedCars++;
-        updateState({ 
-          aiStatusText: `[${gName}] Araç ${i+1}/${gCars.length} Veri Analizi Yapılıyor...`,
-          analysisProgress: 5 + Math.round((processedCars / totalCars) * 80)
-        });
-        const a1 = await analyzeDataOnly(gCars[i]);
+        const carProcessPromise = (async () => {
+          const a1 = await analyzeDataOnly(gCars[i]);
+          
+          processedCars++;
+          updateState({ 
+            aiStatusText: `Araçlar Eşzamanlı Analiz Ediliyor (${processedCars}/${totalCars})...`,
+            analysisProgress: 5 + Math.round((processedCars / totalCars) * 80)
+          });
 
-        let cleanTitle = a1.clean_title || gCars[i].title;
-        if (!a1.clean_title || a1.clean_title.length > 50) {
-          const match = gCars[i].title.match(/(?:[12][0-9]{3})/);
-          if (match) {
-            cleanTitle = `${gName} ${match[0]} Model`;
-          } else {
-            cleanTitle = gName;
+          let cleanTitle = a1.clean_title || gCars[i].title;
+          if (!a1.clean_title || a1.clean_title.length > 50) {
+            const match = gCars[i].title.match(/(?:[12][0-9]{3})/);
+            if (match) {
+              cleanTitle = `${gName} ${match[0]} Model`;
+            } else {
+              cleanTitle = gName;
+            }
           }
-        }
 
-        cars.push({
-          title: cleanTitle,
-          price: gCars[i].price,
-          url: gCars[i].url,
-          images: gCars[i].images,
-          market_speed_score: a1.market_speed_score,
-          price_perf_score: a1.price_perf_score,
-          fair_price_score: a1.fair_price_score,
-          condition_score: a1.condition_score,
-          overall_score: a1.overall_score,
-          ai_report: a1.data_report,
-          competitor_analysis: a1.competitor_analysis,
-          detailed_specs: a1.detailed_specs,
-          damage_map: a1.damage_map || null
-        });
+          return {
+            groupName: gName,
+            carData: {
+              title: cleanTitle,
+              price: gCars[i].price,
+              url: gCars[i].url,
+              images: gCars[i].images,
+              market_speed_score: a1.market_speed_score,
+              price_perf_score: a1.price_perf_score,
+              fair_price_score: a1.fair_price_score,
+              condition_score: a1.condition_score,
+              overall_score: a1.overall_score,
+              ai_report: a1.data_report,
+              competitor_analysis: a1.competitor_analysis,
+              detailed_specs: a1.detailed_specs,
+              damage_map: a1.damage_map || null
+            }
+          };
+        })();
+        allAnalysisPromises.push(carProcessPromise);
       }
+    }
 
-      updateState({ aiStatusText: `[${gName}] Veriler Derleniyor...` });
+    // Bütün araçların yapay zeka analizlerini PARALEL olarak bekle (Zaman kazancı x10)
+    const allProcessedCars = await Promise.all(allAnalysisPromises);
+
+    // İşlenmiş araçları gruplarına göre tekrar ayır
+    for (let g = 0; g < groupNames.length; g++) {
+      const gName = groupNames[g];
+      const carsInGroup = allProcessedCars.filter(c => c.groupName === gName).map(c => c.carData);
+      
       const groupConsolidated = {
         groupName: gName,
-        group_logic: `${gName} grubu için güncel piyasa ve özellik analizi tamamlandı.`,
-        cars: cars
+        group_logic: `${gName} grubu için eşzamanlı yapay zeka analizi tamamlandı.`,
+        cars: carsInGroup
       };
       allGroupReports.push(groupConsolidated);
     }
