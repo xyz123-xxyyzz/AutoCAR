@@ -436,6 +436,7 @@ export default function AnalysisReport() {
             <div className="w-full h-[1px] bg-black/10 mb-20"></div>
 
               {/* Section 4: Araç Resimleri (Kullanıcı Talebiyle Kaldırıldı) */}
+              <div>
               <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4 mb-12">
                 <a href={currentCar.url} target="_blank" rel="noopener noreferrer" className="bg-[#FFCC00] text-black px-10 py-5 rounded-full font-bold tracking-widest text-xs uppercase hover:scale-105 transition-all duration-300 shadow-xl shadow-[#FFCC00]/20 flex items-center justify-center gap-3">
                   İlan Linkine Git <ArrowRight size={18} />
