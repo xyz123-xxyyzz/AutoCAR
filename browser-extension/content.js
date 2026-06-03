@@ -72,23 +72,34 @@ if (typeof window.AutoCAR_ContentScript_Loaded === 'undefined') {
         }
       }
 
-      const imgEls = document.querySelectorAll('img, a');
+      // Sayfanın tüm kaynak kodunu (JS verileri dahil) metin olarak al
+      const htmlStr = document.documentElement.innerHTML;
+      
+      // Kaynak kod içindeki thmb veya mega içeren tüm URL'leri yakalayan Regex
+      // Sahibinden resimleri genellikle //s0.shbdn.com/ilan-fotograflari/... formatındadır.
+      const urlRegex = /(?:https?:)?\/\/[^"'\s<>]+?(?:mega|thmb)[^"'\s<>]+/gi;
+      const matches = htmlStr.match(urlRegex) || [];
+      
       const uniqueImageIds = new Set();
       
-      imgEls.forEach(el => {
-        let src = el.src || el.dataset.src || el.getAttribute('data-src') || el.href || el.getAttribute('data-source');
-        
-        if (src && typeof src === 'string' && (src.includes('mega') || src.includes('thmb'))) {
-          if (!src.includes('svg') && !src.includes('icon') && !src.includes('avatar') && !src.includes('data:image') && !src.includes('base64') && !src.includes('360') && !src.includes('video') && !src.includes('transparent') && !src.includes('blank') && !src.includes('/assets/')) {
-            src = src.replace('thmb_', '').replace('/thmb/', '/mega/'); 
-            
-            const idMatch = src.match(/\/(\d+)[^/]*$/);
-            const uniqueId = idMatch ? idMatch[1] : src;
-            
-            if (!uniqueImageIds.has(uniqueId)) {
-              uniqueImageIds.add(uniqueId);
-              data.images.push(src);
-            }
+      matches.forEach(src => {
+        if (!src.includes('svg') && !src.includes('icon') && !src.includes('avatar') && !src.includes('data:image') && !src.includes('base64') && !src.includes('360') && !src.includes('video') && !src.includes('transparent') && !src.includes('blank') && !src.includes('/assets/')) {
+          
+          // Her zaman yüksek çözünürlüklü mega resimleri al
+          let highResSrc = src.replace('thmb_', '').replace('/thmb/', '/mega/');
+          
+          // Başına https: ekle
+          if (highResSrc.startsWith('//')) {
+            highResSrc = 'https:' + highResSrc;
+          }
+          
+          // Resim ID'sini bulup kopya resimleri engelle (mega ve thmb versiyonları aynı resimdir)
+          const idMatch = highResSrc.match(/\/(\d+)[^/]*$/);
+          const uniqueId = idMatch ? idMatch[1] : highResSrc;
+          
+          if (!uniqueImageIds.has(uniqueId)) {
+            uniqueImageIds.add(uniqueId);
+            data.images.push(highResSrc);
           }
         }
       });
