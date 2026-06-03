@@ -1,3 +1,13 @@
+// ==========================================
+// AUTOCAR AI - EKLENTİ AYARLARI
+// ==========================================
+const CONFIG = {
+  // Geliştirme yaparken bunu kullanın: "http://localhost:5173/analiz"
+  // Sistemi satarken / canlıdayken bunu kullanın: "https://auto-car-gold.vercel.app/analiz"
+  PORTAL_URL: "https://auto-car-gold.vercel.app/analiz" 
+};
+// ==========================================
+
 const apiKeyPart1 = 'sk-proj-Z8bfe7a3mXpD45pHPamGVz9S7dxjX3gb52cTYjL8VC1EsRS2ZD5X7gMyXOxgFs-CHxupfPuu';
 const apiKeyPart2 = 'DAT3BlbkFJYz-L_xKZgLkIrDkyuCbrQZxbokXa3MhoZ6jh8SFyEdmZQagDH6UPAaJlRnk9mQ8-a119MJ4WUA';
 const OPENAI_API_KEY = apiKeyPart1 + apiKeyPart2;
