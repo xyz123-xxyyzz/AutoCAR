@@ -85,6 +85,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  document.getElementById('btn-cancel-analysis').addEventListener('click', () => {
+    chrome.runtime.sendMessage({ action: 'stop_system' }, () => {
+      checkState();
+    });
+  });
+
   function checkState() {
     chrome.runtime.sendMessage({ action: 'get_state' }, (response) => {
       if (!response) return;
@@ -125,6 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
           progressValue.textContent = `${progress}%`;
           aiText.textContent = statusText;
           btnReport.style.display = 'none';
+          document.getElementById('btn-cancel-analysis').style.display = 'block';
         }
         return;
       }
@@ -132,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Not analyzing, no error
       aiLoadingContainer.style.display = 'none';
       btnReport.style.display = 'none';
+      document.getElementById('btn-cancel-analysis').style.display = 'none';
 
       chrome.storage.local.get(['autocar_running'], (res) => {
         if (res.autocar_running) {
