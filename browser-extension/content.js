@@ -72,21 +72,23 @@ if (typeof window.AutoCAR_ContentScript_Loaded === 'undefined') {
         }
       }
 
-      const imgEls = document.querySelectorAll('.mega-photo-nav label img, .rsImg, .classifiedDetailMainPhoto img, .classifiedDetailThumbList img, .photo-nav img');
+      const imgEls = document.querySelectorAll('img, a');
       const uniqueImageIds = new Set();
       
-      imgEls.forEach(img => {
-        let src = img.src || img.dataset.src || img.getAttribute('data-src');
-        if (src && !src.includes('svg') && !src.includes('icon') && !src.includes('avatar') && !src.includes('data:image') && !src.includes('base64') && !src.includes('360') && !src.includes('video') && !src.includes('transparent') && !src.includes('blank') && !src.includes('/assets/')) {
-          src = src.replace('thmb_', '').replace('/thmb/', '/mega/'); 
-          
-          // Sahibinden resim URL'sinden benzersiz ID'yi (sayıları) bulalım ki aynı resmi (mega ve normal) 2 kez eklemeyelim.
-          const idMatch = src.match(/\/(\d+)[^/]*$/);
-          const uniqueId = idMatch ? idMatch[1] : src;
-          
-          if (!uniqueImageIds.has(uniqueId)) {
-            uniqueImageIds.add(uniqueId);
-            data.images.push(src);
+      imgEls.forEach(el => {
+        let src = el.src || el.dataset.src || el.getAttribute('data-src') || el.href || el.getAttribute('data-source');
+        
+        if (src && typeof src === 'string' && src.includes('shbcdn.com') && (src.includes('mega') || src.includes('thmb'))) {
+          if (!src.includes('svg') && !src.includes('icon') && !src.includes('avatar') && !src.includes('data:image') && !src.includes('base64') && !src.includes('360') && !src.includes('video') && !src.includes('transparent') && !src.includes('blank') && !src.includes('/assets/')) {
+            src = src.replace('thmb_', '').replace('/thmb/', '/mega/'); 
+            
+            const idMatch = src.match(/\/(\d+)[^/]*$/);
+            const uniqueId = idMatch ? idMatch[1] : src;
+            
+            if (!uniqueImageIds.has(uniqueId)) {
+              uniqueImageIds.add(uniqueId);
+              data.images.push(src);
+            }
           }
         }
       });
