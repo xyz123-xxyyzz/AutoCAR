@@ -183,17 +183,6 @@ export default function AnalysisReport() {
                     <Trophy size={80} className={item.color || 'text-[#C0C0C0]'} />
                   </div>
                   
-                  {/* Master AI Görselleri (Eşleştirilmiş Doğrudan Veri) */}
-                  {item.realImages && item.realImages.length > 0 && (
-                    <div className="flex gap-2 mb-6 mt-2 relative z-10">
-                      {item.realImages.map((imgUrl, i) => (
-                        <div key={i} className="w-1/3 aspect-[4/3] rounded-xl overflow-hidden relative border border-black/5 shadow-inner-embossed">
-                          <img src={imgUrl} alt="Araç Görseli" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
                   <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl mb-6 relative z-10 ${item.bg || 'bg-gray-100'} ${item.color || 'text-black'}`}>
                     <span className="font-display font-black text-2xl">{item.rank || idx + 1}</span>
                   </div>
@@ -446,31 +435,7 @@ export default function AnalysisReport() {
 
             <div className="w-full h-[1px] bg-black/10 mb-20"></div>
 
-            {/* Section 4: Araç Resimleri (Yeni Galeri Bölümü) */}
-            <div>
-              <h3 className="text-2xl font-display font-black tracking-tight text-black mb-8 flex items-center gap-4">
-                <ImageIcon className="text-black/30" /> Araç Görselleri
-              </h3>
-              
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {(() => {
-                  const imgs = currentCar.images || [];
-                  if (!Array.isArray(imgs) || imgs.length === 0) return <div className="text-sm font-bold text-black/50 col-span-full">Görsel bulunamadı.</div>;
-                  
-                  return imgs.map((imgSrc, idx) => (
-                    <div key={idx} onClick={() => openLightbox(imgs, idx)} className="bg-white p-2 rounded-2xl shadow-embossed group cursor-pointer">
-                      <div className="rounded-xl overflow-hidden relative">
-                        <img src={imgSrc} alt={`Araç Görseli ${idx + 1}`} className="w-full h-40 object-cover group-hover:scale-110 transition-transform duration-500" />
-                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center text-white font-bold tracking-widest text-xs uppercase text-center p-2">
-                          <Maximize className="mb-2" size={24} />
-                          Büyüt
-                        </div>
-                      </div>
-                    </div>
-                  ));
-                })()}
-              </div>
-              
+              {/* Section 4: Araç Resimleri (Kullanıcı Talebiyle Kaldırıldı) */}
               <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4 mb-12">
                 <a href={currentCar.url} target="_blank" rel="noopener noreferrer" className="bg-[#FFCC00] text-black px-10 py-5 rounded-full font-bold tracking-widest text-xs uppercase hover:scale-105 transition-all duration-300 shadow-xl shadow-[#FFCC00]/20 flex items-center justify-center gap-3">
                   İlan Linkine Git <ArrowRight size={18} />
