@@ -99,10 +99,9 @@ function updateTabStatus(tabId, status, data = null) {
 async function callOpenAI(systemPrompt, userContent, useVision = false, model = 'gpt-4o-mini', retries = 3) {
   return new Promise((resolve, reject) => {
     chrome.storage.local.get(['openai_api_key'], async (resStorage) => {
-      let apiKey = resStorage.openai_api_key;
-      if (!apiKey || apiKey.trim() === '') {
-        // Fallback to hardcoded key if user hasn't provided one (even if it might be revoked)
-        apiKey = OPENAI_API_KEY;
+      let apiKey = (resStorage.openai_api_key || '').trim();
+      if (!apiKey) {
+        apiKey = OPENAI_API_KEY.trim();
       }
 
       try {
@@ -142,7 +141,7 @@ async function callOpenAI(systemPrompt, userContent, useVision = false, model = 
       } catch (err) {
         console.error(err);
         if (err.message.includes('NetworkError') || err.message.includes('Failed to fetch')) {
-          reject(new Error('İnternet bağlantısı koptu veya tarayıcı izin vermedi.'));
+          reject(new Error(`İnternet bağlantısı koptu veya tarayıcı izin vermedi. Detay: ${err.message}`));
         } else {
           reject(err);
         }
