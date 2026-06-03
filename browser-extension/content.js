@@ -75,14 +75,17 @@ if (typeof window.AutoCAR_ContentScript_Loaded === 'undefined') {
       // Sayfanın tüm kaynak kodunu (JS verileri dahil) metin olarak al
       const htmlStr = document.documentElement.innerHTML;
       
-      // Kaynak kod içindeki thmb veya mega içeren tüm URL'leri yakalayan Regex
-      // Sahibinden resimleri genellikle //s0.shbdn.com/ilan-fotograflari/... formatındadır.
-      const urlRegex = /(?:https?:)?\/\/[^"'\s<>]+?(?:mega|thmb)[^"'\s<>]+/gi;
+      // Kaynak kod içindeki thmb veya mega içeren tüm URL'leri yakalayan kurşun geçirmez Regex
+      // JSON içindeki gizli "https:\/\/" formatlarını da yakalar
+      const urlRegex = /(?:https?:)?(?:\\?\/){2}[^"'\s<>]+?(?:mega|thmb)[^"'\s<>]+/gi;
       const matches = htmlStr.match(urlRegex) || [];
       
       const uniqueImageIds = new Set();
       
-      matches.forEach(src => {
+      matches.forEach(rawSrc => {
+        // Eğer JSON formatındaysa (Ters taksimleri düzelt)
+        let src = rawSrc.replace(/\\/g, '');
+        
         if (!src.includes('svg') && !src.includes('icon') && !src.includes('avatar') && !src.includes('data:image') && !src.includes('base64') && !src.includes('360') && !src.includes('video') && !src.includes('transparent') && !src.includes('blank') && !src.includes('/assets/')) {
           
           // Her zaman yüksek çözünürlüklü mega resimleri al
