@@ -96,7 +96,7 @@ function updateTabStatus(tabId, status, data = null) {
   }
 }
 
-async function callOpenAI(systemPrompt, userContent, useVision = false, model = 'gpt-4o', retries = 3) {
+async function callOpenAI(systemPrompt, userContent, useVision = false, model = 'gpt-4o-mini', retries = 3) {
   return new Promise((resolve, reject) => {
     chrome.storage.local.get(['openai_api_key'], async (resStorage) => {
       let apiKey = resStorage.openai_api_key;
