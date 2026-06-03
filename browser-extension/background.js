@@ -381,6 +381,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
+  if (request.action === 'stop_system') {
+    chrome.storage.local.set({ autocar_running: false });
+    updateState({
+      trackedTabs: [],
+      isAnalyzing: false,
+      analysisProgress: 0,
+      aiStatusText: "Hazır",
+      finalReport: null,
+      aiError: false
+    });
+    sendResponse({ success: true });
+    return true;
+  }
+
   if (request.action === 'get_state') {
     chrome.storage.local.get(['trackedTabs', 'isAnalyzing', 'analysisProgress', 'aiStatusText', 'finalReport', 'aiError'], (res) => {
       const currentTabs = res.trackedTabs || trackedTabs;
