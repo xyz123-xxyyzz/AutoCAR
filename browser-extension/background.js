@@ -188,7 +188,7 @@ Format:
   "fair_price_score": 50,
   "condition_score": 40,
   "overall_score": 61,
-  "data_report": "A very detailed, comprehensive summary report about the car in Turkish. YOU MUST EXPLICITLY AND TRANSPARENTLY EXPLAIN WHY YOU GAVE THE SPECIFIC SCORES for Satış Hızı, Fiyat/Performans, Uygunluk, and Araç Durumu. Break down your reasoning for each of the 4 scores so the user understands exactly why the car received those numbers. Be completely objective, realistic and point out every red flag. No sugarcoating.",
+  "data_report": "A very detailed, comprehensive summary report about the car in Turkish. YOU MUST EXPLICITLY AND TRANSPARENTLY EXPLAIN WHY YOU GAVE THE SPECIFIC SCORES for Satış Hızı, Fiyat/Performans, Uygunluk, and Araç Durumu. Break down your reasoning for each of the 4 scores. CRITICAL RULE FOR FORMATTING: Do NOT write a single flat paragraph! Write it as a structured list with exactly ONE EMPTY LINE (\n\n) between each score's explanation. Example format: 'Satış Hızı (75 Puan): [Açıklama]\n\nFiyat / Perf. (70 Puan): [Açıklama]\n\nUygunluk (50 Puan): [Açıklama]\n\nAraç Durumu (50 Puan): [Açıklama]'. Be completely objective, realistic and point out every red flag. No sugarcoating.",
   "detailed_specs": [
     { "name": "Spec Name (Turkish)", "value": "Value", "status": "good", "comment": "Detailed professional comment in Turkish", "note": "Short note" }
   ],

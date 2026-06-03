@@ -307,14 +307,14 @@ export default function AnalysisReport() {
                 </div>
                 
                 <div className="relative pl-8 border-l-4 border-black">
-                  <h3 className="text-black font-display font-black tracking-[0.2em] text-[10px] uppercase mb-4 flex items-center gap-3">
-                    <Star size={14} /> AI Analizi (Görsel + Veri)
-                  </h3>
-                  <p className="text-sm font-bold text-black/60 leading-loose tracking-wider">
-                    {currentCar.ai_report}
-                  </p>
-                </div>
+                  <h3 className="text-xs font-bold tracking-[0.2em] text-black/40 uppercase mb-4 flex items-center gap-2">
+                  <Star size={14} /> AI Analizi (Görsel + Veri)
+                </h3>
+                <p className="text-sm font-bold text-black/60 leading-loose tracking-wider whitespace-pre-line">
+                  {currentCar.ai_report}
+                </p>
               </div>
+            </div>
 
               <div className="w-full xl:w-[350px] flex flex-col gap-4">
                 <div className="bg-[#F5F5F7] rounded-[2rem] p-10 text-center relative overflow-hidden group shadow-inner-embossed flex flex-col justify-center min-h-[220px]">
