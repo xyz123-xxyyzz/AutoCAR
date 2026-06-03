@@ -311,7 +311,8 @@ export default function AnalysisReport() {
                   <Star size={14} /> AI Analizi (Görsel + Veri)
                 </h3>
                 <p className="text-sm font-bold text-black/60 leading-loose tracking-wider whitespace-pre-line">
-                  {currentCar.ai_report}
+                  {currentCar.ai_report
+                    ?.replace(/(Fiyat\s*\/?\s*Performans|Fiyat\s*\/\s*Perf\.|Uygunluk|Araç Durumu)\s*\(/g, '\n\n$1 (') || ''}
                 </p>
               </div>
             </div>

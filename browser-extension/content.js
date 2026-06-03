@@ -78,7 +78,7 @@ if (typeof window.AutoCAR_ContentScript_Loaded === 'undefined') {
       imgEls.forEach(el => {
         let src = el.src || el.dataset.src || el.getAttribute('data-src') || el.href || el.getAttribute('data-source');
         
-        if (src && typeof src === 'string' && src.includes('shbcdn.com') && (src.includes('mega') || src.includes('thmb'))) {
+        if (src && typeof src === 'string' && (src.includes('mega') || src.includes('thmb'))) {
           if (!src.includes('svg') && !src.includes('icon') && !src.includes('avatar') && !src.includes('data:image') && !src.includes('base64') && !src.includes('360') && !src.includes('video') && !src.includes('transparent') && !src.includes('blank') && !src.includes('/assets/')) {
             src = src.replace('thmb_', '').replace('/thmb/', '/mega/'); 
             
