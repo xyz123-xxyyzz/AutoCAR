@@ -147,33 +147,33 @@ function groupTabsByModel(readyData) {
 }
 
 async function analyzeDataOnly(carData) {
-  const systemPrompt = `Sen bir veri analisti yapay zekasın. Aracın teknik verilerini, fiyatını ve hasar kaydını inceleyip detaylı analiz et.
-SADECE GEÇERLİ BİR JSON DÖNDÜR.
+  const systemPrompt = `You are an expert, highly critical, and realistic automotive appraiser and data analyst AI.
+Analyze the provided car data (technical specs, price, damage history, mileage).
+YOU MUST RETURN ONLY VALID JSON.
 Format:
 {
+  "clean_title": "Cleaned up Make, Model and Year of the car (e.g., 'Volkswagen Passat 2015'). Remove any garbage advertising words from the original title.",
   "competitor_analysis": {
-    "competitors": ["Rakip Marka Model 1", "Rakip Marka Model 2"],
-    "text": "Bu aracın piyasa durumu ve gerçek dünyadaki rakiplerine (Grup içi değil, dış piyasadaki gerçek rakipler) göre kıyaslaması.",
-    "pros": ["Güçlü yön 1", "Güçlü yön 2"],
-    "cons": ["Zayıf yön 1", "Zayıf yön 2"]
+    "competitors": ["Competitor Make Model 1", "Competitor Make Model 2"],
+    "text": "Detailed comparison of this car against its actual real-world market competitors. Be objective and critical.",
+    "pros": ["Strong point 1", "Strong point 2"],
+    "cons": ["Weak point 1", "Weak point 2"]
   },
-  "market_speed_score": "[1-100 arası mantıklı bir sayı (Örn: 82)]",
-  "price_perf_score": "[1-100 arası mantıklı bir sayı (Örn: 91)]",
-  "condition_score": "[1-100 arası mantıklı bir sayı (Örn: 75)]",
-  "overall_score": "[DİĞER ÜÇ PUANIN ORTALAMASI OLAN SAYI (Örn: 83)]",
-  "data_report": "Bu araç hakkında derinlemesine, uzun ve kapsamlı bir özet rapor yaz. Sadece 1-2 cümle olmasın.",
+  "market_speed_score": "[Integer 1-100]",
+  "price_perf_score": "[Integer 1-100]",
+  "condition_score": "[Integer 1-100]",
+  "overall_score": "[Arithmetic mean of the other 3 scores (Integer)]",
+  "data_report": "A very detailed, comprehensive summary report about the car in Turkish. Go deep into its condition, price logic, and market position.",
   "detailed_specs": [
-    { "name": "Özellik Adı", "value": "Değer", "status": "good", "comment": "Çok detaylı ve profesyonel bir açıklama yaz.", "note": "Kısa not" }
+    { "name": "Spec Name (Turkish)", "value": "Value", "status": "good", "comment": "Detailed professional comment in Turkish", "note": "Short note" }
   ]
 }
-Kurallar:
-- "competitor_analysis" kısmında "competitors" array'ine bu aracın gerçek piyasadaki EN BÜYÜK 2 VEYA 3 RAKİBİNİ (Örn: "Toyota Corolla", "Ford Focus") ekle. Analiz metnini (text) bu gerçek rakiplerle kıyaslayarak yaz.
-- "detailed_specs" dizisine araçla ilgili BULABİLDİĞİN TÜM ÖNEMLİ ÖZELLİKLERİ (en az 15-20 özellik) ekle ve yorum kısımlarını çok detaylı tut.
-- overall_score, diğer üç skorun aritmetik ortalaması olmalı ve KESİNLİKLE TAM SAYI (virgülsüz) olmalıdır. Eğer küsurat çıkarsa yuvarla.
-- Puanlamaları (1-100 arası) yaparken ŞU 3 KURALA GÖRE AŞIRI GERÇEKÇİ HESAPLAMA YAP:
-  1. market_speed_score (Satış Hızı): Aracın Türkiye pazarındaki gerçek popülaritesini baz al. Piyasası çok hızlı olanlara (Egea, Megane) 85-95 arası, zor satılan özel serilere veya çok lükslere (Örn: Eski kasa BMW M5) 50-75 arası puan ver. Aşırı mantıklı ve gerçekçi ol.
-  2. price_perf_score (Fiyat/Performans): İstenen fiyatı, aracın yılı/km'si ve hasar durumuyla kıyasla. Piyasaya göre çok pahalıysa veya hasarına göre fiyatı yüksekse ACIKIMASIZCA düşük puan ver (Örn: 40-60). Fiyatı gerçekten mantıklıysa yüksek puan ver.
-  3. condition_score (Araç Durumu): SADECE hasar kaydı, değişen/boya ve kilometreyi baz al. Ağır hasarlıysa veya kmsi aşırı yüksekse 30-55 arası ver. Temizse 80-95 arası ver. Tamamen mantıklı ve tarafsız bir ekspertiz gibi davran.
+RULES FOR SCORING (BE EXTREMELY REALISTIC AND HARSH):
+1. market_speed_score (Sales Speed): Base this on the car's popularity in the Turkish market. Highly liquid cars (e.g., Fiat Egea, Renault Megane) get 85-95. Hard-to-sell, luxury, or very old cars get 40-70. Be realistic.
+2. price_perf_score (Price/Performance): Compare the asking price against the car's year, mileage, and damage. If it's overpriced for its condition, give it a brutally low score (e.g., 40-60). If the price is genuinely a good deal, score it high.
+3. condition_score (Car Condition): Focus ONLY on damage history, painted/replaced parts, and mileage. If the car is very old (e.g., 2006) OR has high mileage (e.g., 200,000+ km), it CANNOT get a high score. Give old/high-mileage cars 30-55. Only give 80-95 if it's very clean and relatively new.
+- All output text fields (data_report, text, pros, cons, detailed_specs) MUST be written in TURKISH.
+- Do NOT hallucinate data. If a spec is missing, deduce it intelligently or skip it.
 `;
   const dataForAi = { ...carData };
   delete dataForAi.images;
@@ -259,12 +259,14 @@ async function runFullAnalysis() {
         });
         const a1 = await analyzeDataOnly(gCars[i]);
 
-        let cleanTitle = gCars[i].title;
-        const match = cleanTitle.match(/(?:[12][0-9]{3})/);
-        if (match) {
-          cleanTitle = `${gName} ${match[0]} Model`;
-        } else {
-          cleanTitle = gName;
+        let cleanTitle = a1.clean_title || gCars[i].title;
+        if (!a1.clean_title || a1.clean_title.length > 50) {
+          const match = gCars[i].title.match(/(?:[12][0-9]{3})/);
+          if (match) {
+            cleanTitle = `${gName} ${match[0]} Model`;
+          } else {
+            cleanTitle = gName;
+          }
         }
 
         cars.push({
