@@ -75,9 +75,9 @@ if (typeof window.AutoCAR_ContentScript_Loaded === 'undefined') {
       // Sayfanın tüm kaynak kodunu (JS verileri dahil) metin olarak al
       const htmlStr = document.documentElement.innerHTML;
       
-      // Kaynak kod içindeki thmb veya mega içeren tüm URL'leri yakalayan kurşun geçirmez Regex
-      // JSON içindeki gizli "https:\/\/" formatlarını da yakalar
-      const urlRegex = /(?:https?:)?(?:\\?\/){2}[^"'\s<>]+?(?:mega|thmb)[^"'\s<>]+/gi;
+      // Kaynak kod içindeki ilan-fotograflari klasöründeki TÜM URL'leri yakalayan kurşun geçirmez Regex
+      // JSON içindeki gizli "https:\/\/" formatlarını ve 26+ resimli galerileri eksiksiz yakalar
+      const urlRegex = /(?:https?:)?(?:\\?\/){2}[^"'\s<>]+?shbdn\.com(?:\\?\/)ilan-fotograflari(?:\\?\/)[^"'\s<>]+?\.(?:jpg|jpeg|png|webp)/gi;
       const matches = htmlStr.match(urlRegex) || [];
       
       const uniqueImageIds = new Set();

@@ -247,8 +247,8 @@ Format:
   ],
   "details": [
     { "icon": "info", "title": "Rakipleri Neler?", "desc": "Volkswagen Passat: Rakibi Skoda Superb. Audi A3: Rakibi Mercedes A Serisi... şeklinde her aracın rakibini yaz." },
-    { "icon": "check", "title": "Kıyaslama Ekseni", "desc": "Neylerle kıyaslanması lazım? (Hız, Konfor, Şehir İçi vb.)" },
-    { "icon": "info", "title": "Bütçe ve Kitle", "desc": "Hangi bütçeye ve hangi kitleye hitap ediyor?" }
+    { "icon": "check", "title": "Kıyaslama Ekseni (Kim Daha Üstün?)", "desc": "Performans: [Hangi araç motor/hız olarak neden üstün?]\\n\\nFiyat/Performans: [Hangisi fiyata göre en çok donanımı veriyor?]\\n\\nSatış Hızı: [Piyasada hangisi daha hızlı satılır?]" },
+    { "icon": "star", "title": "Bütçe ve Kitle", "desc": "Hangi bütçeye ve hangi kitleye hitap ediyor?" }
   ],
   "tableData": [
     { "feature": "Özellik Adı (Model Yılı, Bagaj, vb.)", "Gold": "2015 ✅", "Silver": "2015 ⚪", "Bronze": "2012 ❌" }
