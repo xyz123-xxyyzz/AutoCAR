@@ -75,7 +75,7 @@ if (typeof window.AutoCAR_ContentScript_Loaded === 'undefined') {
       const imgEls = document.querySelectorAll('.mega-photo-nav label img, .rsImg, .classifiedDetailMainPhoto img, .classifiedDetailThumbList img, .photo-nav img');
       imgEls.forEach(img => {
         let src = img.src || img.dataset.src || img.getAttribute('data-src');
-        if (src && !src.includes('svg') && !src.includes('icon') && !src.includes('avatar')) {
+        if (src && !src.includes('svg') && !src.includes('icon') && !src.includes('avatar') && !src.includes('data:image') && !src.includes('base64') && !src.includes('360') && !src.includes('video')) {
           src = src.replace('thmb_', '').replace('/thmb/', '/mega/'); 
           if (!data.images.includes(src)) {
             data.images.push(src);
