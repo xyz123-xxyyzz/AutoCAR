@@ -131,10 +131,15 @@ async function callOpenAI(systemPrompt, userContent, useVision = false, model = 
           if (res.status === 401) {
             throw new Error('API Anahtarı eksik veya geçersiz. Lütfen Ayarlar (⚙️) kısmından geçerli bir OpenAI API Anahtarı girin.');
           }
-          if (res.status === 429 && retries > 0) {
-            console.warn(`429 Too Many Requests. Retrying in 6 seconds... (${retries} retries left)`);
-            await new Promise(r => setTimeout(r, 6000));
-            return resolve(await callOpenAI(systemPrompt, userContent, useVision, model, retries - 1));
+          if (res.status === 429) {
+            if (json.error && json.error.code === 'insufficient_quota') {
+              throw new Error('Yapay Zeka (OpenAI) Bakiyeniz Tükenmiştir. Lütfen Ayarlar panelindeki linkten bakiye yüklemesi yapın.');
+            }
+            if (retries > 0) {
+              console.warn(`429 Too Many Requests. Retrying in 6 seconds... (${retries} retries left)`);
+              await new Promise(r => setTimeout(r, 6000));
+              return resolve(await callOpenAI(systemPrompt, userContent, useVision, model, retries - 1));
+            }
           }
           throw new Error(json.error ? json.error.message : 'Bilinmeyen API Hatası');
         }

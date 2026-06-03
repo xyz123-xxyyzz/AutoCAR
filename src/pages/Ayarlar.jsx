@@ -101,6 +101,59 @@ export default function Ayarlar() {
           </div>
         </div>
         
+        {/* VIP Kullanıcı OpenAI Bilgileri */}
+        <div className="mt-12 bg-black rounded-[2.5rem] p-10 shadow-embossed text-white relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 opacity-10">
+            <Globe size={200} />
+          </div>
+          <h2 className="text-xl font-display font-black tracking-tight mb-8 uppercase flex items-center gap-3 relative z-10">
+            <div className="w-2 h-8 bg-[#FFCC00] rounded-full"></div>
+            Yapay Zeka (OpenAI) Erişim Bilgileri
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/10">
+              <div className="text-[10px] font-bold tracking-[0.2em] text-white/50 uppercase mb-2">Tanımlı E-Posta Adresi</div>
+              <div className="flex items-center justify-between gap-4">
+                <div className="font-mono text-lg font-bold tracking-tight">autocar.demo@gmail.com</div>
+                <button 
+                  onClick={() => { navigator.clipboard.writeText('autocar.demo@gmail.com'); showToast('success', 'E-Posta kopyalandı!'); }}
+                  className="px-4 py-2 bg-white text-black text-[10px] font-bold tracking-widest uppercase rounded-full hover:bg-[#FFCC00] transition-colors"
+                >
+                  Kopyala
+                </button>
+              </div>
+            </div>
+            
+            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/10">
+              <div className="text-[10px] font-bold tracking-[0.2em] text-white/50 uppercase mb-2">Tanımlı Şifre</div>
+              <div className="flex items-center justify-between gap-4">
+                <div className="font-mono text-lg font-bold tracking-tight">AutoCAR2026!</div>
+                <button 
+                  onClick={() => { navigator.clipboard.writeText('AutoCAR2026!'); showToast('success', 'Şifre kopyalandı!'); }}
+                  className="px-4 py-2 bg-white text-black text-[10px] font-bold tracking-widest uppercase rounded-full hover:bg-[#FFCC00] transition-colors"
+                >
+                  Kopyala
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-8 pt-8 border-t border-white/10 relative z-10">
+            <p className="text-sm font-bold text-white/70 leading-relaxed mb-6">
+              Yukarıdaki bilgiler tamamen size özel tahsis edilmiştir. Eklentinizin analiz yapabilmesi için OpenAI bakiyenizin olması gerekmektedir. Bakiyenizi kontrol etmek veya yükleme yapmak için aşağıdaki butonu kullanabilirsiniz.
+            </p>
+            <a 
+              href="https://platform.openai.com/account/billing" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-3 px-8 py-4 bg-[#FFCC00] text-black font-bold tracking-[0.2em] text-[10px] uppercase rounded-full hover:scale-105 transition-transform"
+            >
+              Bakiye Yüklemek İçin Tıklayın <Globe size={16} />
+            </a>
+          </div>
+        </div>
+        
         {/* Logout Section */}
         <div className="mt-12 flex justify-center">
           <button 
