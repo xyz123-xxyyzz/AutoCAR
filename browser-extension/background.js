@@ -301,7 +301,8 @@ Kurallar:
         fp: c.fair_price_score,
         cs: c.condition_score,
         total: c.overall_score
-      }
+      },
+      specs: (c.detailed_specs || []).map(s => `${s.name}: ${s.value}`)
     }))
   }));
 

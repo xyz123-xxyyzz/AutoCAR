@@ -57,9 +57,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       // OpenAI'ye gideceği için gereksiz başlıkları kırpıp ilk 10.000 karakteri (en dolu kısmı) alıyoruz
       fullText = fullText.slice(0, 10000);
 
+      let cleanPrice = price.trim();
+      if (cleanPrice.includes('Kredi')) {
+        cleanPrice = cleanPrice.split('Kredi')[0].trim();
+      }
+
       const result = {
         title: title.trim().replace(/\s+/g, ' '),
-        price: price.trim(),
+        price: cleanPrice,
         url: window.location.href,
         fullText: fullText
       };
