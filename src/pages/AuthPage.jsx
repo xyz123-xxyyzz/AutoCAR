@@ -28,17 +28,14 @@ export default function AuthPage() {
     setError(null);
 
     try {
-      const { data: vipUser, error: vipError } = await supabase
-        .from('vip_users')
-        .select('password, role, admin_device_id, customer_device_id, openai_api_key')
-        .eq('email', email)
-        .single();
+      // Güvenlik için şifre ve api key verilerini direkt çekmek yerine (RLS engeller),
+      // Supabase'deki güvenli RPC (login_vip_user) fonksiyonumuzu çağırıyoruz.
+      const { data: vipUser, error: vipError } = await supabase.rpc('login_vip_user', {
+        user_email: email,
+        user_password: password
+      });
 
       if (vipError || !vipUser) {
-        throw new Error('Bu e-posta yetkili bir VIP hesabı değil.');
-      }
-
-      if (vipUser.password !== password) {
         throw new Error('Geçersiz e-posta veya şifre. Lütfen yöneticinizden aldığınız VIP bilgileri kontrol edin.');
       }
 
