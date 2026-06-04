@@ -466,6 +466,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === 'start_analysis') {
     chrome.storage.local.set({ autocar_running: false });
+    if (trackedTabs.length > 50) {
+      updateState({
+        isAnalyzing: true,
+        aiError: true,
+        analysisProgress: 100,
+        aiStatusText: "Maksimum sınır aşıldı! Lütfen aynı anda en fazla 50 araba seçin.",
+        finalReport: null
+      });
+      sendResponse({ success: false, error: "Limit aşıldı" });
+      return true;
+    }
+
     updateState({
       isAnalyzing: true,
       aiError: false,

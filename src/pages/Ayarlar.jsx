@@ -102,56 +102,51 @@ export default function Ayarlar() {
           </div>
         </div>
         
-        {/* VIP Kullanıcı OpenAI Bilgileri */}
+        {/* Kullanım Kılavuzu & Bilgilendirme (PDF Formatında) */}
         <div className="mt-12 bg-black rounded-[2.5rem] p-10 shadow-embossed text-white relative overflow-hidden">
           <div className="absolute -top-10 -right-10 opacity-10">
             <Globe size={200} />
           </div>
-          <h2 className="text-xl font-display font-black tracking-tight mb-8 uppercase flex items-center gap-3 relative z-10">
+          <h2 className="text-2xl font-display font-black tracking-tight mb-8 uppercase flex items-center gap-3 relative z-10">
             <div className="w-2 h-8 bg-[#FFCC00] rounded-full"></div>
-            Yapay Zeka (OpenAI) Erişim Bilgileri
+            Kullanım Kılavuzu & Önemli Bilgiler
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+          <div className="relative z-10 space-y-8">
             <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/10">
-              <div className="text-[10px] font-bold tracking-[0.2em] text-white/50 uppercase mb-2">Tanımlı E-Posta Adresi</div>
-              <div className="flex items-center justify-between gap-4">
-                <div className="font-mono text-lg font-bold tracking-tight">autocar.demo@gmail.com</div>
-                <button 
-                  onClick={() => { navigator.clipboard.writeText('autocar.demo@gmail.com'); showToast('success', 'E-Posta kopyalandı!'); }}
-                  className="px-4 py-2 bg-white text-black text-[10px] font-bold tracking-widest uppercase rounded-full hover:bg-[#FFCC00] transition-colors"
-                >
-                  Kopyala
-                </button>
-              </div>
+              <h3 className="text-[#FFCC00] font-bold text-lg mb-3 tracking-wide">1. Nasıl Analiz Yaparım?</h3>
+              <p className="text-sm text-white/80 leading-relaxed font-medium">
+                Öncelikle yukarıdaki tarayıcı eklentisini kurmalısınız. Ardından desteklenen sitelere (sahibinden, arabam vb.) girip ilgilendiğiniz ilanları yeni sekmelerde açın. 
+                Sağ üstteki AutoCAR eklentisine tıkladığınızda sistem sekmeleri otomatik algılar. "Analiz Et" diyerek işlemi başlatabilirsiniz. 
+                <strong>Unutmayın, sistem güvenliği için aynı anda en fazla 50 araç analiz edilebilir.</strong>
+              </p>
             </div>
             
             <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/10">
-              <div className="text-[10px] font-bold tracking-[0.2em] text-white/50 uppercase mb-2">Tanımlı Şifre</div>
-              <div className="flex items-center justify-between gap-4">
-                <div className="font-mono text-lg font-bold tracking-tight">AutoCAR2026!</div>
-                <button 
-                  onClick={() => { navigator.clipboard.writeText('AutoCAR2026!'); showToast('success', 'Şifre kopyalandı!'); }}
-                  className="px-4 py-2 bg-white text-black text-[10px] font-bold tracking-widest uppercase rounded-full hover:bg-[#FFCC00] transition-colors"
-                >
-                  Kopyala
-                </button>
-              </div>
+              <h3 className="text-[#FFCC00] font-bold text-lg mb-3 tracking-wide">2. Hesabım ve Bilgilerim</h3>
+              <p className="text-sm text-white/80 leading-relaxed font-medium">
+                Size tahsis edilmiş e-posta adresiniz: <strong className="text-white bg-black/50 px-2 py-1 rounded">autocar.demo@gmail.com</strong> ve 
+                şifreniz: <strong className="text-white bg-black/50 px-2 py-1 rounded">AutoCAR2026!</strong> olarak ayarlanmıştır. Bu bilgiler yapay zeka 
+                erişimi ve kontrol paneli girişi için ortaktır. Şifrenizi kimseyle paylaşmayınız.
+              </p>
             </div>
-          </div>
-          
-          <div className="mt-8 pt-8 border-t border-white/10 relative z-10">
-            <p className="text-sm font-bold text-white/70 leading-relaxed mb-6">
-              Yukarıdaki bilgiler tamamen size özel tahsis edilmiştir. Eklentinizin analiz yapabilmesi için OpenAI bakiyenizin olması gerekmektedir. Bakiyenizi kontrol etmek veya yükleme yapmak için aşağıdaki butonu kullanabilirsiniz.
-            </p>
-            <a 
-              href="https://platform.openai.com/account/billing" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 px-8 py-4 bg-[#FFCC00] text-black font-bold tracking-[0.2em] text-[10px] uppercase rounded-full hover:scale-105 transition-transform"
-            >
-              Bakiye Yüklemek İçin Tıklayın <Globe size={16} />
-            </a>
+
+            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/10">
+              <h3 className="text-[#FFCC00] font-bold text-lg mb-3 tracking-wide">3. Fatura ve OpenAI (Yapay Zeka) Ödemeleri</h3>
+              <p className="text-sm text-white/80 leading-relaxed font-medium mb-4">
+                AutoCAR sistemi, gücünü doğrudan OpenAI API sistemlerinden alır. Sistemin sorunsuz çalışmaya devam edebilmesi için OpenAI hesabınızda 
+                her zaman bakiye (kredi) bulunması gerekmektedir. Analiz başı ortalama harcama çok düşüktür (Örn: 100 araç için ~1 TL). 
+                Kredi kartınızı sisteme tanımlamak ve bakiye yüklemek için aşağıdaki OpenAI faturalandırma paneline gitmelisiniz.
+              </p>
+              <a 
+                href="https://platform.openai.com/account/billing" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-3 px-6 py-3 bg-[#FFCC00] text-black font-bold tracking-[0.2em] text-[10px] uppercase rounded-full hover:scale-105 transition-transform"
+              >
+                OpenAI Bakiye Yükleme Sayfasına Git <Globe size={16} />
+              </a>
+            </div>
           </div>
         </div>
         

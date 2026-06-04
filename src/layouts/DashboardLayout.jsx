@@ -59,14 +59,7 @@ export default function DashboardLayout({ children, subscriptionType, userName, 
             </Link>
           )}
 
-          <Link 
-            to="/abonelik" 
-            className={`text-[11px] font-bold tracking-[0.15em] uppercase transition-opacity ${
-              location.pathname === '/abonelik' ? 'text-black' : 'text-black/50 hover:text-black'
-            }`}
-          >
-            Abonelik
-          </Link>
+
           <Link 
             to="/ayarlar" 
             className={`text-[11px] font-bold tracking-[0.15em] uppercase transition-opacity ${
@@ -77,16 +70,10 @@ export default function DashboardLayout({ children, subscriptionType, userName, 
           </Link>
         </div>
 
-        {/* Right: Credits & User */}
         <div className="flex items-center gap-6">
           <div className="flex flex-col items-end">
             <span className={getSubColor()}>{subscriptionType}</span>
             <span className="text-[10px] text-black/50 font-bold uppercase tracking-widest">{userName}</span>
-          </div>
-          <div className="w-[1px] h-6 bg-black/10"></div>
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold tracking-[0.15em] uppercase text-black/50">Kredi</span>
-            <span className="font-display font-black text-xl leading-none">{credits}</span>
           </div>
         </div>
 

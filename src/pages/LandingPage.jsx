@@ -43,7 +43,7 @@ export default function LandingPage() {
         </p>
 
         <Link to="/login" className="group px-12 py-6 bg-white border border-white rounded-full flex items-center gap-6 shadow-embossed hover:shadow-embossed-hover transition-all duration-500 hover:-translate-y-2">
-          <span className="text-xs font-bold tracking-[0.2em] uppercase text-black">Hemen Başla (Ücretsiz)</span>
+          <span className="text-xs font-bold tracking-[0.2em] uppercase text-black">Müşteri Girişi Yap</span>
           <div className="w-10 h-10 bg-[#F5F5F7] shadow-inner-embossed rounded-full flex items-center justify-center group-hover:bg-black group-hover:text-white transition-colors">
             <ArrowRight size={18} strokeWidth={2} />
           </div>
@@ -99,9 +99,9 @@ export default function LandingPage() {
               <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-8 shadow-embossed group-hover:bg-[#333] transition-colors duration-500">
                 <Shield size={32} className="text-black group-hover:text-red-400 transition-colors" />
               </div>
-              <h3 className="text-2xl font-display font-black tracking-tight mb-4">Gizli Kusur Tespiti</h3>
+              <h3 className="text-2xl font-display font-black tracking-tight mb-4">Veriye Dayalı Rasyonalite</h3>
               <p className="text-sm font-bold opacity-60 leading-relaxed">
-                İlan açıklamalarındaki kelime oyunlarını, tramer ile hasar boya durumundaki uyumsuzlukları yakalar. "Lokal boya" deyip 50.000 TL tramer girilmişse sizi anında uyarır.
+                İlan açıklamalarındaki kelime oyunlarına takılmaz. Büyük veriyi okur, şeffaf skorlamalar yapar ve sadece finansal olarak en kârlı/uygun araca yatırım yapmanızı sağlar.
               </p>
             </div>
           </div>
@@ -167,7 +167,7 @@ export default function LandingPage() {
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-display font-black tracking-tighter mb-6">Mükemmel Analiz Çıktıları</h2>
             <p className="text-lg font-bold text-black/50 max-w-2xl mx-auto">
-              Sistem size sadece düz metin vermez. Teknik verileri görselleştirir, araçların ön, iç ve arka resimlerini yan yana dizecek kadar akıllıdır.
+              Yapay Zeka raporları size düz metin okutmaz. Finansal özetleri görselleştirir ve fiyatı gerçekten uygun olanı podyuma çıkarır.
             </p>
           </div>
 
@@ -209,22 +209,22 @@ export default function LandingPage() {
                 </div>
                 <div className="text-[10px] font-bold tracking-widest text-black/30">ÖRNEK TESPİT</div>
               </div>
-              <h3 className="text-2xl font-display font-black tracking-tight mb-4">Tramer Uyuşmazlığı Tespitleri</h3>
+              <h3 className="text-2xl font-display font-black tracking-tight mb-4">Büyük Veri ile Şeffaflık</h3>
               <p className="text-sm font-bold text-black/60 mb-8 leading-relaxed">
-                İlanda "Sadece çizik boyası var" yazan ama 50.000 TL trameri olan araçları saniyeler içinde deşifre eder. Paranız cebinizde kalır.
+                Araçların fiyatı ve teknik özelliklerinden yola çıkarak satılma hızını matematiksel formüllere döker ve sizi riskli ilanlardan uzak tutar.
               </p>
               
               <div className="bg-[#F5F5F7] p-6 rounded-2xl border-l-4 border-red-500 relative overflow-hidden">
                 <div className="absolute right-0 top-0 opacity-5 p-4"><AlertCircle size={64}/></div>
                 <div className="text-[10px] font-bold tracking-widest text-red-500 uppercase mb-2">Yapay Zeka Uyarısı</div>
-                <div className="text-sm font-bold text-black/80">Lokal boya için girilen tramer çok yüksek. Muhtemel ön panel veya far değişimi mevcut.</div>
+                <div className="text-sm font-bold text-black/80">Bu aracın donanım paketindeki eksiklikler sebebiyle piyasada satılma hızı ortalamanın altındadır.</div>
               </div>
             </div>
           </div>
 
           <div className="mt-16 flex justify-center">
             <Link to="/login" className="px-10 py-5 bg-black text-white text-xs font-bold tracking-[0.2em] uppercase rounded-full hover:bg-black/80 transition-all duration-300 shadow-2xl hover:scale-105 flex items-center gap-4">
-              <MousePointerClick size={16} /> Ücretsiz Denemeye Başla
+              <MousePointerClick size={16} /> Kullanıcı Paneline Git
             </Link>
           </div>
 
