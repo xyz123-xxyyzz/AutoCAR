@@ -68,8 +68,9 @@ export default function SahipDashboard() {
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-black/5">
-                  <th className="pb-4 text-[10px] font-bold tracking-[0.2em] uppercase text-black/40">E-Posta</th>
-                  <th className="pb-4 text-[10px] font-bold tracking-[0.2em] uppercase text-black/40">Rol</th>
+                  <th className="pb-4 text-[10px] font-bold tracking-[0.2em] uppercase text-black/40">E-Posta (Rol)</th>
+                  <th className="pb-4 text-[10px] font-bold tracking-[0.2em] uppercase text-black/40">Şifre</th>
+                  <th className="pb-4 text-[10px] font-bold tracking-[0.2em] uppercase text-black/40">OpenAI API Key</th>
                   <th className="pb-4 text-[10px] font-bold tracking-[0.2em] uppercase text-black/40 text-right">Cihaz Durumu</th>
                 </tr>
               </thead>
@@ -80,11 +81,21 @@ export default function SahipDashboard() {
                   
                   return (
                     <tr key={idx} className="hover:bg-[#F5F5F7]/50 transition-colors">
-                      <td className="py-4 text-sm font-bold">{user.email}</td>
                       <td className="py-4">
-                        <span className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full ${user.role === 'sahip' ? 'bg-black text-white' : 'bg-black/5 text-black'}`}>
+                        <div className="text-sm font-bold">{user.email}</div>
+                        <div className="text-[10px] font-bold uppercase tracking-widest text-black/40 mt-1">
                           {user.role}
-                        </span>
+                        </div>
+                      </td>
+                      <td className="py-4">
+                        <div className="font-mono text-xs font-bold bg-[#F5F5F7] px-3 py-1 rounded-lg inline-block shadow-inner-embossed">
+                          {user.password || '---'}
+                        </div>
+                      </td>
+                      <td className="py-4">
+                        <div className="font-mono text-[10px] font-bold bg-[#F5F5F7] px-3 py-1 rounded-lg inline-block shadow-inner-embossed text-black/60 max-w-[150px] truncate" title={user.openai_api_key}>
+                          {user.openai_api_key || 'Eksik'}
+                        </div>
                       </td>
                       <td className="py-4 text-right">
                         {isActive ? (
@@ -102,7 +113,7 @@ export default function SahipDashboard() {
                 })}
                 {users.length === 0 && (
                   <tr>
-                    <td colSpan="3" className="py-8 text-center text-[10px] font-bold uppercase tracking-widest text-black/30">
+                    <td colSpan="4" className="py-8 text-center text-[10px] font-bold uppercase tracking-widest text-black/30">
                       Sistemde kullanıcı bulunamadı.
                     </td>
                   </tr>
