@@ -16,6 +16,12 @@ const syncApiKey = () => {
           });
         }
       });
+    } else {
+      // Eğer localStorage'da api key yoksa, eklentiden de sil
+      chrome.storage.local.remove(['openai_api_key']);
+      if (email) {
+        chrome.storage.local.set({ userEmail: email });
+      }
     }
   } catch (e) {
     console.error("AutoCAR Extension Error:", e);

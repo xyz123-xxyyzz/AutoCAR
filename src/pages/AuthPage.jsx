@@ -59,6 +59,8 @@ export default function AuthPage() {
       localStorage.setItem('userEmail', email);
       if (vipUser.openai_api_key) {
         localStorage.setItem('openai_api_key', vipUser.openai_api_key);
+      } else {
+        localStorage.removeItem('openai_api_key');
       }
 
       if (demoRole === 'Sahip') navigate('/sahip');
