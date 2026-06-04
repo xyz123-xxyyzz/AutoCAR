@@ -175,14 +175,24 @@ function groupTabsByModel(readyData) {
   return groups;
 }
 
-async function analyzeDataOnly(carData) {
-  const systemPrompt = `You are an expert, highly critical, and brutally realistic automotive appraiser and data analyst AI.
-Analyze the provided car data (technical specs, price, damage history, mileage).
-YOU MUST RETURN ONLY VALID JSON.
-Format:
-{
-  "clean_title": "Cleaned up Make, Model and Year of the car (e.g., 'Volkswagen Passat 2015'). Remove any garbage advertising words from the original title.",
-  "competitor_analysis": {
+async function analyzeDataOnly(carData, options) {
+  const { runData, runVision } = options;
+
+  let systemPrompt = `You are an expert, highly critical, and brutally realistic automotive appraiser and data analyst AI.\n`;
+  if (runData && runVision) {
+    systemPrompt += `Analyze the provided car data (technical specs, price, damage history, mileage) AND the attached images.\n`;
+  } else if (runData) {
+    systemPrompt += `Analyze the provided car data (technical specs, price, damage history, mileage).\n`;
+  } else if (runVision) {
+    systemPrompt += `Analyze the provided car images to find defects and positive traits.\n`;
+  }
+
+  systemPrompt += `YOU MUST RETURN ONLY VALID JSON.\nFormat:\n{\n`;
+  
+  systemPrompt += `  "clean_title": "Cleaned up Make, Model and Year of the car (e.g., 'Volkswagen Passat 2015'). Remove any garbage advertising words from the original title.",\n`;
+
+  if (runData) {
+    systemPrompt += `  "competitor_analysis": {
     "competitors": ["Competitor Make Model 1", "Competitor Make Model 2"],
     "text": "Detailed comparison of this car against its actual real-world market competitors. Be objective, brutally honest and highly critical.",
     "pros": ["Strong point 1", "Strong point 2"],
@@ -193,7 +203,7 @@ Format:
   "fair_price_score": 50,
   "condition_score": 40,
   "overall_score": 61,
-  "data_report": "A very detailed, comprehensive summary report about the car in Turkish. YOU MUST EXPLICITLY AND TRANSPARENTLY EXPLAIN WHY YOU GAVE THE SPECIFIC SCORES for Satış Hızı, Fiyat/Performans, Uygunluk, and Araç Durumu. Break down your reasoning for each of the 4 scores. CRITICAL RULE FOR FORMATTING: Do NOT write a single flat paragraph! Write it as a structured list with exactly ONE EMPTY LINE (\n\n) between each score's explanation. Example format: 'Satış Hızı (75 Puan): [Açıklama]\n\nFiyat / Perf. (70 Puan): [Açıklama]\n\nUygunluk (50 Puan): [Açıklama]\n\nAraç Durumu (50 Puan): [Açıklama]'. Be completely objective, realistic and point out every red flag. No sugarcoating.",
+  "data_report": "A very detailed, comprehensive summary report about the car in Turkish. YOU MUST EXPLICITLY AND TRANSPARENTLY EXPLAIN WHY YOU GAVE THE SPECIFIC SCORES for Satış Hızı, Fiyat/Performans, Uygunluk, and Araç Durumu. Break down your reasoning for each of the 4 scores. CRITICAL RULE FOR FORMATTING: Do NOT write a single flat paragraph! Write it as a structured list with exactly ONE EMPTY LINE (\\n\\n) between each score's explanation. Example format: 'Satış Hızı (75 Puan): [Açıklama]\\n\\nFiyat / Perf. (70 Puan): [Açıklama]\\n\\nUygunluk (50 Puan): [Açıklama]\\n\\nAraç Durumu (50 Puan): [Açıklama]'. Be completely objective, realistic and point out every red flag. No sugarcoating.",
   "detailed_specs": [
     { "name": "Spec Name (Turkish)", "value": "Value", "status": "good", "comment": "Detailed professional comment in Turkish", "note": "Short note" }
   ],
@@ -211,10 +221,24 @@ Format:
     "sol_arka_kapi": "orijinal",
     "sol_arka_camurluk": "orijinal",
     "bagaj": "orijinal"
+  },\n`;
   }
-}
-RULES FOR SCORING AND EXTRACTION (BE OBJECTIVE BUT FAIR):
-1. detailed_specs: YOU MUST EXTRACT EVERY SINGLE TECHNICAL SPECIFICATION available in the listing. Do NOT just put 4 specs! Extract at least 15-25 specs (e.g., HP, Torque, Engine Size, Transmission, Color, Drivetrain, Fuel type, Trim level, 0-100, Top Speed, Year, Mileage, etc.). If the data is there, extract it!
+
+  if (runVision) {
+    systemPrompt += `  "vision_report": "A detailed visual inspection report in Turkish based ONLY on the provided images. Look for scratches, dents, panel gaps, paint mismatches, or interior wear. If the car looks exceptionally clean, state that too.",
+  "defects": ["Görünen kusur 1", "Görünen kusur 2"],
+  "positives": ["İyi durumdaki detay 1", "İyi durumdaki detay 2"]\n`;
+  } else {
+    // Need to strip the last comma if we didn't add vision
+    if (systemPrompt.endsWith(',\n')) {
+      systemPrompt = systemPrompt.slice(0, -2) + '\n';
+    }
+  }
+
+  systemPrompt += `}\n\nRULES FOR SCORING AND EXTRACTION (BE OBJECTIVE BUT FAIR):\n`;
+
+  if (runData) {
+    systemPrompt += `1. detailed_specs: YOU MUST EXTRACT EVERY SINGLE TECHNICAL SPECIFICATION available in the listing. Do NOT just put 4 specs! Extract at least 15-25 specs. If the data is there, extract it!
 CRITICAL RULE FOR DETAILED SPECS 'comment' FIELD: DO NOT just repeat the value! The user already sees the value. The 'comment' must be your DEEP, EXPERT AI THOUGHT/OPINION on that specific feature.
 Example BAD: "Araç 2019 modeldir."
 Example GOOD: "2019 model olması, kronik motor sorunlarının çözüldüğü makyajlı kasaya denk gelir, bu bir avantajdır."
@@ -231,14 +255,46 @@ Example GOOD: "120.000 km dizel motor için ağır bakım (triger vs.) sınırı
 
 6. overall_score: The exact arithmetic mean of the above 4 scores (market_speed_score, price_perf_score, fair_price_score, condition_score). ALL SCORES MUST BE INTEGERS, not strings. Do not put brackets around them.
 
-- For damage_map: ONLY use "orijinal", "boyali", "lokal_boyali", "degisen", "bilinmiyor". Deduce this accurately.
-- All output text MUST be in TURKISH.
-- Do NOT hallucinate data, but extract EVERYTHING provided in the data blob.
-`;
+- For damage_map: ONLY use "orijinal", "boyali", "lokal_boyali", "degisen", "bilinmiyor". Deduce this accurately.\n`;
+  }
+
+  if (runVision) {
+    systemPrompt += `- For images: EXAMINE THE ATTACHED IMAGES CAREFULLY. Point out visible defects or positive traits.\n`;
+  }
+
+  systemPrompt += `- All output text MUST be in TURKISH.
+- Do NOT hallucinate data, but extract EVERYTHING provided in the data blob.\n`;
 
   const dataForAi = { ...carData };
+  const imageUrls = runVision ? (dataForAi.images || []).slice(0, 5) : [];
   delete dataForAi.images;
-  return await callOpenAI(systemPrompt, dataForAi);
+
+  if (runVision) {
+    let userContent = [];
+    if (runData) {
+      userContent.push({
+        type: "text",
+        text: JSON.stringify(dataForAi)
+      });
+    } else {
+      userContent.push({
+        type: "text",
+        text: `Only analyze the images for this car: ${dataForAi.title || 'Unknown Car'}`
+      });
+    }
+
+    imageUrls.forEach(url => {
+      userContent.push({
+        type: "image_url",
+        image_url: { url: url }
+      });
+    });
+
+    return await callOpenAI(systemPrompt, userContent, true, 'gpt-4o-mini');
+  } else {
+    // Pure data, standard prompt
+    return await callOpenAI(systemPrompt, dataForAi);
+  }
 }
 
 async function generateGlobalMasterReport(groupReports) {
@@ -294,7 +350,7 @@ Kurallar:
   return await callOpenAI(systemPrompt, cleanGroupReports);
 }
 
-async function runFullAnalysis() {
+async function runFullAnalysis(options) {
   const readyData = trackedTabs.filter(t => t.status === 'Yüklendi' && t.data).map(t => t.data);
   
   if (readyData.length === 0) {
@@ -325,7 +381,7 @@ async function runFullAnalysis() {
 
       for (let i = 0; i < gCars.length; i++) {
         const carProcessPromise = (async () => {
-          const a1 = await analyzeDataOnly(gCars[i]);
+          const a1 = await analyzeDataOnly(gCars[i], options);
           
           processedCars++;
           updateState({ 
@@ -350,14 +406,17 @@ async function runFullAnalysis() {
               price: gCars[i].price,
               url: gCars[i].url,
               images: gCars[i].images,
-              market_speed_score: a1.market_speed_score,
-              price_perf_score: a1.price_perf_score,
-              fair_price_score: a1.fair_price_score,
-              condition_score: a1.condition_score,
-              overall_score: a1.overall_score,
-              ai_report: a1.data_report,
-              competitor_analysis: a1.competitor_analysis,
-              detailed_specs: a1.detailed_specs,
+              market_speed_score: a1.market_speed_score || null,
+              price_perf_score: a1.price_perf_score || null,
+              fair_price_score: a1.fair_price_score || null,
+              condition_score: a1.condition_score || null,
+              overall_score: a1.overall_score || null,
+              ai_report: a1.data_report || null,
+              vision_report: a1.vision_report || null,
+              defects: a1.defects || [],
+              positives: a1.positives || [],
+              competitor_analysis: a1.competitor_analysis || null,
+              detailed_specs: a1.detailed_specs || [],
               damage_map: a1.damage_map || null
             }
           };
@@ -474,7 +533,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       finalReport: null
     });
     
-    runFullAnalysis(); 
+    const options = request.options || { runData: true, runVision: false };
+    runFullAnalysis(options); 
     sendResponse({ success: true });
     return true;
   }

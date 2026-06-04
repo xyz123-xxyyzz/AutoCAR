@@ -296,144 +296,234 @@ export default function AnalysisReport() {
                   {currentCar.price}
                 </div>
                 
-                <div className="relative pl-8 border-l-4 border-black">
-                  <h3 className="text-xs font-bold tracking-[0.2em] text-black/40 uppercase mb-4 flex items-center gap-2">
-                  <Star size={14} /> AI Analizi (Görsel + Veri)
-                </h3>
-                <p className="text-sm font-bold text-black/60 leading-loose tracking-wider whitespace-pre-line">
-                  {currentCar.ai_report
-                    ?.replace(/(Fiyat\s*\/?\s*Performans|Fiyat\s*\/\s*Perf\.|Uygunluk|Araç Durumu)\s*\(/g, '\n\n$1 (') || ''}
-                </p>
+                {currentCar.ai_report && (
+                  <div className="relative pl-8 border-l-4 border-black">
+                    <h3 className="text-xs font-bold tracking-[0.2em] text-black/40 uppercase mb-4 flex items-center gap-2">
+                    <Star size={14} /> AI Veri Analizi
+                  </h3>
+                  <p className="text-sm font-bold text-black/60 leading-loose tracking-wider whitespace-pre-line">
+                    {currentCar.ai_report
+                      ?.replace(/(Fiyat\s*\/?\s*Performans|Fiyat\s*\/\s*Perf\.|Uygunluk|Araç Durumu)\s*\(/g, '\n\n$1 (') || ''}
+                  </p>
+                </div>
+                )}
               </div>
-            </div>
 
-              <div className="w-full xl:w-[350px] flex flex-col gap-4">
-                <div className="bg-[#F5F5F7] rounded-[2rem] p-10 text-center relative overflow-hidden group shadow-inner-embossed flex flex-col justify-center min-h-[220px]">
-                  <div className="text-black/40 font-bold text-[10px] tracking-[0.2em] uppercase mb-2">Genel Skor</div>
-                  <div className="text-7xl lg:text-[7rem] leading-none font-display font-black tracking-tighter text-black w-full overflow-hidden px-2">
-                    {parseInt(currentCar.overall_score, 10) || 0}
+              {currentCar.ai_report && (
+                <div className="w-full xl:w-[350px] flex flex-col gap-4">
+                  <div className="bg-[#F5F5F7] rounded-[2rem] p-10 text-center relative overflow-hidden group shadow-inner-embossed flex flex-col justify-center min-h-[220px]">
+                    <div className="text-black/40 font-bold text-[10px] tracking-[0.2em] uppercase mb-2">Genel Skor</div>
+                    <div className="text-7xl lg:text-[7rem] leading-none font-display font-black tracking-tighter text-black w-full overflow-hidden px-2">
+                      {parseInt(currentCar.overall_score, 10) || 0}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-2 mt-4">
+                    <div className="bg-white border border-black/5 rounded-[1.5rem] p-6 flex justify-between items-center shadow-embossed hover:shadow-embossed-hover transition-all duration-500">
+                      <div className="flex items-center gap-4">
+                        <div className="p-2 bg-[#F5F5F7] rounded-full shadow-inner-embossed"><Zap className="text-black" size={16} strokeWidth={2} /></div>
+                        <span className="font-bold tracking-widest text-[10px] text-black uppercase">Satış Hızı</span>
+                      </div>
+                      <div className="text-2xl font-display font-black tracking-tighter text-black">{parseInt(currentCar.market_speed_score, 10) || 0}</div>
+                    </div>
+                    <div className="bg-white border border-black/5 rounded-[1.5rem] p-6 flex justify-between items-center shadow-embossed hover:shadow-embossed-hover transition-all duration-500">
+                      <div className="flex items-center gap-4">
+                        <div className="p-2 bg-[#F5F5F7] rounded-full shadow-inner-embossed"><TrendingUp className="text-black" size={16} strokeWidth={2} /></div>
+                        <span className="font-bold tracking-widest text-[10px] text-black uppercase">Fiyat / Perf.</span>
+                      </div>
+                      <div className="text-2xl font-display font-black tracking-tighter text-black">{parseInt(currentCar.price_perf_score, 10) || 0}</div>
+                    </div>
+                    <div className="bg-white border border-black/5 rounded-[1.5rem] p-6 flex justify-between items-center shadow-embossed hover:shadow-embossed-hover transition-all duration-500">
+                      <div className="flex items-center gap-4">
+                        <div className="p-2 bg-[#F5F5F7] rounded-full shadow-inner-embossed"><Target className="text-black" size={16} strokeWidth={2} /></div>
+                        <span className="font-bold tracking-widest text-[10px] text-black uppercase">Uygunluk</span>
+                      </div>
+                      <div className="text-2xl font-display font-black tracking-tighter text-black">{parseInt(currentCar.fair_price_score, 10) || 0}</div>
+                    </div>
+                    <div className="bg-white border border-black/5 rounded-[1.5rem] p-6 flex justify-between items-center shadow-embossed hover:shadow-embossed-hover transition-all duration-500">
+                      <div className="flex items-center gap-4">
+                        <div className="p-2 bg-[#F5F5F7] rounded-full shadow-inner-embossed"><Shield className="text-black" size={16} strokeWidth={2} /></div>
+                        <span className="font-bold tracking-widest text-[10px] text-black uppercase">Araç Durumu</span>
+                      </div>
+                      <div className="text-2xl font-display font-black tracking-tighter text-black">{parseInt(currentCar.condition_score, 10) || 0}</div>
+                    </div>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 gap-2 mt-4">
-                  <div className="bg-white border border-black/5 rounded-[1.5rem] p-6 flex justify-between items-center shadow-embossed hover:shadow-embossed-hover transition-all duration-500">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 bg-[#F5F5F7] rounded-full shadow-inner-embossed"><Zap className="text-black" size={16} strokeWidth={2} /></div>
-                      <span className="font-bold tracking-widest text-[10px] text-black uppercase">Satış Hızı</span>
-                    </div>
-                    <div className="text-2xl font-display font-black tracking-tighter text-black">{parseInt(currentCar.market_speed_score, 10) || 0}</div>
-                  </div>
-                  <div className="bg-white border border-black/5 rounded-[1.5rem] p-6 flex justify-between items-center shadow-embossed hover:shadow-embossed-hover transition-all duration-500">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 bg-[#F5F5F7] rounded-full shadow-inner-embossed"><TrendingUp className="text-black" size={16} strokeWidth={2} /></div>
-                      <span className="font-bold tracking-widest text-[10px] text-black uppercase">Fiyat / Perf.</span>
-                    </div>
-                    <div className="text-2xl font-display font-black tracking-tighter text-black">{parseInt(currentCar.price_perf_score, 10) || 0}</div>
-                  </div>
-                  <div className="bg-white border border-black/5 rounded-[1.5rem] p-6 flex justify-between items-center shadow-embossed hover:shadow-embossed-hover transition-all duration-500">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 bg-[#F5F5F7] rounded-full shadow-inner-embossed"><Target className="text-black" size={16} strokeWidth={2} /></div>
-                      <span className="font-bold tracking-widest text-[10px] text-black uppercase">Uygunluk</span>
-                    </div>
-                    <div className="text-2xl font-display font-black tracking-tighter text-black">{parseInt(currentCar.fair_price_score, 10) || 0}</div>
-                  </div>
-                  <div className="bg-white border border-black/5 rounded-[1.5rem] p-6 flex justify-between items-center shadow-embossed hover:shadow-embossed-hover transition-all duration-500">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 bg-[#F5F5F7] rounded-full shadow-inner-embossed"><Shield className="text-black" size={16} strokeWidth={2} /></div>
-                      <span className="font-bold tracking-widest text-[10px] text-black uppercase">Araç Durumu</span>
-                    </div>
-                    <div className="text-2xl font-display font-black tracking-tighter text-black">{parseInt(currentCar.condition_score, 10) || 0}</div>
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Section 2: Detaylı Araç Özellikleri */}
-            <div className="mb-20">
-              <h3 className="text-2xl font-display font-black tracking-tight text-black mb-8 flex items-center gap-4">
-                <Settings className="text-black/30" /> Detaylı Araç Özellikleri
-              </h3>
-              
-              <div className="flex flex-col gap-4">
-                {currentCar.detailed_specs?.map((spec, index) => (
-                  <div key={index} className="bg-white border border-black/5 p-6 md:p-8 rounded-[2rem] shadow-embossed hover:shadow-embossed-hover transition-all duration-300 flex flex-col md:flex-row md:items-start gap-4 md:gap-8">
-                    <div className="w-full md:w-1/3 shrink-0">
-                      <div className="text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase mb-2">{spec.name}</div>
-                      <div className="text-xl font-display font-black tracking-tight text-black">{spec.value}</div>
-                    </div>
-                    
-                    <div className="w-full md:w-2/3 border-t md:border-t-0 md:border-l border-black/5 pt-4 md:pt-0 md:pl-8">
-                      <div className="flex items-start gap-3">
-                        <div className="mt-1">{renderStatusIcon(spec.status)}</div>
-                        <div>
-                          <p className="text-sm font-bold text-black/70 leading-relaxed mb-2">
-                            {spec.comment}
-                          </p>
-                          {spec.note && (
-                            <p className="text-[11px] font-bold tracking-wider text-black/40 italic">
-                              {spec.note}
-                            </p>
-                          )}
+            {currentCar.ai_report && currentCar.detailed_specs && currentCar.detailed_specs.length > 0 && (
+              <>
+                <div className="mb-20">
+                  <h3 className="text-2xl font-display font-black tracking-tight text-black mb-8 flex items-center gap-4">
+                    <Settings className="text-black/30" /> Detaylı Araç Özellikleri
+                  </h3>
+                  
+                  <div className="flex flex-col gap-4">
+                    {currentCar.detailed_specs.map((spec, index) => (
+                      <div key={index} className="bg-white border border-black/5 p-6 md:p-8 rounded-[2rem] shadow-embossed hover:shadow-embossed-hover transition-all duration-300 flex flex-col md:flex-row md:items-start gap-4 md:gap-8">
+                        <div className="w-full md:w-1/3 shrink-0">
+                          <div className="text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase mb-2">{spec.name}</div>
+                          <div className="text-xl font-display font-black tracking-tight text-black">{spec.value}</div>
+                        </div>
+                        
+                        <div className="w-full md:w-2/3 border-t md:border-t-0 md:border-l border-black/5 pt-4 md:pt-0 md:pl-8">
+                          <div className="flex items-start gap-3">
+                            <div className="mt-1">{renderStatusIcon(spec.status)}</div>
+                            <div>
+                              <p className="text-sm font-bold text-black/70 leading-relaxed mb-2">
+                                {spec.comment}
+                              </p>
+                              {spec.note && (
+                                <p className="text-[11px] font-bold tracking-wider text-black/40 italic">
+                                  {spec.note}
+                                </p>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
 
-            <div className="w-full h-[1px] bg-black/10 mb-20"></div>
+                <div className="w-full h-[1px] bg-black/10 mb-20"></div>
+              </>
+            )}
 
             {/* Section 3: Kıyaslama ve Rakip Analizi */}
-            <div className="mb-20">
-              <h3 className="text-2xl font-display font-black tracking-tight text-black mb-8 flex items-center gap-4">
-                <Maximize className="text-black/30" /> Rakiplerine Göre Analiz {currentCar.competitor_analysis?.competitors ? `(${currentCar.competitor_analysis.competitors.join(', ')})` : ''}
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-8">
-                <div className="bg-[#F5F5F7] p-8 rounded-[2rem] shadow-inner-embossed">
-                  <div className="text-[10px] font-bold tracking-[0.2em] text-green-600 uppercase mb-6 flex items-center gap-2"><CheckCircle size={14}/> Avantajlı Yönleri</div>
-                  <ul className="space-y-4">
-                    {currentCar.competitor_analysis?.pros?.map((p, i) => (
-                      <li key={i} className="flex items-start gap-3 text-sm font-bold text-black/70">
-                        <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-1.5 shrink-0"></div>
-                        {p}
-                      </li>
-                    )) || <li className="text-sm font-bold text-black/50">Belirtilmemiş</li>}
-                  </ul>
+            {currentCar.ai_report && currentCar.competitor_analysis && (
+              <>
+                <div className="mb-20">
+                  <h3 className="text-2xl font-display font-black tracking-tight text-black mb-8 flex items-center gap-4">
+                    <Maximize className="text-black/30" /> Rakiplerine Göre Analiz {currentCar.competitor_analysis.competitors ? `(${currentCar.competitor_analysis.competitors.join(', ')})` : ''}
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-8">
+                    <div className="bg-[#F5F5F7] p-8 rounded-[2rem] shadow-inner-embossed">
+                      <div className="text-[10px] font-bold tracking-[0.2em] text-green-600 uppercase mb-6 flex items-center gap-2"><CheckCircle size={14}/> Avantajlı Yönleri</div>
+                      <ul className="space-y-4">
+                        {currentCar.competitor_analysis.pros?.map((p, i) => (
+                          <li key={i} className="flex items-start gap-3 text-sm font-bold text-black/70">
+                            <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-1.5 shrink-0"></div>
+                            {p}
+                          </li>
+                        )) || <li className="text-sm font-bold text-black/50">Belirtilmemiş</li>}
+                      </ul>
+                    </div>
+
+                    <div className="bg-[#F5F5F7] p-8 rounded-[2rem] shadow-inner-embossed">
+                      <div className="text-[10px] font-bold tracking-[0.2em] text-red-500 uppercase mb-6 flex items-center gap-2"><AlertTriangle size={14}/> Zayıf Yönleri</div>
+                      <ul className="space-y-4">
+                        {currentCar.competitor_analysis.cons?.map((p, i) => (
+                          <li key={i} className="flex items-start gap-3 text-sm font-bold text-black/70">
+                            <div className="w-1.5 h-1.5 bg-red-400 rounded-full mt-1.5 shrink-0"></div>
+                            {p}
+                          </li>
+                        )) || <li className="text-sm font-bold text-black/50">Belirtilmemiş</li>}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="bg-black text-white p-10 md:p-12 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-8 opacity-10">
+                      <Maximize size={120} />
+                    </div>
+                    <div className="text-[10px] font-bold tracking-[0.2em] text-white/50 uppercase mb-6 relative z-10 flex items-center gap-3">
+                      <Star size={14} className="text-[#D4AF37]" /> Rakiplerine Göre Analiz {currentCar.competitor_analysis.competitors ? `(${currentCar.competitor_analysis.competitors.join(', ')})` : ''}
+                    </div>
+                    <div className="relative z-10 space-y-6">
+                      {(currentCar.competitor_analysis.text || 'Rakip analizi bulunamadı.').split('\n\n').map((paragraph, idx) => (
+                        <p key={idx} className="text-sm md:text-base font-bold leading-loose tracking-wide text-white/90">
+                          {paragraph}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
-                <div className="bg-[#F5F5F7] p-8 rounded-[2rem] shadow-inner-embossed">
-                  <div className="text-[10px] font-bold tracking-[0.2em] text-red-500 uppercase mb-6 flex items-center gap-2"><AlertTriangle size={14}/> Zayıf Yönleri</div>
-                  <ul className="space-y-4">
-                    {currentCar.competitor_analysis?.cons?.map((p, i) => (
-                      <li key={i} className="flex items-start gap-3 text-sm font-bold text-black/70">
-                        <div className="w-1.5 h-1.5 bg-red-400 rounded-full mt-1.5 shrink-0"></div>
-                        {p}
-                      </li>
-                    )) || <li className="text-sm font-bold text-black/50">Belirtilmemiş</li>}
-                  </ul>
-                </div>
-              </div>
+                <div className="w-full h-[1px] bg-black/10 mb-20"></div>
+              </>
+            )}
 
-              <div className="bg-black text-white p-10 md:p-12 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-8 opacity-10">
-                  <Maximize size={120} />
-                </div>
-                <div className="text-[10px] font-bold tracking-[0.2em] text-white/50 uppercase mb-6 relative z-10 flex items-center gap-3">
-                  <Star size={14} className="text-[#D4AF37]" /> Rakiplerine Göre Analiz {currentCar.competitor_analysis?.competitors ? `(${currentCar.competitor_analysis.competitors.join(', ')})` : ''}
-                </div>
-                <div className="relative z-10 space-y-6">
-                  {(currentCar.competitor_analysis?.text || 'Rakip analizi bulunamadı.').split('\n\n').map((paragraph, idx) => (
-                    <p key={idx} className="text-sm md:text-base font-bold leading-loose tracking-wide text-white/90">
-                      {paragraph}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            </div>
+            {/* Section 4: Görsel Yapay Zeka Analizi */}
+            {currentCar.vision_report && (
+              <>
+                <div className="mb-20">
+                  <h3 className="text-2xl font-display font-black tracking-tight text-black mb-8 flex items-center gap-4">
+                    <ImageIcon className="text-black/30" /> Araç Fotoğrafları ve Görsel Analiz
+                  </h3>
+                  
+                  {/* Resim Galerisi */}
+                  <div className="w-full overflow-x-auto hide-scrollbar mb-12 cursor-grab active:cursor-grabbing pb-8 border-b border-black/5">
+                    <div className="flex gap-4 px-2" style={{ width: 'max-content' }}>
+                      {currentCar.images?.map((img, idx) => (
+                        <div 
+                          key={idx} 
+                          onClick={() => openLightbox(currentCar.images, idx)}
+                          className="relative h-[200px] md:h-[280px] rounded-3xl overflow-hidden shrink-0 shadow-lg cursor-pointer group"
+                        >
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors z-10"></div>
+                          <img 
+                            src={img} 
+                            alt={`Araç ${idx+1}`} 
+                            className="h-full w-auto object-cover"
+                            draggable="false"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-            <div className="w-full h-[1px] bg-black/10 mb-20"></div>
+                  {/* Görsel AI Notları */}
+                  <div className="bg-[#1C1C1E] text-white p-10 md:p-12 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-8 opacity-5">
+                      <ImageIcon size={120} />
+                    </div>
+                    <div className="text-[10px] font-bold tracking-[0.2em] text-white/50 uppercase mb-8 relative z-10 flex items-center gap-3">
+                      <Star size={14} className="text-[#32D74B]" /> 4o-Mini Görsel İnceleme Raporu
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-10 relative z-10">
+                      <div className="bg-black/40 p-8 rounded-[2rem]">
+                        <div className="text-[10px] font-bold tracking-[0.2em] text-[#32D74B] uppercase mb-6 flex items-center gap-2"><CheckCircle size={14}/> Olumlu Detaylar</div>
+                        <ul className="space-y-4">
+                          {currentCar.positives?.map((p, i) => (
+                            <li key={i} className="flex items-start gap-3 text-sm font-bold text-white/80">
+                              <div className="w-1.5 h-1.5 bg-[#32D74B] rounded-full mt-1.5 shrink-0"></div>
+                              {p}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="bg-black/40 p-8 rounded-[2rem]">
+                        <div className="text-[10px] font-bold tracking-[0.2em] text-[#FF453A] uppercase mb-6 flex items-center gap-2"><AlertTriangle size={14}/> Görünen Kusurlar</div>
+                        <ul className="space-y-4">
+                          {currentCar.defects?.map((p, i) => (
+                            <li key={i} className="flex items-start gap-3 text-sm font-bold text-white/80">
+                              <div className="w-1.5 h-1.5 bg-[#FF453A] rounded-full mt-1.5 shrink-0"></div>
+                              {p}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="relative z-10 border-t border-white/10 pt-8">
+                      {(currentCar.vision_report || '').split('\n\n').map((paragraph, idx) => (
+                        <p key={idx} className="text-sm md:text-base font-bold leading-loose tracking-wide text-white/90">
+                          {paragraph}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="w-full h-[1px] bg-black/10 mb-20"></div>
+              </>
+            )}
 
               {/* İlan Linki ve Ekspertiz */}
               <div>
