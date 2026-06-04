@@ -174,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
           statusCounter.className = 'status';
           btnStart.style.display = 'block';
           tabList.style.display = 'none';
-          analysisOptions.style.display = 'none';
+          analysisOptions.style.display = 'block';
           btnAnalyze.style.display = 'none';
         }
       });
@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!tabs || tabs.length === 0) {
       tabList.innerHTML = '<div class="empty-state">İlanları yeni sekmede açın. Sistem otomatik yükleyecektir.</div>';
       btnAnalyze.style.display = 'none';
-      analysisOptions.style.display = 'none';
+      analysisOptions.style.display = 'block';
       return;
     }
 
