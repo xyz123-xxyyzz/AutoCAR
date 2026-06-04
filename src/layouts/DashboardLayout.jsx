@@ -39,25 +39,14 @@ export default function DashboardLayout({ children, subscriptionType, userName, 
             Kontrol Paneli
           </Link>
           
-          {subscriptionType === 'Sahip' ? (
-            <Link 
-              to="/kullanicilar" 
-              className={`text-[11px] font-bold tracking-[0.15em] uppercase transition-opacity ${
-                location.pathname === '/kullanicilar' ? 'text-black' : 'text-black/50 hover:text-black'
-              }`}
-            >
-              Kullanıcılar
-            </Link>
-          ) : (
-            <Link 
-              to="/gecmis" 
-              className={`text-[11px] font-bold tracking-[0.15em] uppercase transition-opacity ${
-                location.pathname === '/gecmis' ? 'text-black' : 'text-black/50 hover:text-black'
-              }`}
-            >
-              Geçmiş Analizler
-            </Link>
-          )}
+          <Link 
+            to="/gecmis" 
+            className={`text-[11px] font-bold tracking-[0.15em] uppercase transition-opacity ${
+              location.pathname === '/gecmis' ? 'text-black' : 'text-black/50 hover:text-black'
+            }`}
+          >
+            Geçmiş Analizler
+          </Link>
 
 
           <Link 
