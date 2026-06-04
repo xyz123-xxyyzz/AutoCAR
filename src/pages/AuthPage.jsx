@@ -47,10 +47,10 @@ export default function AuthPage() {
           localStorage.setItem('autocar_device_id', deviceId);
         }
 
-        // vip_users tablosundan VIP hesabı çek
+        // Auth başarılı, şimdi kendi tablomuzdan (vip_users) rolü, cihazı ve API Key'i çekelim
         const { data: vipUser, error: vipError } = await supabase
           .from('vip_users')
-          .select('*')
+          .select('role, admin_device_id, customer_device_id, openai_api_key')
           .eq('email', email)
           .single();
 
@@ -102,10 +102,13 @@ export default function AuthPage() {
           }
         }
 
-        // Güncel rolü localStorage'a yaz
+        // Başarılı giriş: Kullanıcıyı yönlendir
         const demoRole = role === 'sahip' ? 'Sahip' : 'Kullanıcı';
         localStorage.setItem('userRole', demoRole);
-        localStorage.setItem('userEmail', email); // Eklendi: Geçmiş raporlar için gerekli
+        localStorage.setItem('userEmail', email); // Geçmiş raporlar için gerekli
+        if (vipUser.openai_api_key) {
+          localStorage.setItem('openai_api_key', vipUser.openai_api_key); // Eklenti köprüsü için
+        }
 
         if (demoRole === 'Sahip') navigate('/sahip');
         else navigate('/kullanici');

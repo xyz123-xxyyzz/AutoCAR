@@ -18,6 +18,13 @@
     "https://auto-car-gold.vercel.app/*",
     "https://api.openai.com/*"
   ],
+  "content_scripts": [
+    {
+      "matches": ["http://localhost/*", "https://*.vercel.app/*", "https://auto-car-gold.vercel.app/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_title": "AutoCAR",
