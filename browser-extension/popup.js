@@ -12,40 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const progressValue = document.getElementById('progress-value');
   const aiText = document.getElementById('ai-text');
 
-  // Analysis Toggles
-  const analysisOptions = document.getElementById('analysis-options');
-  const toggleData = document.getElementById('toggle-data');
-  const toggleVision = document.getElementById('toggle-vision');
+  // Checkboxes removed as system is Data-Only now
 
-  // Load saved toggles
-  chrome.storage.local.get(['toggle_data', 'toggle_vision'], (res) => {
-    if (res.toggle_data !== undefined) toggleData.checked = res.toggle_data;
-    if (res.toggle_vision !== undefined) toggleVision.checked = res.toggle_vision;
-    validateAnalyzeBtn();
-  });
-
-  const saveToggles = () => {
-    chrome.storage.local.set({
-      toggle_data: toggleData.checked,
-      toggle_vision: toggleVision.checked
-    });
-    validateAnalyzeBtn();
-  };
-
-  toggleData.addEventListener('change', saveToggles);
-  toggleVision.addEventListener('change', saveToggles);
-
-  function validateAnalyzeBtn() {
-    if (!toggleData.checked && !toggleVision.checked) {
-      btnAnalyze.disabled = true;
-      btnAnalyze.style.opacity = '0.5';
-      btnAnalyze.textContent = 'Lütfen Bir Seçenek İşaretleyin';
-    } else {
-      btnAnalyze.disabled = false;
-      btnAnalyze.style.opacity = '1';
-      btnAnalyze.textContent = 'Analiz Et';
-    }
-  }
 
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('mode') === 'window') {
@@ -80,13 +48,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   btnAnalyze.addEventListener('click', () => {
-    if (!toggleData.checked && !toggleVision.checked) return;
     chrome.runtime.sendMessage({ 
       action: 'start_analysis', 
-      options: { 
-        runData: toggleData.checked, 
-        runVision: toggleVision.checked 
-      } 
+      options: { runData: true } 
     }, () => {
       checkState();
     });
@@ -129,7 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isAnalyzing || isError) {
         btnStart.style.display = 'none';
         tabList.style.display = 'none';
-        analysisOptions.style.display = 'none';
         btnAnalyze.style.display = 'none';
         
         statusCounter.textContent = isError ? 'Sistem Hatası' : 'Yapay Zeka Devrede';
@@ -174,7 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
           statusCounter.className = 'status';
           btnStart.style.display = 'block';
           tabList.style.display = 'none';
-          analysisOptions.style.display = 'block';
           btnAnalyze.style.display = 'none';
         }
       });
@@ -187,7 +149,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!tabs || tabs.length === 0) {
       tabList.innerHTML = '<div class="empty-state">İlanları yeni sekmede açın. Sistem otomatik yükleyecektir.</div>';
       btnAnalyze.style.display = 'none';
-      analysisOptions.style.display = 'block';
       return;
     }
 
@@ -196,11 +157,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (readyCount > 0) {
       btnAnalyze.style.display = 'block';
-      analysisOptions.style.display = 'block';
-      validateAnalyzeBtn();
     } else {
       btnAnalyze.style.display = 'none';
-      analysisOptions.style.display = 'none';
     }
 
     tabs.forEach((tab) => {
