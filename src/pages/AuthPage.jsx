@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Loader2, AlertCircle, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Loader2, AlertCircle, ShieldCheck, MonitorSmartphone, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export default function AuthPage() {
@@ -10,9 +10,12 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
+  // Consent Modal States
+  const [showDeviceConsent, setShowDeviceConsent] = useState(false);
+  const [pendingLogin, setPendingLogin] = useState(null);
+  
   const navigate = useNavigate();
 
-  // Fetch IP automatically on mount
   useEffect(() => {
     fetch('https://api.ipify.org?format=json')
       .then(res => res.json())
@@ -23,13 +26,66 @@ export default function AuthPage() {
       });
   }, []);
 
+  const finalizeLogin = async (vipUser, deviceId) => {
+    try {
+      const role = vipUser.role; 
+      
+      if (role === 'sahip') {
+        if (!vipUser.admin_device_id) {
+          await supabase.from('vip_users').update({ admin_device_id: deviceId }).eq('email', email);
+        } else if (vipUser.admin_device_id !== deviceId) {
+          throw new Error('Güvenlik: Yönetici hesabı yalnızca tanımlı Ana Bilgisayardan (Sizin Bilgisayarınızdan) açılabilir.');
+        }
+      } else {
+        const { data: ownerUser } = await supabase
+          .from('vip_users')
+          .select('admin_device_id')
+          .eq('role', 'sahip')
+          .limit(1)
+          .single();
+          
+        const masterDeviceId = ownerUser?.admin_device_id;
+
+        if (deviceId === masterDeviceId) {
+          // Geçiş Serbest (Sahip, müşteri hesabına giriyor)
+        } else {
+          if (!vipUser.customer_device_id) {
+            await supabase.from('vip_users').update({ customer_device_id: deviceId }).eq('email', email);
+          } else if (vipUser.customer_device_id !== deviceId) {
+            throw new Error('İlk başta hangi cihazdan girdiyseniz o cihazdan tekrardan giriş yapmalısınız.');
+          }
+        }
+      }
+
+      const demoRole = role === 'sahip' ? 'Sahip' : 'Kullanıcı';
+      localStorage.setItem('userRole', demoRole);
+      localStorage.setItem('userEmail', email);
+      if (vipUser.openai_api_key) {
+        localStorage.setItem('openai_api_key', vipUser.openai_api_key);
+      }
+
+      if (demoRole === 'Sahip') navigate('/sahip');
+      else navigate('/kullanici');
+    } catch (err) {
+      setError(err.message || 'Giriş yapılırken bir hata oluştu.');
+      setLoading(false);
+    }
+  };
+
+  const handleDeviceConsent = async () => {
+    setShowDeviceConsent(false);
+    setLoading(true);
+    let deviceId = 'dev_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+    localStorage.setItem('autocar_device_id', deviceId);
+    await finalizeLogin(pendingLogin, deviceId);
+  };
+
   const handleAuth = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      // Doğrudan vip_users tablosundan bilgileri çekiyoruz (Supabase Auth yerine)
       const { data: vipUser, error: vipError } = await supabase
         .from('vip_users')
         .select('password, role, admin_device_id, customer_device_id, openai_api_key')
@@ -40,83 +96,60 @@ export default function AuthPage() {
         throw new Error('Bu e-posta yetkili bir VIP hesabı değil.');
       }
 
-      // Şifre kontrolü
       if (vipUser.password !== password) {
         throw new Error('Geçersiz e-posta veya şifre. Lütfen yöneticinizden aldığınız VIP bilgileri kontrol edin.');
       }
 
-      if (vipUser) {
-        // Cihaz Kilidi (Device Fingerprinting)
-        let deviceId = localStorage.getItem('autocar_device_id');
-        if (!deviceId) {
-          deviceId = 'dev_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
-          localStorage.setItem('autocar_device_id', deviceId);
-        }
-
-        const role = vipUser.role; // 'sahip' veya 'kullanici'
-        
-        if (role === 'sahip') {
-          // SAHİP KURALI: Sadece ve sadece Sahip'in kendi bilgisayarı (1 Adet) girebilir.
-          if (!vipUser.admin_device_id) {
-            // İlk kez giriyorsa cihazı Master Device olarak kaydet
-            await supabase.from('vip_users').update({ admin_device_id: deviceId }).eq('email', email);
-          } else if (vipUser.admin_device_id !== deviceId) {
-            // İkinci bir bilgisayardan girmeye çalışıyorsa reddet
-            await supabase.auth.signOut();
-            throw new Error('Güvenlik: Yönetici hesabı yalnızca tanımlı Ana Bilgisayardan (Sizin Bilgisayarınızdan) açılabilir.');
-          }
-        } else {
-          // MÜŞTERİ KURALI: 
-          // 1. Sahip (Master Device) her zaman girebilir.
-          // 2. Müşteri (Kendi Device'ı) 1 kez kaydedilir ve sadece o bilgisayardan girebilir.
-          
-          // Önce Master Device'ı (Sahibin Cihazını) veritabanından öğrenelim
-          const { data: ownerUser } = await supabase
-            .from('vip_users')
-            .select('admin_device_id')
-            .eq('role', 'sahip')
-            .limit(1)
-            .single();
-            
-          const masterDeviceId = ownerUser?.admin_device_id;
-
-          // Eğer giren kişi SİZSİNİZ (Master Device) ise, müşteri hesabına direkt izin ver.
-          if (deviceId === masterDeviceId) {
-            // Geçiş Serbest (Müşteri slotunu bile harcamaz)
-          } else {
-            // Eğer giren kişi MÜŞTERİ ise (Master Device değilse)
-            if (!vipUser.customer_device_id) {
-              // Müşteri ilk defa giriyorsa, onun bilgisayarını müşteriye ait cihaz olarak kaydet (2. slot doldu)
-              await supabase.from('vip_users').update({ customer_device_id: deviceId }).eq('email', email);
-            } else if (vipUser.customer_device_id !== deviceId) {
-              // Eğer giren bilgisayar ne SİZİN bilgisayarınız, ne de MÜŞTERİNİN ilk girdiği bilgisayar değilse (Yani 3. bir kişi/arkadaşıysa) -> REDDET
-              await supabase.auth.signOut();
-              throw new Error('İlk başta hangi cihazdan girdiyseniz o cihazdan tekrardan giriş yapmalısınız.');
-            }
-          }
-        }
-
-        // Başarılı giriş: Kullanıcıyı yönlendir
-        const demoRole = role === 'sahip' ? 'Sahip' : 'Kullanıcı';
-        localStorage.setItem('userRole', demoRole);
-        localStorage.setItem('userEmail', email); // Geçmiş raporlar için gerekli
-        if (vipUser.openai_api_key) {
-          localStorage.setItem('openai_api_key', vipUser.openai_api_key); // Eklenti köprüsü için
-        }
-
-        if (demoRole === 'Sahip') navigate('/sahip');
-        else navigate('/kullanici');
+      let deviceId = localStorage.getItem('autocar_device_id');
+      if (!deviceId) {
+         // Cihaz daha önce hiç kayıt olmamış, izin isteyelim
+         setPendingLogin(vipUser);
+         setShowDeviceConsent(true);
+         setLoading(false);
+         return;
       }
+
+      await finalizeLogin(vipUser, deviceId);
 
     } catch (err) {
       setError(err.message || 'Giriş yapılırken bir hata oluştu.');
-    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F2F5] text-black font-sans flex flex-col items-center justify-center p-6 selection:bg-black selection:text-white">
+    <div className="min-h-screen bg-[#F0F2F5] text-black font-sans flex flex-col items-center justify-center p-6 selection:bg-black selection:text-white relative">
+      
+      {/* Device Consent Modal */}
+      {showDeviceConsent && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white max-w-md w-full rounded-[2.5rem] p-10 shadow-2xl border border-white/50 text-center animate-in fade-in zoom-in duration-300">
+            <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner-embossed">
+              <MonitorSmartphone size={32} />
+            </div>
+            <h3 className="text-2xl font-display font-black tracking-tight mb-4">Cihaz Kayıt Onayı</h3>
+            <p className="text-black/60 font-medium text-sm leading-relaxed mb-8">
+              VIP Hesabınız, güvenlik gereği yalnızca kullandığınız bu cihazdan (bilgisayardan) açılacak şekilde kilitlenecektir.<br/><br/>
+              Sizin cihazınıza özel güvenlik altyapısını kurmamız için onay vermeniz gerekmektedir.
+            </p>
+            <div className="space-y-3">
+              <button 
+                onClick={handleDeviceConsent}
+                className="w-full py-4 bg-black text-white font-bold tracking-widest text-[11px] uppercase rounded-full hover:bg-black/80 transition-colors flex items-center justify-center gap-2 shadow-embossed"
+              >
+                <CheckCircle2 size={16} /> İzin Ver ve Kurulumu Tamamla
+              </button>
+              <button 
+                onClick={() => { setShowDeviceConsent(false); setPendingLogin(null); }}
+                className="w-full py-4 bg-transparent text-black/50 font-bold tracking-widest text-[11px] uppercase rounded-full hover:bg-black/5 transition-colors"
+              >
+                İptal Et
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="w-full max-w-md">
         
         <div className="text-center mb-10">
