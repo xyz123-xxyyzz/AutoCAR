@@ -176,15 +176,68 @@ function groupTabsByModel(readyData) {
 }
 
 async function analyzeDataClone(carData) {
-  const systemPrompt = `You are an expert, highly critical, and brutally realistic automotive appraiser and data analyst AI.
-Analyze the provided car data (technical specs, price, damage history, mileage).
+  const systemPrompt = `You are a strict, brutally honest Automotive Data Analyst AI.
+Analyze the provided car data (specs, price, damage history, mileage).
+Extract technical insights, assess the market speed, evaluate the price-to-performance ratio, and condition.
+Return ONLY VALID JSON.
+Format:
+{
+  "market_speed_analysis": "Commentary on how fast this car sells in Turkey.",
+  "price_perf_analysis": "Commentary on whether the price is justified by its features.",
+  "condition_analysis": "Commentary on the car's condition based on mileage, damage history, and year.",
+  "competitors_pros_cons": {
+    "competitors": ["Model 1", "Model 2"],
+    "text": "Comparison text.",
+    "pros": ["Pro 1", "Pro 2"],
+    "cons": ["Con 1", "Con 2"]
+  },
+  "detailed_specs_raw": [
+    { "name": "Spec Name", "value": "Value", "status": "good/bad/neutral", "comment": "Expert opinion on this spec" }
+  ],
+  "damage_map_raw": {
+    "kaput": "orijinal", "tavan": "boyali"
+  }
+}
+All text MUST be in TURKISH. Be brutally honest, do not sugarcoat anything.`;
+
+  const dataForAi = { ...carData };
+  delete dataForAi.images;
+  return await callOpenAI(systemPrompt, dataForAi);
+}
+
+async function analyzeVisionClone(imageUrl, carTitle) {
+  const systemPrompt = `You are an expert automotive visual inspector AI.
+Examine the SINGLE provided car image very carefully.
+Find any visible defects (scratches, dents, wear, color mismatch) or positive traits (clean interior, good paint condition, premium wheels).
+Return ONLY VALID JSON.
+Format:
+{
+  "defects_found": ["Defect 1", "Defect 2"],
+  "positives_found": ["Positive 1", "Positive 2"],
+  "image_notes": "A brief summary of what you observe in this specific image."
+}
+All text MUST be in TURKISH. Do NOT hallucinate defects if they are not clearly visible.`;
+
+  let userContent = [
+    { type: "text", text: `Analyze this single image for: ${carTitle || 'Unknown Car'}` },
+    { type: "image_url", image_url: { url: imageUrl } }
+  ];
+
+  return await callOpenAI(systemPrompt, userContent, true, 'gpt-4o-mini');
+}
+
+async function reportPreparerClone(dataInsights, visionInsights, hasData, hasVision, carTitle) {
+  const systemPrompt = `You are the Master Automotive Report Preparer AI.
+You will receive raw insights from the Data Analyst Clone AND/OR the Vision Analyst Clones.
+Your job is to synthesize these into a single, perfectly structured, comprehensive JSON report for the end-user.
+
 YOU MUST RETURN ONLY VALID JSON.
 Format:
 {
-  "clean_title": "Cleaned up Make, Model and Year of the car (e.g., 'Volkswagen Passat 2015'). Remove any garbage advertising words from the original title.",
+  "clean_title": "Cleaned up Make, Model and Year of the car (e.g., 'Volkswagen Passat 2015'). Remove advertising words.",
   "competitor_analysis": {
-    "competitors": ["Competitor Make Model 1", "Competitor Make Model 2"],
-    "text": "Detailed comparison of this car against its actual real-world market competitors. Be objective, brutally honest and highly critical.",
+    "competitors": ["Competitor 1", "Competitor 2"],
+    "text": "Detailed comparison against competitors.",
     "pros": ["Strong point 1", "Strong point 2"],
     "cons": ["Weak point 1", "Weak point 2"]
   },
@@ -193,91 +246,39 @@ Format:
   "fair_price_score": 50,
   "condition_score": 40,
   "overall_score": 61,
-  "data_report": "A very detailed, comprehensive summary report about the car in Turkish. YOU MUST EXPLICITLY AND TRANSPARENTLY EXPLAIN WHY YOU GAVE THE SPECIFIC SCORES for Satış Hızı, Fiyat/Performans, Uygunluk, and Araç Durumu. Break down your reasoning for each of the 4 scores. CRITICAL RULE FOR FORMATTING: Do NOT write a single flat paragraph! Write it as a structured list with exactly ONE EMPTY LINE (\\n\\n) between each score's explanation. Example format: 'Satış Hızı (75 Puan): [Açıklama]\\n\\nFiyat / Perf. (70 Puan): [Açıklama]\\n\\nUygunluk (50 Puan): [Açıklama]\\n\\nAraç Durumu (50 Puan): [Açıklama]'. Be completely objective, realistic and point out every red flag. No sugarcoating.",
+  "data_report": "A very detailed summary report about the car's technical data in Turkish. Break down the reasoning for the 4 scores. Use exactly ONE EMPTY LINE (\\n\\n) between each score's explanation. (e.g., 'Satış Hızı (75 Puan): [Açıklama]\\n\\nFiyat / Perf...'). BE OBJECTIVE AND BRUTALLY HONEST.",
   "detailed_specs": [
-    { "name": "Spec Name (Turkish)", "value": "Value", "status": "good", "comment": "Detailed professional comment in Turkish", "note": "Short note" }
+    { "name": "Spec Name", "value": "Value", "status": "good", "comment": "Comment" }
   ],
   "damage_map": {
-    "kaput": "orijinal",
-    "tavan": "orijinal",
-    "on_tampon": "orijinal",
-    "arka_tampon": "orijinal",
-    "sag_on_camurluk": "orijinal",
-    "sag_on_kapi": "orijinal",
-    "sag_arka_kapi": "orijinal",
-    "sag_arka_camurluk": "orijinal",
-    "sol_on_camurluk": "orijinal",
-    "sol_on_kapi": "orijinal",
-    "sol_arka_kapi": "orijinal",
-    "sol_arka_camurluk": "orijinal",
-    "bagaj": "orijinal"
-  }
+    "kaput": "orijinal"
+  },
+  "vision_report": "A synthesized visual inspection report in Turkish combining the notes from all the photos. Point out scratches, dents, or cleanliness. If no vision data, leave null.",
+  "defects": ["Combined defect 1", "Combined defect 2"],
+  "positives": ["Combined positive 1", "Combined positive 2"]
 }
 
-RULES FOR SCORING AND EXTRACTION (BE OBJECTIVE BUT FAIR):
-1. detailed_specs: YOU MUST EXTRACT EVERY SINGLE TECHNICAL SPECIFICATION available in the listing. Do NOT just put 4 specs! Extract at least 15-25 specs. If the data is there, extract it!
-CRITICAL RULE FOR DETAILED SPECS 'comment' FIELD: DO NOT just repeat the value! The user already sees the value. The 'comment' must be your DEEP, EXPERT AI THOUGHT/OPINION on that specific feature.
-Example BAD: "Araç 2019 modeldir."
-Example GOOD: "2019 model olması, kronik motor sorunlarının çözüldüğü makyajlı kasaya denk gelir, bu bir avantajdır."
+RULES FOR SCORING (INTEGERS ONLY):
+- market_speed_score: 0-100 (Volume of listings / popularity).
+- price_perf_score: 0-100 (Features vs Price).
+- fair_price_score: 0-100 (Is it priced at fair market value?).
+- condition_score: 0-100 (Year, Mileage, Damage).
+- overall_score: EXACT ARITHMETIC MEAN of the above 4 scores.
 
-2. market_speed_score (Satış Hızı): Evaluate how fast this car sells in the Turkish market.
-3. price_perf_score (Fiyat/Performans): Compare the asking price to the car's features.
-4. fair_price_score (Uygunluk): Determine if the vehicle is priced strictly at its fair market value based on its specs and condition.
-5. condition_score (Araç Durumu): Measure how far the car is from being "Brand New" (0 km).
-6. overall_score: The exact arithmetic mean of the above 4 scores. ALL SCORES MUST BE INTEGERS, not strings.
+CRITICAL INSTRUCTIONS:
+- If 'hasData' is false, you can leave data_report, detailed_specs, and competitor_analysis empty/null.
+- If 'hasVision' is false, leave vision_report, defects, and positives empty/null.
+- All output MUST be in TURKISH.`;
 
-- For damage_map: ONLY use "orijinal", "boyali", "lokal_boyali", "degisen", "bilinmiyor". Deduce this accurately.
-- All output text MUST be in TURKISH.
-- Do NOT hallucinate data, but extract EVERYTHING provided in the data blob.
-`;
+  const inputPayload = {
+    carTitle,
+    hasData,
+    hasVision,
+    dataInsights,
+    visionInsights
+  };
 
-  const dataForAi = { ...carData };
-  delete dataForAi.images;
-  return await callOpenAI(systemPrompt, dataForAi);
-}
-
-async function analyzeVisionClone(carData) {
-  const systemPrompt = `You are an expert automotive visual inspector AI.
-Analyze the provided car images to find defects and positive traits.
-YOU MUST RETURN ONLY VALID JSON.
-Format:
-{
-  "vision_report": "A detailed visual inspection report in Turkish based ONLY on the provided images. Look for scratches, dents, panel gaps, paint mismatches, or interior wear. If the car looks exceptionally clean, state that too.",
-  "defects": ["Görünen kusur 1", "Görünen kusur 2"],
-  "positives": ["İyi durumdaki detay 1", "İyi durumdaki detay 2"]
-}
-
-RULES:
-- EXAMINE THE ATTACHED IMAGES CAREFULLY. Point out visible defects or positive traits.
-- All output text MUST be in TURKISH.
-- Do NOT hallucinate defects that are not visible in the images.
-`;
-
-  const imageUrls = (carData.images || []).slice(0, 5);
-  
-  if (imageUrls.length === 0) {
-    return {
-      vision_report: "Araç için analiz edilecek fotoğraf bulunamadı.",
-      defects: [],
-      positives: []
-    };
-  }
-
-  let userContent = [
-    {
-      type: "text",
-      text: `Analyze the images for this car: ${carData.title || 'Unknown Car'}`
-    }
-  ];
-
-  imageUrls.forEach(url => {
-    userContent.push({
-      type: "image_url",
-      image_url: { url: url }
-    });
-  });
-
-  return await callOpenAI(systemPrompt, userContent, true, 'gpt-4o-mini');
+  return await callOpenAI(systemPrompt, inputPayload);
 }
 
 async function generateGlobalMasterReport(groupReports) {
@@ -364,30 +365,49 @@ async function runFullAnalysis(options) {
 
       for (let i = 0; i < gCars.length; i++) {
         const carProcessPromise = (async () => {
-          let dataResult = {};
-          let visionResult = {};
+          let dataResult = null;
+          let visionResultsArray = [];
 
-          if (options.runData && options.runVision) {
-            [dataResult, visionResult] = await Promise.all([
-              analyzeDataClone(gCars[i]),
-              analyzeVisionClone(gCars[i])
-            ]);
-          } else if (options.runData) {
-            dataResult = await analyzeDataClone(gCars[i]);
-          } else if (options.runVision) {
-            visionResult = await analyzeVisionClone(gCars[i]);
+          // 1. AŞAMA: Data Analizcisi ve Görsel Analizcilerin Çalıştırılması (Paralel)
+          const executionPromises = [];
+
+          if (options.runData) {
+            executionPromises.push(
+              analyzeDataClone(gCars[i]).then(res => { dataResult = res; })
+            );
           }
 
-          const a1 = { ...dataResult, ...visionResult };
-          
+          if (options.runVision) {
+            const imageUrlsToProcess = (gCars[i].images || []).slice(0, 5); // Max 5 fotoğraf
+            for (let imgUrl of imageUrlsToProcess) {
+              executionPromises.push(
+                analyzeVisionClone(imgUrl, gCars[i].title).then(res => {
+                  visionResultsArray.push(res);
+                })
+              );
+            }
+          }
+
+          // Bekle...
+          await Promise.all(executionPromises);
+
+          // 2. AŞAMA: Araç Raportörü Klonunun Çalıştırılması
+          const finalReport = await reportPreparerClone(
+            dataResult, 
+            visionResultsArray, 
+            options.runData, 
+            options.runVision, 
+            gCars[i].title
+          );
+
           processedCars++;
           updateState({ 
             aiStatusText: `Araçlar Eşzamanlı Analiz Ediliyor (${processedCars}/${totalCars})...`,
             analysisProgress: 5 + Math.round((processedCars / totalCars) * 80)
           });
 
-          let cleanTitle = a1.clean_title || gCars[i].title;
-          if (!a1.clean_title || a1.clean_title.length > 50) {
+          let cleanTitle = finalReport.clean_title || gCars[i].title;
+          if (!finalReport.clean_title || finalReport.clean_title.length > 50) {
             const match = gCars[i].title.match(/(?:[12][0-9]{3})/);
             if (match) {
               cleanTitle = `${gName} ${match[0]} Model`;
@@ -403,18 +423,18 @@ async function runFullAnalysis(options) {
               price: gCars[i].price,
               url: gCars[i].url,
               images: gCars[i].images,
-              market_speed_score: a1.market_speed_score || null,
-              price_perf_score: a1.price_perf_score || null,
-              fair_price_score: a1.fair_price_score || null,
-              condition_score: a1.condition_score || null,
-              overall_score: a1.overall_score || null,
-              ai_report: a1.data_report || null,
-              vision_report: a1.vision_report || null,
-              defects: a1.defects || [],
-              positives: a1.positives || [],
-              competitor_analysis: a1.competitor_analysis || null,
-              detailed_specs: a1.detailed_specs || [],
-              damage_map: a1.damage_map || null
+              market_speed_score: finalReport.market_speed_score || null,
+              price_perf_score: finalReport.price_perf_score || null,
+              fair_price_score: finalReport.fair_price_score || null,
+              condition_score: finalReport.condition_score || null,
+              overall_score: finalReport.overall_score || null,
+              ai_report: finalReport.data_report || null,
+              vision_report: finalReport.vision_report || null,
+              defects: finalReport.defects || [],
+              positives: finalReport.positives || [],
+              competitor_analysis: finalReport.competitor_analysis || null,
+              detailed_specs: finalReport.detailed_specs || [],
+              damage_map: finalReport.damage_map || null
             }
           };
         })();
