@@ -28,44 +28,31 @@ export default function AuthPage() {
     setError(null);
 
     try {
-      // Güvenlik için şifre ve api key verilerini direkt çekmek yerine (RLS engeller),
-      // Supabase'deki güvenli RPC (login_vip_user) fonksiyonumuzu çağırıyoruz.
-      const { data: vipUser, error: vipError } = await supabase.rpc('login_vip_user', {
-        user_email: email,
-        user_password: password
-      });
-
-      if (vipError || !vipUser) {
-        throw new Error('Geçersiz e-posta veya şifre. Lütfen yöneticinizden aldığınız VIP bilgileri kontrol edin.');
-      }
-
-      // Cihaz Kilidi (Device Fingerprinting) OTOMATİK
+      // Cihaz Kilidi (Device Fingerprinting)
       let deviceId = localStorage.getItem('autocar_device_id');
       if (!deviceId) {
         deviceId = 'dev_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
         localStorage.setItem('autocar_device_id', deviceId);
       }
 
-      const role = vipUser.role.toLowerCase();
-
-      // RLS (Güvenlik kalkanı) olduğu için cihaz ID'sini doğrudan kaydedemiyoruz.
-      // Bunun için Supabase'de yazdığımız RPC'yi çağırıyoruz.
-      await supabase.rpc('register_device_id', {
-        user_email: email,
-        device_id: deviceId,
-        is_admin: role === 'sahip'
+      // Her şeyi Supabase'deki akıllı RPC fonksiyonuna gönderiyoruz.
+      // Parola, Admin/Müşteri cihaz eşleşmesi ve Master cihaz iznini bu fonksiyon kontrol eder.
+      const { data: response, error: rpcError } = await supabase.rpc('process_vip_login', {
+        p_email: email,
+        p_password: password,
+        p_device_id: deviceId
       });
 
-      // Cihaz uyuşmazlığı kontrolü:
-      if (role === 'sahip') {
-        if (vipUser.admin_device_id && vipUser.admin_device_id !== deviceId) {
-          throw new Error('Güvenlik: Yönetici hesabı yalnızca tanımlı Ana Bilgisayardan (Sizin Bilgisayarınızdan) açılabilir.');
-        }
-      } else {
-        if (vipUser.customer_device_id && vipUser.customer_device_id !== deviceId) {
-          throw new Error('DİKKAT: BU SİSTEME SADECE İLK GİRDİĞİNİZ BİLGİSAYAR İLE GİRİŞ YAPABİLİRSİNİZ.');
-        }
+      if (rpcError) {
+        throw new Error('Sistemsel bir hata oluştu: ' + rpcError.message);
       }
+
+      if (!response.success) {
+        throw new Error(response.error || 'Giriş reddedildi.');
+      }
+
+      const vipUser = response.user;
+      const role = vipUser.role.toLowerCase();
 
       const demoRole = role === 'sahip' ? 'Sahip' : 'Kullanıcı';
       localStorage.setItem('userRole', demoRole);
