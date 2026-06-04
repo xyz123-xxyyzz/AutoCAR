@@ -62,19 +62,8 @@ export default function AuthPage() {
           throw new Error('Güvenlik: Yönetici hesabı yalnızca tanımlı Ana Bilgisayardan (Sizin Bilgisayarınızdan) açılabilir.');
         }
       } else {
-        // Sahibin cihaz ID'si ile eşleşme kontrolü (Master cihaz yetkisi)
-        const { data: ownerUser } = await supabase
-          .from('vip_users')
-          .select('admin_device_id')
-          .eq('role', 'sahip')
-          .limit(1)
-          .single();
-          
-        const masterDeviceId = ownerUser?.admin_device_id;
-
-          } else if (vipUser.customer_device_id !== deviceId) {
-            throw new Error('İlk başta hangi cihazdan girdiyseniz o cihazdan tekrardan giriş yapmalısınız.');
-          }
+        if (vipUser.customer_device_id && vipUser.customer_device_id !== deviceId) {
+          throw new Error('DİKKAT: BU SİSTEME SADECE İLK GİRDİĞİNİZ BİLGİSAYAR İLE GİRİŞ YAPABİLİRSİNİZ.');
         }
       }
 
