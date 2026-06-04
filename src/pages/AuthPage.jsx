@@ -62,27 +62,34 @@ export default function AuthPage() {
         const role = vipUser.role; // 'sahip' veya 'kullanici'
         
         if (role === 'sahip') {
-          // Eğer giriş yapan Sahip ise
-          if (!vipUser.admin_device_id) {
-            // İlk kez giriyorsa cihazı kaydet
-            await supabase.from('vip_users').update({ admin_device_id: deviceId }).eq('email', email);
-          } else if (vipUser.admin_device_id !== deviceId) {
-            // Cihaz uyuşmuyorsa
-            await supabase.auth.signOut();
-            throw new Error('Bu yönetici hesabı başka bir bilgisayara kilitlenmiştir.');
+          // Eğer giriş yapan Sahip ise (2 cihaza kadar izin ver)
+          let adminDevices = vipUser.admin_device_id ? vipUser.admin_device_id.split(',') : [];
+          
+          if (!adminDevices.includes(deviceId)) {
+            if (adminDevices.length < 2) {
+              adminDevices.push(deviceId);
+              await supabase.from('vip_users').update({ admin_device_id: adminDevices.join(',') }).eq('email', email);
+            } else {
+              await supabase.auth.signOut();
+              throw new Error('Bu yönetici hesabı maksimum cihaz sınırına (2) ulaşmıştır. Başka bir bilgisayardan giriş yapılamaz.');
+            }
           }
         } else {
           // Eğer giriş yapan Müşteri (kullanici) ise
+          let adminDevices = vipUser.admin_device_id ? vipUser.admin_device_id.split(',') : [];
+          let customerDevices = vipUser.customer_device_id ? vipUser.customer_device_id.split(',') : [];
+          
           // 1. Kural: Sahip bilgisayarı her zaman müşteri hesabına da girebilir!
-          if (vipUser.admin_device_id !== deviceId) {
-            // Sahip değilse, müşteri cihazını kontrol et
-            if (!vipUser.customer_device_id) {
-              // Müşteri ilk kez giriyorsa cihazını kaydet
-              await supabase.from('vip_users').update({ customer_device_id: deviceId }).eq('email', email);
-            } else if (vipUser.customer_device_id !== deviceId) {
-              // Cihaz ne müşterinin ne de sahibin cihazı değilse REDDET!
-              await supabase.auth.signOut();
-              throw new Error('İzinsiz erişim: Bu VIP hesap yalnızca Müşterinin veya Sahibin yetkili bilgisayarından açılabilir.');
+          if (!adminDevices.includes(deviceId)) {
+            // Sahip değilse, müşteri cihazını kontrol et (2 cihaza kadar izin ver)
+            if (!customerDevices.includes(deviceId)) {
+              if (customerDevices.length < 2) {
+                customerDevices.push(deviceId);
+                await supabase.from('vip_users').update({ customer_device_id: customerDevices.join(',') }).eq('email', email);
+              } else {
+                await supabase.auth.signOut();
+                throw new Error('Bu kullanıcı hesabı maksimum cihaz sınırına (2) ulaşmıştır. Başka bir bilgisayardan giriş yapılamaz.');
+              }
             }
           }
         }
