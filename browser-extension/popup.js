@@ -157,6 +157,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (readyCount > 0) {
       btnAnalyze.style.display = 'block';
+      if (tabs.length > 50) {
+        btnAnalyze.disabled = true;
+        btnAnalyze.textContent = 'Maks. 50 İlan Aşılmıştır';
+      } else {
+        btnAnalyze.disabled = false;
+        btnAnalyze.textContent = 'Analiz Et';
+      }
     } else {
       btnAnalyze.style.display = 'none';
     }
