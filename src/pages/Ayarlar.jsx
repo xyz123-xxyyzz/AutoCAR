@@ -6,6 +6,9 @@ import { supabase } from '../lib/supabase';
 
 export default function Ayarlar() {
   const role = localStorage.getItem('userRole') || 'Kullanıcı';
+  const displayEmail = role === 'Sahip' ? 'kagulle31@gmail.com' : 'autocarkullanici1@gmail.com';
+  const displayPassword = role === 'Sahip' ? 'kz19gll28' : 'AutoCAR2026!1';
+  
   const navigate = useNavigate();
   const [chromeInstalled, setChromeInstalled] = useState(false);
   const [firefoxInstalled, setFirefoxInstalled] = useState(false);
@@ -125,8 +128,8 @@ export default function Ayarlar() {
             <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/10">
               <h3 className="text-[#FFCC00] font-bold text-lg mb-3 tracking-wide">2. Hesabım ve Bilgilerim</h3>
               <p className="text-sm text-white/80 leading-relaxed font-medium">
-                Size tahsis edilmiş e-posta adresiniz: <strong className="text-white bg-black/50 px-2 py-1 rounded">autocar.demo@gmail.com</strong> ve 
-                şifreniz: <strong className="text-white bg-black/50 px-2 py-1 rounded">AutoCAR2026!</strong> olarak ayarlanmıştır. Bu bilgiler yapay zeka 
+                Size tahsis edilmiş e-posta adresiniz: <strong className="text-white bg-black/50 px-2 py-1 rounded">{displayEmail}</strong> ve 
+                şifreniz: <strong className="text-white bg-black/50 px-2 py-1 rounded">{displayPassword}</strong> olarak ayarlanmıştır. Bu bilgiler yapay zeka 
                 erişimi ve kontrol paneli girişi için ortaktır. Şifrenizi kimseyle paylaşmayınız.
               </p>
             </div>
