@@ -294,11 +294,19 @@ Kurallar:
   // Bu sayede 1000 araç bile gönderilse OpenAI chat limiti şişmez.
   const cleanGroupReports = groupReports.map(g => ({
     groupName: g.groupName,
-    cars: g.cars.map(c => {
-      const fullCarData = { ...c };
-      delete fullCarData.images; // Master AI'ın resim görmesine gerek yok
-      return fullCarData;
-    })
+    cars: g.cars.map(c => ({
+      title: c.title,
+      price: c.price,
+      scores: {
+        ms: c.market_speed_score,
+        pp: c.price_perf_score,
+        fp: c.fair_price_score,
+        cs: c.condition_score,
+        total: c.overall_score
+      },
+      specs: (c.detailed_specs || []).map(s => `${s.name}: ${s.value}`),
+      competitors: c.competitor_analysis ? c.competitor_analysis.competitors : []
+    }))
   }));
 
   return await callOpenAI(systemPrompt, cleanGroupReports);
