@@ -29,34 +29,28 @@ export default function AuthPage() {
     setError(null);
 
     try {
-      // Supabase Authentication (SADECE GİRİŞ, YENİ KAYIT YASAK)
-      let { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      // Doğrudan vip_users tablosundan bilgileri çekiyoruz (Supabase Auth yerine)
+      const { data: vipUser, error: vipError } = await supabase
+        .from('vip_users')
+        .select('password, role, admin_device_id, customer_device_id, openai_api_key')
+        .eq('email', email)
+        .single();
 
-      if (authError) {
+      if (vipError || !vipUser) {
+        throw new Error('Bu e-posta yetkili bir VIP hesabı değil.');
+      }
+
+      // Şifre kontrolü
+      if (vipUser.password !== password) {
         throw new Error('Geçersiz e-posta veya şifre. Lütfen yöneticinizden aldığınız VIP bilgileri kontrol edin.');
       }
 
-      if (data?.user) {
+      if (vipUser) {
         // Cihaz Kilidi (Device Fingerprinting)
         let deviceId = localStorage.getItem('autocar_device_id');
         if (!deviceId) {
           deviceId = 'dev_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
           localStorage.setItem('autocar_device_id', deviceId);
-        }
-
-        // Auth başarılı, şimdi kendi tablomuzdan (vip_users) rolü, cihazı ve API Key'i çekelim
-        const { data: vipUser, error: vipError } = await supabase
-          .from('vip_users')
-          .select('role, admin_device_id, customer_device_id, openai_api_key')
-          .eq('email', email)
-          .single();
-
-        if (vipError || !vipUser) {
-          await supabase.auth.signOut();
-          throw new Error('Bu e-posta yetkili bir VIP hesabı değil.');
         }
 
         const role = vipUser.role; // 'sahip' veya 'kullanici'
