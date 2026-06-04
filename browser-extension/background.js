@@ -293,14 +293,14 @@ Kurallar:
   const cleanGroupReports = groupReports.map(g => ({
     groupName: g.groupName,
     cars: g.cars.map(c => ({
-      title: c.carData.title,
-      price: c.carData.price,
+      title: c.title,
+      price: c.price,
       scores: {
-        ms: c.carData.market_speed_score,
-        pp: c.carData.price_perf_score,
-        fp: c.carData.fair_price_score,
-        cs: c.carData.condition_score,
-        total: c.carData.overall_score
+        ms: c.market_speed_score,
+        pp: c.price_perf_score,
+        fp: c.fair_price_score,
+        cs: c.condition_score,
+        total: c.overall_score
       }
     }))
   }));
