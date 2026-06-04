@@ -87,8 +87,11 @@ export default function AnalysisReport() {
                score = parseInt(realGroup.cars[0].overall_score, 10);
             }
 
+            const newId = Math.floor(Math.random() * 9000000000) + 1000000000; // 10 haneli rastgele sayı
+            
             const { data: insertedData, error } = await supabase.from('analyses_history').insert([
               { 
+                id: newId,
                 user_email: userEmail,
                 role: userRole,
                 car_details: title,
@@ -101,8 +104,7 @@ export default function AnalysisReport() {
               console.error("Geçmiş kaydetme hatası:", error);
             } else if (insertedData && insertedData[0]) {
               // YENİ BENZERSİZ LİNK (AC-ID) OLUŞTUR VE ADRES ÇUBUĞUNU GÜNCELLE
-              const newId = insertedData[0].id;
-              window.history.replaceState(null, '', `/analiz/AC-${newId}`);
+              window.history.replaceState(null, '', `/analiz/AC-${insertedData[0].id}`);
             }
           }
         }
