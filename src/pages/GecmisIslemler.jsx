@@ -1,26 +1,68 @@
-import { useState } from 'react';
-import { ArrowRight, Clock, PlusCircle, Car } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowRight, Clock, PlusCircle, Car, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
+import { supabase } from '../lib/supabase';
 
 export default function GecmisIslemler() {
   const role = localStorage.getItem('userRole') || 'Kullanıcı';
+  const userEmail = localStorage.getItem('userEmail');
   const navigate = useNavigate();
   const [filter, setFilter] = useState('Tümü'); // Tümü, Yüklemeler, Analizler
+  const [islemler, setIslemler] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const mockIslemler = [
-    { type: 'Yükleme', date: 'Bugün, 15:30', detail: '+100 Kredi Yüklendi', icon: PlusCircle, id: 1 },
-    { type: 'Analiz', date: 'Bugün, 14:30', detail: 'BMW 320i M Sport Analizi', icon: Car, score: 92, id: 2 },
-    { type: 'Analiz', date: 'Dün, 11:15', detail: 'Mercedes C200d AMG Analizi', icon: Car, score: 88, id: 3 },
-    { type: 'Yükleme', date: 'Dün, 09:00', detail: '+50 Kredi Yüklendi', icon: PlusCircle, id: 4 },
-  ];
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!userEmail) {
+        setLoading(false);
+        return;
+      }
+      
+      const { data, error } = await supabase
+        .from('analyses_history')
+        .select('*')
+        .eq('user_email', userEmail)
+        .order('created_at', { ascending: false });
 
-  const filteredIslemler = mockIslemler.filter(i => {
+      if (error) {
+        console.error("Geçmiş çekme hatası:", error);
+      } else if (data) {
+        const formattedData = data.map(item => {
+          const dateObj = new Date(item.created_at);
+          const dateStr = dateObj.toLocaleDateString('tr-TR') + ' ' + dateObj.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+          return {
+            id: item.id,
+            type: 'Analiz',
+            date: dateStr,
+            detail: item.car_details || 'Analiz Raporu',
+            icon: Car,
+            score: item.score || 0,
+            report_json: item.report_json
+          };
+        });
+        setIslemler(formattedData);
+      }
+      setLoading(false);
+    };
+
+    fetchHistory();
+  }, [userEmail]);
+
+  const filteredIslemler = islemler.filter(i => {
     if (filter === 'Tümü') return true;
     if (filter === 'Yüklemeler') return i.type === 'Yükleme';
     if (filter === 'Analizler') return i.type === 'Analiz';
     return true;
   });
+
+  const handleOpenReport = (report_json) => {
+    // Raporu localStorage'a koyup analiz sayfasına yönlendir
+    window.localStorage.setItem('autocar_ai_result', JSON.stringify(report_json));
+    // Zaten bu raporu kaydettiğimiz için tekrar kaydetmesini önlemek adına hash'i de güncelle
+    window.localStorage.setItem('last_saved_report', JSON.stringify(report_json));
+    navigate('/analiz');
+  };
 
   return (
     <DashboardLayout subscriptionType={role} userName={role === 'Sahip' ? 'Yönetici' : 'Demo'} credits={role === 'Sahip' ? '999.999' : role === 'Premium' ? '15.400' : 15}>
@@ -50,10 +92,14 @@ export default function GecmisIslemler() {
 
       {/* List */}
       <div className="space-y-4">
-        {filteredIslemler.map(islem => (
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="animate-spin text-black/20" size={48} />
+          </div>
+        ) : filteredIslemler.map(islem => (
           <div 
             key={islem.id} 
-            onClick={() => islem.type === 'Analiz' ? navigate('/analiz') : null}
+            onClick={() => islem.type === 'Analiz' ? handleOpenReport(islem.report_json) : null}
             className={`group p-8 bg-white border border-black/5 rounded-[2rem] flex flex-col md:flex-row justify-between md:items-center shadow-embossed hover:shadow-embossed-hover transition-all duration-500 ${islem.type === 'Analiz' ? 'cursor-pointer' : ''}`}
           >
             <div className="flex items-center gap-6 mb-4 md:mb-0">
@@ -77,9 +123,9 @@ export default function GecmisIslemler() {
             )}
           </div>
         ))}
-        {filteredIslemler.length === 0 && (
+        {!loading && filteredIslemler.length === 0 && (
           <div className="text-center p-12 text-black/40 font-bold text-sm tracking-widest uppercase">
-            Gösterilecek işlem bulunamadı.
+            Gösterilecek geçmiş analiz bulunamadı.
           </div>
         )}
       </div>

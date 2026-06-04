@@ -105,6 +105,7 @@ export default function AuthPage() {
         // Güncel rolü localStorage'a yaz
         const demoRole = role === 'sahip' ? 'Sahip' : 'Kullanıcı';
         localStorage.setItem('userRole', demoRole);
+        localStorage.setItem('userEmail', email); // Eklendi: Geçmiş raporlar için gerekli
 
         if (demoRole === 'Sahip') navigate('/sahip');
         else navigate('/kullanici');

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, TrendingUp, Zap, CheckCircle, Star, Settings, Shield, Gauge, Maximize, AlertTriangle, AlertCircle, XCircle, Minus, HelpCircle, Trophy, Target, Sparkles, ArrowRight, Table2, Image as ImageIcon, Users, X } from 'lucide-react';
 import DamageMap from '../components/DamageMap';
+import { supabase } from '../lib/supabase';
 
 export default function AnalysisReport() {
   const [isLoading, setIsLoading] = useState(true);
@@ -19,7 +20,7 @@ export default function AnalysisReport() {
 
 
   useEffect(() => {
-    const processData = () => {
+    const processData = async () => {
       const storedData = window.localStorage.getItem('autocar_ai_result');
       if (!storedData) {
         setAiLoadingText('Eklentiden Rapor Bekleniyor...');
@@ -38,6 +39,44 @@ export default function AnalysisReport() {
         }
         
         setIsLoading(false);
+
+        // GEÇMİŞİ KAYDET (Eğer yeni bir raporsa)
+        const lastSaved = window.localStorage.getItem('last_saved_report');
+        if (storedData !== lastSaved) {
+          window.localStorage.setItem('last_saved_report', storedData);
+          
+          const userEmail = localStorage.getItem('userEmail');
+          const userRole = localStorage.getItem('userRole') || 'Kullanıcı';
+          
+          if (userEmail) {
+            let title = "Yeni Analiz";
+            let score = 0;
+            
+            if (result.summaryData && result.summaryData.title) {
+               title = result.summaryData.title;
+               score = result.summaryData.podium?.[0]?.score || 0;
+            } else if (result.groups && result.groups.length > 0) {
+               title = result.groups[0].cars?.[0]?.title || "Tekil Araç Analizi";
+               score = result.groups[0].cars?.[0]?.overall_score || 0;
+            }
+            
+            const realGroup = result.groups?.find(g => g.groupName?.toLowerCase().includes(title.substring(0, 10).toLowerCase()) || title.toLowerCase().includes(g.groupName?.toLowerCase()));
+            if (realGroup && realGroup.cars?.[0]?.overall_score) {
+               score = parseInt(realGroup.cars[0].overall_score, 10);
+            }
+
+            const { error } = await supabase.from('analyses_history').insert([
+              { 
+                user_email: userEmail,
+                role: userRole,
+                car_details: title,
+                score: parseInt(score, 10) || 0,
+                report_json: result
+              }
+            ]);
+            if (error) console.error("Geçmiş kaydetme hatası:", error);
+          }
+        }
       } catch (err) {
         console.error('Data Load Error:', err);
         setAiLoadingText('Veri Yükleme Hatası Oluştu.');
