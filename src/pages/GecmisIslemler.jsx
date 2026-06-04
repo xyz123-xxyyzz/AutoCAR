@@ -21,8 +21,9 @@ export default function GecmisIslemler() {
       
       let query = supabase
         .from('analyses_history')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('id, created_at, user_email, role, car_details, score')
+        .order('created_at', { ascending: false })
+        .limit(200); // Kasmayı önlemek için son 200 analizi getirir
 
       // Sadece 'Kullanıcı' rolünde olanları kendi e-postasına göre filtrele
       if (role !== 'Sahip') {

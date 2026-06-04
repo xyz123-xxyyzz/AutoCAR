@@ -46,15 +46,23 @@ export default function AuthPage() {
         localStorage.setItem('autocar_device_id', deviceId);
       }
 
-      const role = vipUser.role; 
-      
+      const role = vipUser.role.toLowerCase();
+
+      // RLS (Güvenlik kalkanı) olduğu için cihaz ID'sini doğrudan kaydedemiyoruz.
+      // Bunun için Supabase'de yazdığımız RPC'yi çağırıyoruz.
+      await supabase.rpc('register_device_id', {
+        user_email: email,
+        device_id: deviceId,
+        is_admin: role === 'sahip'
+      });
+
+      // Cihaz uyuşmazlığı kontrolü:
       if (role === 'sahip') {
-        if (!vipUser.admin_device_id) {
-          await supabase.from('vip_users').update({ admin_device_id: deviceId }).eq('email', email);
-        } else if (vipUser.admin_device_id !== deviceId) {
+        if (vipUser.admin_device_id && vipUser.admin_device_id !== deviceId) {
           throw new Error('Güvenlik: Yönetici hesabı yalnızca tanımlı Ana Bilgisayardan (Sizin Bilgisayarınızdan) açılabilir.');
         }
       } else {
+        // Sahibin cihaz ID'si ile eşleşme kontrolü (Master cihaz yetkisi)
         const { data: ownerUser } = await supabase
           .from('vip_users')
           .select('admin_device_id')
@@ -64,11 +72,6 @@ export default function AuthPage() {
           
         const masterDeviceId = ownerUser?.admin_device_id;
 
-        if (deviceId === masterDeviceId) {
-          // Geçiş Serbest (Sahip, müşteri hesabına giriyor)
-        } else {
-          if (!vipUser.customer_device_id) {
-            await supabase.from('vip_users').update({ customer_device_id: deviceId }).eq('email', email);
           } else if (vipUser.customer_device_id !== deviceId) {
             throw new Error('İlk başta hangi cihazdan girdiyseniz o cihazdan tekrardan giriş yapmalısınız.');
           }
