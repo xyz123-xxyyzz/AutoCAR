@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Loader2, AlertCircle, ShieldCheck, MonitorSmartphone, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Loader2, AlertCircle, ShieldCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export default function AuthPage() {
@@ -9,10 +9,6 @@ export default function AuthPage() {
   const [ip, setIp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
-  // Consent Modal States
-  const [showDeviceConsent, setShowDeviceConsent] = useState(false);
-  const [pendingLogin, setPendingLogin] = useState(null);
   
   const navigate = useNavigate();
 
@@ -26,8 +22,33 @@ export default function AuthPage() {
       });
   }, []);
 
-  const finalizeLogin = async (vipUser, deviceId) => {
+  const handleAuth = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
     try {
+      const { data: vipUser, error: vipError } = await supabase
+        .from('vip_users')
+        .select('password, role, admin_device_id, customer_device_id, openai_api_key')
+        .eq('email', email)
+        .single();
+
+      if (vipError || !vipUser) {
+        throw new Error('Bu e-posta yetkili bir VIP hesabı değil.');
+      }
+
+      if (vipUser.password !== password) {
+        throw new Error('Geçersiz e-posta veya şifre. Lütfen yöneticinizden aldığınız VIP bilgileri kontrol edin.');
+      }
+
+      // Cihaz Kilidi (Device Fingerprinting) OTOMATİK
+      let deviceId = localStorage.getItem('autocar_device_id');
+      if (!deviceId) {
+        deviceId = 'dev_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+        localStorage.setItem('autocar_device_id', deviceId);
+      }
+
       const role = vipUser.role; 
       
       if (role === 'sahip') {
@@ -66,90 +87,16 @@ export default function AuthPage() {
 
       if (demoRole === 'Sahip') navigate('/sahip');
       else navigate('/kullanici');
-    } catch (err) {
-      setError(err.message || 'Giriş yapılırken bir hata oluştu.');
-      setLoading(false);
-    }
-  };
-
-  const handleDeviceConsent = async () => {
-    setShowDeviceConsent(false);
-    setLoading(true);
-    let deviceId = 'dev_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
-    localStorage.setItem('autocar_device_id', deviceId);
-    await finalizeLogin(pendingLogin, deviceId);
-  };
-
-  const handleAuth = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { data: vipUser, error: vipError } = await supabase
-        .from('vip_users')
-        .select('password, role, admin_device_id, customer_device_id, openai_api_key')
-        .eq('email', email)
-        .single();
-
-      if (vipError || !vipUser) {
-        throw new Error('Bu e-posta yetkili bir VIP hesabı değil.');
-      }
-
-      if (vipUser.password !== password) {
-        throw new Error('Geçersiz e-posta veya şifre. Lütfen yöneticinizden aldığınız VIP bilgileri kontrol edin.');
-      }
-
-      let deviceId = localStorage.getItem('autocar_device_id');
-      if (!deviceId) {
-         // Cihaz daha önce hiç kayıt olmamış, izin isteyelim
-         setPendingLogin(vipUser);
-         setShowDeviceConsent(true);
-         setLoading(false);
-         return;
-      }
-
-      await finalizeLogin(vipUser, deviceId);
 
     } catch (err) {
       setError(err.message || 'Giriş yapılırken bir hata oluştu.');
+    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#F0F2F5] text-black font-sans flex flex-col items-center justify-center p-6 selection:bg-black selection:text-white relative">
-      
-      {/* Device Consent Modal */}
-      {showDeviceConsent && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white max-w-md w-full rounded-[2.5rem] p-10 shadow-2xl border border-white/50 text-center animate-in fade-in zoom-in duration-300">
-            <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner-embossed">
-              <MonitorSmartphone size={32} />
-            </div>
-            <h3 className="text-2xl font-display font-black tracking-tight mb-4">Cihaz Kayıt Onayı</h3>
-            <p className="text-black/60 font-medium text-sm leading-relaxed mb-8">
-              VIP Hesabınız, güvenlik gereği yalnızca kullandığınız bu cihazdan (bilgisayardan) açılacak şekilde kilitlenecektir.<br/><br/>
-              Sizin cihazınıza özel güvenlik altyapısını kurmamız için onay vermeniz gerekmektedir.
-            </p>
-            <div className="space-y-3">
-              <button 
-                onClick={handleDeviceConsent}
-                className="w-full py-4 bg-black text-white font-bold tracking-widest text-[11px] uppercase rounded-full hover:bg-black/80 transition-colors flex items-center justify-center gap-2 shadow-embossed"
-              >
-                <CheckCircle2 size={16} /> İzin Ver ve Kurulumu Tamamla
-              </button>
-              <button 
-                onClick={() => { setShowDeviceConsent(false); setPendingLogin(null); }}
-                className="w-full py-4 bg-transparent text-black/50 font-bold tracking-widest text-[11px] uppercase rounded-full hover:bg-black/5 transition-colors"
-              >
-                İptal Et
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+    <div className="min-h-screen bg-[#F0F2F5] text-black font-sans flex flex-col items-center justify-center p-6 selection:bg-black selection:text-white">
       <div className="w-full max-w-md">
         
         <div className="text-center mb-10">
@@ -225,7 +172,7 @@ export default function AuthPage() {
 
           <p className="text-center text-[10px] text-black/30 font-bold mt-8 tracking-widest leading-relaxed uppercase">
             Sadece yöneticinizden aldığınız VIP şifre ile giriş yapabilirsiniz.<br/>
-            Güvenliğiniz için cihaz kimliğiniz kaydedilmektedir.
+            <span className="text-red-500 font-black">DİKKAT:</span> BU SİSTEME SADECE İLK GİRDİĞİNİZ BİLGİSAYAR İLE GİRİŞ YAPABİLİRSİNİZ.
           </p>
 
         </div>
