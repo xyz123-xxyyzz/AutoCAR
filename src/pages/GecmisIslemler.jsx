@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowRight, Clock, PlusCircle, Car, Loader2 } from 'lucide-react';
+import { ArrowRight, Clock, PlusCircle, Car, Loader2, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { supabase } from '../lib/supabase';
@@ -8,7 +8,7 @@ export default function GecmisIslemler() {
   const role = localStorage.getItem('userRole') || 'Kullanıcı';
   const userEmail = localStorage.getItem('userEmail');
   const navigate = useNavigate();
-  const [filter, setFilter] = useState('Tümü'); // Tümü, Yüklemeler, Analizler
+  const [filter, setFilter] = useState('Tümü');
   const [islemler, setIslemler] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -19,11 +19,17 @@ export default function GecmisIslemler() {
         return;
       }
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('analyses_history')
         .select('*')
-        .eq('user_email', userEmail)
         .order('created_at', { ascending: false });
+
+      // Sadece 'Kullanıcı' rolünde olanları kendi e-postasına göre filtrele
+      if (role !== 'Sahip') {
+        query = query.eq('user_email', userEmail);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error("Geçmiş çekme hatası:", error);
@@ -38,7 +44,8 @@ export default function GecmisIslemler() {
             detail: item.car_details || 'Analiz Raporu',
             icon: Car,
             score: item.score || 0,
-            report_json: item.report_json
+            report_json: item.report_json,
+            ownerEmail: item.user_email
           };
         });
         setIslemler(formattedData);
@@ -47,7 +54,7 @@ export default function GecmisIslemler() {
     };
 
     fetchHistory();
-  }, [userEmail]);
+  }, [userEmail, role]);
 
   const filteredIslemler = islemler.filter(i => {
     if (filter === 'Tümü') return true;
@@ -57,17 +64,18 @@ export default function GecmisIslemler() {
   });
 
   const handleOpenReport = (id) => {
-    // Benzersiz link yapısına yönlendir (Örn: /analiz/AC-12)
     navigate(`/analiz/AC-${id}`);
   };
 
   return (
-    <DashboardLayout subscriptionType={role} userName={role === 'Sahip' ? 'Yönetici' : 'Demo'} credits={role === 'Sahip' ? '999.999' : role === 'Premium' ? '15.400' : 15}>
+    <DashboardLayout subscriptionType={role} userName={role === 'Sahip' ? 'Yönetici' : 'Demo'} credits={role === 'Sahip' ? 'Sınırsız' : 15}>
       <header className="mb-12">
         <h1 className="text-5xl font-display font-black tracking-tighter mb-4 text-black uppercase">
           Geçmiş İşlemler
         </h1>
-        <p className="text-black/50 font-bold tracking-[0.2em] uppercase text-xs">Yüklemeleriniz ve Analizleriniz</p>
+        <p className="text-black/50 font-bold tracking-[0.2em] uppercase text-xs">
+          {role === 'Sahip' ? 'SİSTEMDEKİ BÜTÜN ANALİZLER (GENEL BAKIŞ)' : 'Yüklemeleriniz ve Analizleriniz'}
+        </p>
       </header>
 
       {/* Filters */}
@@ -105,17 +113,20 @@ export default function GecmisIslemler() {
               </div>
               <div>
                 <div className="font-display font-black tracking-tight text-xl text-black mb-1">{islem.detail}</div>
-                <div className="text-[10px] text-black/40 font-bold tracking-[0.2em] uppercase flex items-center gap-2">
-                  <Clock size={10} /> {islem.date}
+                <div className="flex items-center gap-4 text-[10px] text-black/40 font-bold tracking-[0.2em] uppercase">
+                  <span className="flex items-center gap-1"><Clock size={10} /> {islem.date}</span>
+                  {role === 'Sahip' && (
+                    <span className="flex items-center gap-1 text-blue-600 bg-blue-50 px-2 py-1 rounded-full"><User size={10} /> {islem.ownerEmail}</span>
+                  )}
                 </div>
               </div>
             </div>
             
             {islem.type === 'Analiz' && (
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-6 mt-4 md:mt-0">
                 <span className="text-[10px] text-black/30 font-bold uppercase tracking-[0.2em]">Puan</span>
                 <div className="text-5xl font-display font-black text-black tracking-tighter">{islem.score}</div>
-                <ArrowRight size={24} className="text-black/20 group-hover:text-black group-hover:translate-x-2 transition-all" />
+                <ArrowRight size={24} className="text-black/20 group-hover:text-black group-hover:translate-x-2 transition-all hidden md:block" />
               </div>
             )}
           </div>
