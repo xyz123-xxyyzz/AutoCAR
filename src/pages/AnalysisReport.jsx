@@ -448,14 +448,14 @@ export default function AnalysisReport() {
             )}
 
             {/* Section 4: Görsel Yapay Zeka Analizi */}
-            {currentCar.vision_report && (
+            {currentCar.images && currentCar.images.length > 0 && (
               <>
                 <div className="mb-20">
                   <h3 className="text-2xl font-display font-black tracking-tight text-black mb-8 flex items-center gap-4">
-                    <ImageIcon className="text-black/30" /> Araç Fotoğrafları ve Görsel Analiz
+                    <ImageIcon className="text-black/30" /> Araç Fotoğrafları {currentCar.vision_report && "ve Görsel Analiz"}
                   </h3>
                   
-                  {/* Resim Galerisi */}
+                  {/* Resim Galerisi (Her Zaman Görünür) */}
                   <div className="w-full overflow-x-auto hide-scrollbar mb-12 cursor-grab active:cursor-grabbing pb-8 border-b border-black/5">
                     <div className="flex gap-4 px-2" style={{ width: 'max-content' }}>
                       {currentCar.images?.map((img, idx) => (
@@ -476,49 +476,51 @@ export default function AnalysisReport() {
                     </div>
                   </div>
 
-                  {/* Görsel AI Notları */}
-                  <div className="bg-[#1C1C1E] text-white p-10 md:p-12 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-8 opacity-5">
-                      <ImageIcon size={120} />
-                    </div>
-                    <div className="text-[10px] font-bold tracking-[0.2em] text-white/50 uppercase mb-8 relative z-10 flex items-center gap-3">
-                      <Star size={14} className="text-[#32D74B]" /> 4o-Mini Görsel İnceleme Raporu
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-10 relative z-10">
-                      <div className="bg-black/40 p-8 rounded-[2rem]">
-                        <div className="text-[10px] font-bold tracking-[0.2em] text-[#32D74B] uppercase mb-6 flex items-center gap-2"><CheckCircle size={14}/> Olumlu Detaylar</div>
-                        <ul className="space-y-4">
-                          {currentCar.positives?.map((p, i) => (
-                            <li key={i} className="flex items-start gap-3 text-sm font-bold text-white/80">
-                              <div className="w-1.5 h-1.5 bg-[#32D74B] rounded-full mt-1.5 shrink-0"></div>
-                              {p}
-                            </li>
-                          ))}
-                        </ul>
+                  {/* Görsel AI Notları (Sadece Vision Çalıştıysa) */}
+                  {currentCar.vision_report && (
+                    <div className="bg-[#1C1C1E] text-white p-10 md:p-12 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-8 opacity-5">
+                        <ImageIcon size={120} />
+                      </div>
+                      <div className="text-[10px] font-bold tracking-[0.2em] text-white/50 uppercase mb-8 relative z-10 flex items-center gap-3">
+                        <Star size={14} className="text-[#32D74B]" /> 4o-Mini Görsel İnceleme Raporu
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-10 relative z-10">
+                        <div className="bg-black/40 p-8 rounded-[2rem]">
+                          <div className="text-[10px] font-bold tracking-[0.2em] text-[#32D74B] uppercase mb-6 flex items-center gap-2"><CheckCircle size={14}/> Olumlu Detaylar</div>
+                          <ul className="space-y-4">
+                            {currentCar.positives?.map((p, i) => (
+                              <li key={i} className="flex items-start gap-3 text-sm font-bold text-white/80">
+                                <div className="w-1.5 h-1.5 bg-[#32D74B] rounded-full mt-1.5 shrink-0"></div>
+                                {p}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+
+                        <div className="bg-black/40 p-8 rounded-[2rem]">
+                          <div className="text-[10px] font-bold tracking-[0.2em] text-[#FF453A] uppercase mb-6 flex items-center gap-2"><AlertTriangle size={14}/> Görünen Kusurlar</div>
+                          <ul className="space-y-4">
+                            {currentCar.defects?.map((p, i) => (
+                              <li key={i} className="flex items-start gap-3 text-sm font-bold text-white/80">
+                                <div className="w-1.5 h-1.5 bg-[#FF453A] rounded-full mt-1.5 shrink-0"></div>
+                                {p}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       </div>
 
-                      <div className="bg-black/40 p-8 rounded-[2rem]">
-                        <div className="text-[10px] font-bold tracking-[0.2em] text-[#FF453A] uppercase mb-6 flex items-center gap-2"><AlertTriangle size={14}/> Görünen Kusurlar</div>
-                        <ul className="space-y-4">
-                          {currentCar.defects?.map((p, i) => (
-                            <li key={i} className="flex items-start gap-3 text-sm font-bold text-white/80">
-                              <div className="w-1.5 h-1.5 bg-[#FF453A] rounded-full mt-1.5 shrink-0"></div>
-                              {p}
-                            </li>
-                          ))}
-                        </ul>
+                      <div className="relative z-10 border-t border-white/10 pt-8">
+                        {(currentCar.vision_report || '').split('\n\n').map((paragraph, idx) => (
+                          <p key={idx} className="text-sm md:text-base font-bold leading-loose tracking-wide text-white/90">
+                            {paragraph}
+                          </p>
+                        ))}
                       </div>
                     </div>
-
-                    <div className="relative z-10 border-t border-white/10 pt-8">
-                      {(currentCar.vision_report || '').split('\n\n').map((paragraph, idx) => (
-                        <p key={idx} className="text-sm md:text-base font-bold leading-loose tracking-wide text-white/90">
-                          {paragraph}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
+                  )}
                 </div>
 
                 <div className="w-full h-[1px] bg-black/10 mb-20"></div>

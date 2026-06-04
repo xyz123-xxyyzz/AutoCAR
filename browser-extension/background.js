@@ -175,24 +175,14 @@ function groupTabsByModel(readyData) {
   return groups;
 }
 
-async function analyzeDataOnly(carData, options) {
-  const { runData, runVision } = options;
-
-  let systemPrompt = `You are an expert, highly critical, and brutally realistic automotive appraiser and data analyst AI.\n`;
-  if (runData && runVision) {
-    systemPrompt += `Analyze the provided car data (technical specs, price, damage history, mileage) AND the attached images.\n`;
-  } else if (runData) {
-    systemPrompt += `Analyze the provided car data (technical specs, price, damage history, mileage).\n`;
-  } else if (runVision) {
-    systemPrompt += `Analyze the provided car images to find defects and positive traits.\n`;
-  }
-
-  systemPrompt += `YOU MUST RETURN ONLY VALID JSON.\nFormat:\n{\n`;
-  
-  systemPrompt += `  "clean_title": "Cleaned up Make, Model and Year of the car (e.g., 'Volkswagen Passat 2015'). Remove any garbage advertising words from the original title.",\n`;
-
-  if (runData) {
-    systemPrompt += `  "competitor_analysis": {
+async function analyzeDataClone(carData) {
+  const systemPrompt = `You are an expert, highly critical, and brutally realistic automotive appraiser and data analyst AI.
+Analyze the provided car data (technical specs, price, damage history, mileage).
+YOU MUST RETURN ONLY VALID JSON.
+Format:
+{
+  "clean_title": "Cleaned up Make, Model and Year of the car (e.g., 'Volkswagen Passat 2015'). Remove any garbage advertising words from the original title.",
+  "competitor_analysis": {
     "competitors": ["Competitor Make Model 1", "Competitor Make Model 2"],
     "text": "Detailed comparison of this car against its actual real-world market competitors. Be objective, brutally honest and highly critical.",
     "pros": ["Strong point 1", "Strong point 2"],
@@ -221,80 +211,73 @@ async function analyzeDataOnly(carData, options) {
     "sol_arka_kapi": "orijinal",
     "sol_arka_camurluk": "orijinal",
     "bagaj": "orijinal"
-  },\n`;
   }
+}
 
-  if (runVision) {
-    systemPrompt += `  "vision_report": "A detailed visual inspection report in Turkish based ONLY on the provided images. Look for scratches, dents, panel gaps, paint mismatches, or interior wear. If the car looks exceptionally clean, state that too.",
-  "defects": ["Görünen kusur 1", "Görünen kusur 2"],
-  "positives": ["İyi durumdaki detay 1", "İyi durumdaki detay 2"]\n`;
-  } else {
-    // Need to strip the last comma if we didn't add vision
-    if (systemPrompt.endsWith(',\n')) {
-      systemPrompt = systemPrompt.slice(0, -2) + '\n';
-    }
-  }
-
-  systemPrompt += `}\n\nRULES FOR SCORING AND EXTRACTION (BE OBJECTIVE BUT FAIR):\n`;
-
-  if (runData) {
-    systemPrompt += `1. detailed_specs: YOU MUST EXTRACT EVERY SINGLE TECHNICAL SPECIFICATION available in the listing. Do NOT just put 4 specs! Extract at least 15-25 specs. If the data is there, extract it!
+RULES FOR SCORING AND EXTRACTION (BE OBJECTIVE BUT FAIR):
+1. detailed_specs: YOU MUST EXTRACT EVERY SINGLE TECHNICAL SPECIFICATION available in the listing. Do NOT just put 4 specs! Extract at least 15-25 specs. If the data is there, extract it!
 CRITICAL RULE FOR DETAILED SPECS 'comment' FIELD: DO NOT just repeat the value! The user already sees the value. The 'comment' must be your DEEP, EXPERT AI THOUGHT/OPINION on that specific feature.
 Example BAD: "Araç 2019 modeldir."
 Example GOOD: "2019 model olması, kronik motor sorunlarının çözüldüğü makyajlı kasaya denk gelir, bu bir avantajdır."
-Example BAD: "Araç 120.000 kilometrededir."
-Example GOOD: "120.000 km dizel motor için ağır bakım (triger vs.) sınırıdır, alırken servis geçmişine kesinlikle bakılmalı."
 
-2. market_speed_score (Satış Hızı): Evaluate how fast this car sells in the Turkish market. A great indicator is the volume of listings: if there are tons of ads for this model (like Fiat Egea, Renault Clio, VW Golf), it means it has a huge market and sells fast (give 85-95). If it's a rare, niche, or very unpopular model with few listings, it sells slowly (give 30-50).
+2. market_speed_score (Satış Hızı): Evaluate how fast this car sells in the Turkish market.
+3. price_perf_score (Fiyat/Performans): Compare the asking price to the car's features.
+4. fair_price_score (Uygunluk): Determine if the vehicle is priced strictly at its fair market value based on its specs and condition.
+5. condition_score (Araç Durumu): Measure how far the car is from being "Brand New" (0 km).
+6. overall_score: The exact arithmetic mean of the above 4 scores. ALL SCORES MUST BE INTEGERS, not strings.
 
-3. price_perf_score (Fiyat/Performans): Compare the asking price to the car's features. Is this the most feature-rich and capable car you can buy for this amount of money in the current market? If it offers incredible features and value for its price bracket, give it a very high score (85-95). If there are much better, more equipped cars available for this exact price, give it a lower score (40-60).
-
-4. fair_price_score (Uygunluk): Determine if the vehicle is priced strictly at its fair market value based on its specs and condition. If it is priced EXACTLY at its fair market value, give it a 50. If it is OVERPRICED (expensive), give it between 0-49. If it is UNDERPRICED (a bargain/cheap), give it between 51-100.
-
-5. condition_score (Araç Durumu): Measure how far the car is from being "Brand New" (0 km). Start at 100 for a flawless new car. Deduct points heavily based on: Year (older = lower score), Mileage (higher km = lower score), Paint/Replaced parts, Scratches, Tramer/Damage records. A 2-3 year old car with no damage might get 85-90. A 10-year-old car with 200k km and 3 painted parts should drop to 50-60. A heavily damaged old car should be 30-40.
-
-6. overall_score: The exact arithmetic mean of the above 4 scores (market_speed_score, price_perf_score, fair_price_score, condition_score). ALL SCORES MUST BE INTEGERS, not strings. Do not put brackets around them.
-
-- For damage_map: ONLY use "orijinal", "boyali", "lokal_boyali", "degisen", "bilinmiyor". Deduce this accurately.\n`;
-  }
-
-  if (runVision) {
-    systemPrompt += `- For images: EXAMINE THE ATTACHED IMAGES CAREFULLY. Point out visible defects or positive traits.\n`;
-  }
-
-  systemPrompt += `- All output text MUST be in TURKISH.
-- Do NOT hallucinate data, but extract EVERYTHING provided in the data blob.\n`;
+- For damage_map: ONLY use "orijinal", "boyali", "lokal_boyali", "degisen", "bilinmiyor". Deduce this accurately.
+- All output text MUST be in TURKISH.
+- Do NOT hallucinate data, but extract EVERYTHING provided in the data blob.
+`;
 
   const dataForAi = { ...carData };
-  const imageUrls = runVision ? (dataForAi.images || []).slice(0, 5) : [];
   delete dataForAi.images;
+  return await callOpenAI(systemPrompt, dataForAi);
+}
 
-  if (runVision) {
-    let userContent = [];
-    if (runData) {
-      userContent.push({
-        type: "text",
-        text: JSON.stringify(dataForAi)
-      });
-    } else {
-      userContent.push({
-        type: "text",
-        text: `Only analyze the images for this car: ${dataForAi.title || 'Unknown Car'}`
-      });
-    }
+async function analyzeVisionClone(carData) {
+  const systemPrompt = `You are an expert automotive visual inspector AI.
+Analyze the provided car images to find defects and positive traits.
+YOU MUST RETURN ONLY VALID JSON.
+Format:
+{
+  "vision_report": "A detailed visual inspection report in Turkish based ONLY on the provided images. Look for scratches, dents, panel gaps, paint mismatches, or interior wear. If the car looks exceptionally clean, state that too.",
+  "defects": ["Görünen kusur 1", "Görünen kusur 2"],
+  "positives": ["İyi durumdaki detay 1", "İyi durumdaki detay 2"]
+}
 
-    imageUrls.forEach(url => {
-      userContent.push({
-        type: "image_url",
-        image_url: { url: url }
-      });
-    });
+RULES:
+- EXAMINE THE ATTACHED IMAGES CAREFULLY. Point out visible defects or positive traits.
+- All output text MUST be in TURKISH.
+- Do NOT hallucinate defects that are not visible in the images.
+`;
 
-    return await callOpenAI(systemPrompt, userContent, true, 'gpt-4o-mini');
-  } else {
-    // Pure data, standard prompt
-    return await callOpenAI(systemPrompt, dataForAi);
+  const imageUrls = (carData.images || []).slice(0, 5);
+  
+  if (imageUrls.length === 0) {
+    return {
+      vision_report: "Araç için analiz edilecek fotoğraf bulunamadı.",
+      defects: [],
+      positives: []
+    };
   }
+
+  let userContent = [
+    {
+      type: "text",
+      text: `Analyze the images for this car: ${carData.title || 'Unknown Car'}`
+    }
+  ];
+
+  imageUrls.forEach(url => {
+    userContent.push({
+      type: "image_url",
+      image_url: { url: url }
+    });
+  });
+
+  return await callOpenAI(systemPrompt, userContent, true, 'gpt-4o-mini');
 }
 
 async function generateGlobalMasterReport(groupReports) {
@@ -381,7 +364,21 @@ async function runFullAnalysis(options) {
 
       for (let i = 0; i < gCars.length; i++) {
         const carProcessPromise = (async () => {
-          const a1 = await analyzeDataOnly(gCars[i], options);
+          let dataResult = {};
+          let visionResult = {};
+
+          if (options.runData && options.runVision) {
+            [dataResult, visionResult] = await Promise.all([
+              analyzeDataClone(gCars[i]),
+              analyzeVisionClone(gCars[i])
+            ]);
+          } else if (options.runData) {
+            dataResult = await analyzeDataClone(gCars[i]);
+          } else if (options.runVision) {
+            visionResult = await analyzeVisionClone(gCars[i]);
+          }
+
+          const a1 = { ...dataResult, ...visionResult };
           
           processedCars++;
           updateState({ 
