@@ -176,7 +176,7 @@ function groupTabsByModel(readyData) {
 }
 
 async function analyzeDataClone(carData) {
-  const systemPrompt = `You are a strict, brutally honest Automotive Data Analyst AI.
+  const systemPrompt = `You are a strict, brutally honest, and highly critical Automotive Data Analyst AI.
 Analyze the provided car data (specs, price, damage history, mileage).
 Extract technical insights, assess the market speed, evaluate the price-to-performance ratio, and condition.
 Return ONLY VALID JSON.
@@ -187,18 +187,22 @@ Format:
   "condition_analysis": "Commentary on the car's condition based on mileage, damage history, and year.",
   "competitors_pros_cons": {
     "competitors": ["Model 1", "Model 2"],
-    "text": "Comparison text.",
+    "text": "Comparison text. Be brutally honest and highlight red flags.",
     "pros": ["Pro 1", "Pro 2"],
     "cons": ["Con 1", "Con 2"]
   },
   "detailed_specs_raw": [
-    { "name": "Spec Name", "value": "Value", "status": "good/bad/neutral", "comment": "Expert opinion on this spec" }
+    { "name": "Spec Name", "value": "Value", "status": "good/bad/neutral", "comment": "Expert, deep opinion on this spec. Do not just repeat the value. State why it is an advantage or a major flaw." }
   ],
   "damage_map_raw": {
     "kaput": "orijinal", "tavan": "boyali"
   }
 }
-All text MUST be in TURKISH. Be brutally honest, do not sugarcoat anything.`;
+
+CRITICAL RULES:
+- All text MUST be in TURKISH. 
+- Be brutally honest, do not sugarcoat anything.
+- If the price is too high or the condition is bad, heavily criticize it.`;
 
   const dataForAi = { ...carData };
   delete dataForAi.images;
@@ -206,7 +210,7 @@ All text MUST be in TURKISH. Be brutally honest, do not sugarcoat anything.`;
 }
 
 async function analyzeVisionClone(imageUrl, carTitle) {
-  const systemPrompt = `You are an expert automotive visual inspector AI.
+  const systemPrompt = `You are a highly critical automotive visual inspector AI.
 Examine the SINGLE provided car image very carefully.
 Find any visible defects (scratches, dents, wear, color mismatch) or positive traits (clean interior, good paint condition, premium wheels).
 Return ONLY VALID JSON.
@@ -216,7 +220,11 @@ Format:
   "positives_found": ["Positive 1", "Positive 2"],
   "image_notes": "A brief summary of what you observe in this specific image."
 }
-All text MUST be in TURKISH. Do NOT hallucinate defects if they are not clearly visible.`;
+
+CRITICAL RULES:
+- All text MUST be in TURKISH. 
+- Do NOT hallucinate defects if they are not clearly visible. 
+- Do not write generic positive statements. Only note something if it is exceptionally good or bad.`;
 
   let userContent = [
     { type: "text", text: `Analyze this single image for: ${carTitle || 'Unknown Car'}` },
@@ -246,14 +254,14 @@ Format:
   "fair_price_score": 50,
   "condition_score": 40,
   "overall_score": 61,
-  "data_report": "A very detailed summary report about the car's technical data in Turkish. Break down the reasoning for the 4 scores. Use exactly ONE EMPTY LINE (\\n\\n) between each score's explanation. (e.g., 'Satış Hızı (75 Puan): [Açıklama]\\n\\nFiyat / Perf...'). BE OBJECTIVE AND BRUTALLY HONEST.",
+  "data_report": "A very detailed summary report about the car's technical data in Turkish. YOU MUST EXPLICITLY AND TRANSPARENTLY EXPLAIN WHY YOU GAVE THE SPECIFIC SCORES for Satış Hızı, Fiyat/Performans, Uygunluk, and Araç Durumu. Break down the reasoning for the 4 scores. Use exactly ONE EMPTY LINE (\\n\\n) between each score's explanation. (e.g., 'Satış Hızı (75 Puan): [Açıklama]\\n\\nFiyat / Perf. (70 Puan): [Açıklama]'). BE OBJECTIVE AND BRUTALLY HONEST. Point out every red flag. No sugarcoating.",
   "detailed_specs": [
-    { "name": "Spec Name", "value": "Value", "status": "good", "comment": "Comment" }
+    { "name": "Spec Name", "value": "Value", "status": "good", "comment": "Detailed expert professional comment explaining why this spec is good or bad. Do not just restate the value." }
   ],
   "damage_map": {
     "kaput": "orijinal"
   },
-  "vision_report": "A synthesized visual inspection report in Turkish combining the notes from all the photos. Point out scratches, dents, or cleanliness. If no vision data, leave null.",
+  "vision_report": "A synthesized visual inspection report in Turkish combining the notes from all the photos. Point out specific scratches, dents, or cleanliness. Be critical. If no vision data, leave null.",
   "defects": ["Combined defect 1", "Combined defect 2"],
   "positives": ["Combined positive 1", "Combined positive 2"]
 }
@@ -268,7 +276,8 @@ RULES FOR SCORING (INTEGERS ONLY):
 CRITICAL INSTRUCTIONS:
 - If 'hasData' is false, you can leave data_report, detailed_specs, and competitor_analysis empty/null.
 - If 'hasVision' is false, leave vision_report, defects, and positives empty/null.
-- All output MUST be in TURKISH.`;
+- All output MUST be in TURKISH.
+- Do NOT hallucinate data. Be totally objective and strict.`;
 
   const inputPayload = {
     carTitle,
@@ -356,94 +365,80 @@ async function runFullAnalysis(options) {
     let totalCars = readyData.length;
     let processedCars = 0;
     
-    // TÜM ARAÇLARI AYNI ANDA (PARALEL) ANALİZ ETMEK İÇİN PROMISE DİZİSİ
-    const allAnalysisPromises = [];
+    let allProcessedCars = [];
 
     for (let g = 0; g < groupNames.length; g++) {
       const gName = groupNames[g];
       const gCars = groups[gName];
 
       for (let i = 0; i < gCars.length; i++) {
-        const carProcessPromise = (async () => {
-          let dataResult = null;
-          let visionResultsArray = [];
+        let dataResult = null;
+        let visionResultsArray = [];
 
-          // 1. AŞAMA: Data Analizcisi ve Görsel Analizcilerin Çalıştırılması (Paralel)
-          const executionPromises = [];
+        // 1. AŞAMA: Data Analizcisi (Tek)
+        if (options.runData) {
+          dataResult = await analyzeDataClone(gCars[i]);
+        }
 
-          if (options.runData) {
-            executionPromises.push(
-              analyzeDataClone(gCars[i]).then(res => { dataResult = res; })
-            );
+        // 2. AŞAMA: Görsel Analizciler (Sıralı çalıştırılır ki Rate Limit yemesin)
+        if (options.runVision) {
+          const imageUrlsToProcess = (gCars[i].images || []).slice(0, 5); // Max 5 fotoğraf
+          for (let imgUrl of imageUrlsToProcess) {
+            const res = await analyzeVisionClone(imgUrl, gCars[i].title);
+            visionResultsArray.push(res);
           }
+        }
 
-          if (options.runVision) {
-            const imageUrlsToProcess = (gCars[i].images || []).slice(0, 5); // Max 5 fotoğraf
-            for (let imgUrl of imageUrlsToProcess) {
-              executionPromises.push(
-                analyzeVisionClone(imgUrl, gCars[i].title).then(res => {
-                  visionResultsArray.push(res);
-                })
-              );
-            }
+        // 3. AŞAMA: Araç Raportörü Klonunun Çalıştırılması
+        const finalReport = await reportPreparerClone(
+          dataResult, 
+          visionResultsArray, 
+          options.runData, 
+          options.runVision, 
+          gCars[i].title
+        );
+
+        processedCars++;
+        updateState({ 
+          aiStatusText: `Araçlar Sırayla Analiz Ediliyor (${processedCars}/${totalCars})...`,
+          analysisProgress: 5 + Math.round((processedCars / totalCars) * 80)
+        });
+
+        let cleanTitle = finalReport.clean_title || gCars[i].title;
+        if (!finalReport.clean_title || finalReport.clean_title.length > 50) {
+          const match = gCars[i].title.match(/(?:[12][0-9]{3})/);
+          if (match) {
+            cleanTitle = `${gName} ${match[0]} Model`;
+          } else {
+            cleanTitle = gName;
           }
+        }
 
-          // Bekle...
-          await Promise.all(executionPromises);
-
-          // 2. AŞAMA: Araç Raportörü Klonunun Çalıştırılması
-          const finalReport = await reportPreparerClone(
-            dataResult, 
-            visionResultsArray, 
-            options.runData, 
-            options.runVision, 
-            gCars[i].title
-          );
-
-          processedCars++;
-          updateState({ 
-            aiStatusText: `Araçlar Eşzamanlı Analiz Ediliyor (${processedCars}/${totalCars})...`,
-            analysisProgress: 5 + Math.round((processedCars / totalCars) * 80)
-          });
-
-          let cleanTitle = finalReport.clean_title || gCars[i].title;
-          if (!finalReport.clean_title || finalReport.clean_title.length > 50) {
-            const match = gCars[i].title.match(/(?:[12][0-9]{3})/);
-            if (match) {
-              cleanTitle = `${gName} ${match[0]} Model`;
-            } else {
-              cleanTitle = gName;
-            }
+        const carProcessed = {
+          groupName: gName,
+          carData: {
+            title: cleanTitle,
+            price: gCars[i].price,
+            url: gCars[i].url,
+            images: gCars[i].images,
+            market_speed_score: finalReport.market_speed_score || null,
+            price_perf_score: finalReport.price_perf_score || null,
+            fair_price_score: finalReport.fair_price_score || null,
+            condition_score: finalReport.condition_score || null,
+            overall_score: finalReport.overall_score || null,
+            ai_report: finalReport.data_report || null,
+            vision_report: finalReport.vision_report || null,
+            defects: finalReport.defects || [],
+            positives: finalReport.positives || [],
+            competitor_analysis: finalReport.competitor_analysis || null,
+            detailed_specs: finalReport.detailed_specs || [],
+            damage_map: finalReport.damage_map || null
           }
+        };
 
-          return {
-            groupName: gName,
-            carData: {
-              title: cleanTitle,
-              price: gCars[i].price,
-              url: gCars[i].url,
-              images: gCars[i].images,
-              market_speed_score: finalReport.market_speed_score || null,
-              price_perf_score: finalReport.price_perf_score || null,
-              fair_price_score: finalReport.fair_price_score || null,
-              condition_score: finalReport.condition_score || null,
-              overall_score: finalReport.overall_score || null,
-              ai_report: finalReport.data_report || null,
-              vision_report: finalReport.vision_report || null,
-              defects: finalReport.defects || [],
-              positives: finalReport.positives || [],
-              competitor_analysis: finalReport.competitor_analysis || null,
-              detailed_specs: finalReport.detailed_specs || [],
-              damage_map: finalReport.damage_map || null
-            }
-          };
-        })();
-        allAnalysisPromises.push(carProcessPromise);
+        allProcessedCars.push(carProcessed);
       }
     }
-
-    // Bütün araçların yapay zeka analizlerini PARALEL olarak bekle (Zaman kazancı x10)
-    const allProcessedCars = await Promise.all(allAnalysisPromises);
 
     // İşlenmiş araçları gruplarına göre tekrar ayır
     for (let g = 0; g < groupNames.length; g++) {
