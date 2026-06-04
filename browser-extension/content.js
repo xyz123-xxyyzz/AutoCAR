@@ -1,5 +1,10 @@
 // content.js
 const syncApiKey = () => {
+  // Sadece kendi web portalımızdaysak senkronizasyon yap (Sahibinden gibi sitelerde localStorage'ı bozmaması için)
+  if (!window.location.href.includes('vercel.app') && !window.location.href.includes('localhost')) {
+    return;
+  }
+
   try {
     const apiKey = window.localStorage.getItem('openai_api_key');
     const email = window.localStorage.getItem('userEmail');
@@ -17,7 +22,7 @@ const syncApiKey = () => {
         }
       });
     } else {
-      // Eğer localStorage'da api key yoksa, eklentiden de sil
+      // Sadece portaldayken ve key gerçekten yoksa temizle
       chrome.storage.local.remove(['openai_api_key']);
       if (email) {
         chrome.storage.local.set({ userEmail: email });
@@ -28,11 +33,11 @@ const syncApiKey = () => {
   }
 };
 
-// İlk açılışta kontrol et
-syncApiKey();
-
-// Giriş yapılması ihtimaline karşı periyodik olarak kontrol et
-setInterval(syncApiKey, 2000);
+// Sadece portaldayken periyodik kontrol et
+if (window.location.href.includes('vercel.app') || window.location.href.includes('localhost')) {
+  syncApiKey();
+  setInterval(syncApiKey, 2000);
+}
 
 // Sayfadaki araç verilerini çeken ana fonksiyon
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
