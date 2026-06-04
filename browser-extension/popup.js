@@ -11,20 +11,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const circularProgress = document.getElementById('circular-progress');
   const progressValue = document.getElementById('progress-value');
   const aiText = document.getElementById('ai-text');
-  
-  const btnSettings = document.getElementById('btn-settings');
-  const settingsView = document.getElementById('settings-view');
-  const apiKeyInput = document.getElementById('api-key-input');
-  const btnSaveSettings = document.getElementById('btn-save-settings');
 
   // Analysis Toggles
   const analysisOptions = document.getElementById('analysis-options');
   const toggleData = document.getElementById('toggle-data');
   const toggleVision = document.getElementById('toggle-vision');
 
-  // Load saved API key and toggles
-  chrome.storage.local.get(['openai_api_key', 'toggle_data', 'toggle_vision'], (res) => {
-    if (res.openai_api_key) apiKeyInput.value = res.openai_api_key;
+  // Load saved toggles
+  chrome.storage.local.get(['toggle_data', 'toggle_vision'], (res) => {
     if (res.toggle_data !== undefined) toggleData.checked = res.toggle_data;
     if (res.toggle_vision !== undefined) toggleVision.checked = res.toggle_vision;
     validateAnalyzeBtn();
@@ -52,18 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
       btnAnalyze.textContent = 'Analiz Et';
     }
   }
-
-  btnSettings.addEventListener('click', () => {
-    settingsView.style.display = settingsView.style.display === 'none' ? 'block' : 'none';
-  });
-
-  btnSaveSettings.addEventListener('click', () => {
-    const key = apiKeyInput.value.trim();
-    chrome.storage.local.set({ openai_api_key: key }, () => {
-      alert('API Anahtarı kaydedildi!');
-      settingsView.style.display = 'none';
-    });
-  });
 
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('mode') === 'window') {
