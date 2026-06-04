@@ -96,12 +96,40 @@ function updateTabStatus(tabId, status, data = null) {
   }
 }
 
+const SUPABASE_URL = "https://jwffcfjuydjjzqtwjitn.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_ESKWW6qt0VZL9_GwNEM3Uw_Z8wUMnOM";
+
 async function callOpenAI(systemPrompt, userContent, useVision = false, model = 'gpt-4o-mini', retries = 3) {
   return new Promise((resolve, reject) => {
-    chrome.storage.local.get(['openai_api_key'], async (resStorage) => {
-      let apiKey = (resStorage.openai_api_key || '').trim();
-      if (!apiKey) {
-        apiKey = OPENAI_API_KEY.trim();
+    chrome.storage.local.get(['userEmail', 'deviceId'], async (resStorage) => {
+      let email = resStorage.userEmail;
+      let deviceId = resStorage.deviceId;
+      
+      if (!email || !deviceId) {
+        return reject(new Error('Kullanıcı bilgileri veya cihaz kimliği eksik. Lütfen Web Portalına tekrar giriş yapın.'));
+      }
+
+      let apiKey = '';
+      try {
+        const supaRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_api_key_for_device`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({ p_email: email, p_device_id: deviceId })
+        });
+        
+        if (!supaRes.ok) throw new Error("Supabase RPC failed");
+        const jsonResponse = await supaRes.json();
+        apiKey = jsonResponse || '';
+      } catch (err) {
+        return reject(new Error('Veritabanına bağlanılamadı. Cihazınız veya parolanız hatalı olabilir.'));
+      }
+
+      if (!apiKey || apiKey.trim().length === 0) {
+        return reject(new Error('API Hatası: Supabase veritabanında bu hesap için API Anahtarı yok veya bu cihaz yetkisiz!'));
       }
 
       try {

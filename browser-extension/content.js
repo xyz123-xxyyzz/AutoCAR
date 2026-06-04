@@ -1,32 +1,26 @@
 // content.js
 const syncApiKey = () => {
-  // Sadece kendi web portalımızdaysak senkronizasyon yap (Sahibinden gibi sitelerde localStorage'ı bozmaması için)
+  // Sadece kendi web portalımızdaysak senkronizasyon yap
   if (!window.location.href.includes('vercel.app') && !window.location.href.includes('localhost')) {
     return;
   }
 
   try {
-    const apiKey = window.localStorage.getItem('openai_api_key');
     const email = window.localStorage.getItem('userEmail');
+    const deviceId = window.localStorage.getItem('autocar_device_id');
 
-    if (apiKey && apiKey.trim().length > 0) {
-      chrome.storage.local.get(['openai_api_key', 'userEmail'], (res) => {
+    if (email && deviceId) {
+      chrome.storage.local.get(['userEmail', 'deviceId'], (res) => {
         let updates = {};
-        if (res.openai_api_key !== apiKey) updates.openai_api_key = apiKey;
-        if (email && res.userEmail !== email) updates.userEmail = email;
+        if (res.userEmail !== email) updates.userEmail = email;
+        if (res.deviceId !== deviceId) updates.deviceId = deviceId;
 
         if (Object.keys(updates).length > 0) {
           chrome.storage.local.set(updates, () => {
-            console.log("AutoCAR Extension: API Key & Email successfully synced.");
+            console.log("AutoCAR Extension: Email & Device ID successfully synced.");
           });
         }
       });
-    } else {
-      // Sadece portaldayken ve key gerçekten yoksa temizle
-      chrome.storage.local.remove(['openai_api_key']);
-      if (email) {
-        chrome.storage.local.set({ userEmail: email });
-      }
     }
   } catch (e) {
     console.error("AutoCAR Extension Error:", e);
