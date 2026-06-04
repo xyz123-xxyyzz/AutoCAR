@@ -97,7 +97,7 @@ export default function AuthPage() {
             } else if (vipUser.customer_device_id !== deviceId) {
               // Eğer giren bilgisayar ne SİZİN bilgisayarınız, ne de MÜŞTERİNİN ilk girdiği bilgisayar değilse (Yani 3. bir kişi/arkadaşıysa) -> REDDET
               await supabase.auth.signOut();
-              throw new Error('İzinsiz Erişim: Bu hesap yalnızca tanımlı Müşteri bilgisayarından veya Yönetici bilgisayarından açılabilir.');
+              throw new Error('İlk başta hangi cihazdan girdiyseniz o cihazdan tekrardan giriş yapmalısınız.');
             }
           }
         }

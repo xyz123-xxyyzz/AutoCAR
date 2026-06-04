@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, TrendingUp, Zap, CheckCircle, Star, Settings, Shield, Gauge, Maximize, AlertTriangle, AlertCircle, XCircle, Minus, HelpCircle, Trophy, Target, Sparkles, ArrowRight, Table2, Image as ImageIcon, Users, X } from 'lucide-react';
 import DamageMap from '../components/DamageMap';
 import { supabase } from '../lib/supabase';
+import { useParams } from 'react-router-dom';
 
 export default function AnalysisReport() {
+  const { id: routeId } = useParams();
   const [isLoading, setIsLoading] = useState(true);
   const [groups, setGroups] = useState([]);
   const [summaryData, setSummaryData] = useState(null);
@@ -21,6 +23,26 @@ export default function AnalysisReport() {
 
   useEffect(() => {
     const processData = async () => {
+      // 1. EĞER LİNK İLE GELDİYSE (Örn: /analiz/AC-45)
+      if (routeId) {
+        const dbId = routeId.replace('AC-', '');
+        const { data, error } = await supabase.from('analyses_history').select('report_json').eq('id', dbId).single();
+        if (data && data.report_json) {
+          const result = data.report_json;
+          setGroups(result.groups || []);
+          setSummaryData(result.summaryData || null);
+          if (result.summaryData) setActiveTab(-1);
+          else if (result.groups && result.groups.length > 0) setActiveTab(0);
+          setIsLoading(false);
+          return;
+        } else {
+          console.error("Link yükleme hatası:", error);
+          setAiLoadingText('Rapor Bulunamadı veya Silinmiş.');
+          return;
+        }
+      }
+
+      // 2. EĞER EKLENTİDEN YENİ GELDİYSE (LocalStorage)
       const storedData = window.localStorage.getItem('autocar_ai_result');
       if (!storedData) {
         setAiLoadingText('Eklentiden Rapor Bekleniyor...');
@@ -65,7 +87,7 @@ export default function AnalysisReport() {
                score = parseInt(realGroup.cars[0].overall_score, 10);
             }
 
-            const { error } = await supabase.from('analyses_history').insert([
+            const { data: insertedData, error } = await supabase.from('analyses_history').insert([
               { 
                 user_email: userEmail,
                 role: userRole,
@@ -73,8 +95,15 @@ export default function AnalysisReport() {
                 score: parseInt(score, 10) || 0,
                 report_json: result
               }
-            ]);
-            if (error) console.error("Geçmiş kaydetme hatası:", error);
+            ]).select();
+            
+            if (error) {
+              console.error("Geçmiş kaydetme hatası:", error);
+            } else if (insertedData && insertedData[0]) {
+              // YENİ BENZERSİZ LİNK (AC-ID) OLUŞTUR VE ADRES ÇUBUĞUNU GÜNCELLE
+              const newId = insertedData[0].id;
+              window.history.replaceState(null, '', `/analiz/AC-${newId}`);
+            }
           }
         }
       } catch (err) {

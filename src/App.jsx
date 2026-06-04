@@ -22,6 +22,7 @@ function App() {
         <Route path="/kullanici" element={<KullaniciDashboard />} />
         <Route path="/satin-alan" element={<SatinAlanDashboard />} />
         <Route path="/analiz" element={<AnalysisReport />} />
+        <Route path="/analiz/:id" element={<AnalysisReport />} />
         <Route path="/gecmis" element={<GecmisIslemler />} />
         <Route path="/kullanici-detay" element={<KullaniciDetay />} />
         <Route path="/eklenti-onizleme" element={<ExtensionPreview />} />

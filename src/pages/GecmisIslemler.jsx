@@ -56,12 +56,9 @@ export default function GecmisIslemler() {
     return true;
   });
 
-  const handleOpenReport = (report_json) => {
-    // Raporu localStorage'a koyup analiz sayfasına yönlendir
-    window.localStorage.setItem('autocar_ai_result', JSON.stringify(report_json));
-    // Zaten bu raporu kaydettiğimiz için tekrar kaydetmesini önlemek adına hash'i de güncelle
-    window.localStorage.setItem('last_saved_report', JSON.stringify(report_json));
-    navigate('/analiz');
+  const handleOpenReport = (id) => {
+    // Benzersiz link yapısına yönlendir (Örn: /analiz/AC-12)
+    navigate(`/analiz/AC-${id}`);
   };
 
   return (
@@ -99,7 +96,7 @@ export default function GecmisIslemler() {
         ) : filteredIslemler.map(islem => (
           <div 
             key={islem.id} 
-            onClick={() => islem.type === 'Analiz' ? handleOpenReport(islem.report_json) : null}
+            onClick={() => islem.type === 'Analiz' ? handleOpenReport(islem.id) : null}
             className={`group p-8 bg-white border border-black/5 rounded-[2rem] flex flex-col md:flex-row justify-between md:items-center shadow-embossed hover:shadow-embossed-hover transition-all duration-500 ${islem.type === 'Analiz' ? 'cursor-pointer' : ''}`}
           >
             <div className="flex items-center gap-6 mb-4 md:mb-0">
