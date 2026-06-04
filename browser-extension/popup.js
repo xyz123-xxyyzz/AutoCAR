@@ -30,6 +30,16 @@ document.addEventListener('DOMContentLoaded', () => {
     window.close();
   });
 
+  // E-Posta bilgisini ekrana yansıt
+  chrome.storage.local.get(['userEmail'], (res) => {
+    const emailDisplay = document.getElementById('user-email-display');
+    if (res.userEmail) {
+      emailDisplay.textContent = res.userEmail;
+    } else {
+      emailDisplay.textContent = "Giriş Yapılmadı";
+    }
+  });
+
   checkState();
   if (!refreshInterval) {
     refreshInterval = setInterval(checkState, 500);

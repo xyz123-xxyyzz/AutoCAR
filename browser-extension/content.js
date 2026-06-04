@@ -2,11 +2,17 @@
 const syncApiKey = () => {
   try {
     const apiKey = window.localStorage.getItem('openai_api_key');
+    const email = window.localStorage.getItem('userEmail');
+
     if (apiKey && apiKey.trim().length > 0) {
-      chrome.storage.local.get(['openai_api_key'], (res) => {
-        if (res.openai_api_key !== apiKey) {
-          chrome.storage.local.set({ openai_api_key: apiKey }, () => {
-            console.log("AutoCAR Extension: API Key successfully synced from Web Portal.");
+      chrome.storage.local.get(['openai_api_key', 'userEmail'], (res) => {
+        let updates = {};
+        if (res.openai_api_key !== apiKey) updates.openai_api_key = apiKey;
+        if (email && res.userEmail !== email) updates.userEmail = email;
+
+        if (Object.keys(updates).length > 0) {
+          chrome.storage.local.set(updates, () => {
+            console.log("AutoCAR Extension: API Key & Email successfully synced.");
           });
         }
       });
