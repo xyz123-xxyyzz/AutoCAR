@@ -260,14 +260,21 @@ Kurallar:
 - "tableData" (Kıyaslama tablosu) KESİNLİKLE ÇOK UZUN OLMALIDIR. En az 15 farklı kıyaslama satırı ekle (Model Yılı, Güç, Tork, Şanzıman, Ekran, Cam Tavan, Fiyat vb.).
 `;
 
-  // Master AI'a giden veriden 'images' dizilerini tamamen siliyoruz ki gereksiz yük olmasın. Görseller React tarafında eşleştirilecek.
+  // Master AI'a giden veriden gereksiz yer kaplayan kısımları (url, boş özellikler vb.) silerek SIKIŞTIRIYORUZ.
+  // Bu sayede 1000 araç bile gönderilse OpenAI chat limiti şişmez.
   const cleanGroupReports = groupReports.map(g => ({
     groupName: g.groupName,
-    group_logic: g.group_logic,
-    cars: g.cars.map(c => {
-      const { images, ...rest } = c;
-      return rest;
-    })
+    cars: g.cars.map(c => ({
+      title: c.carData.title,
+      price: c.carData.price,
+      scores: {
+        ms: c.carData.market_speed_score,
+        pp: c.carData.price_perf_score,
+        fp: c.carData.fair_price_score,
+        cs: c.carData.condition_score,
+        total: c.carData.overall_score
+      }
+    }))
   }));
 
   return await callOpenAI(systemPrompt, cleanGroupReports);
@@ -295,62 +302,72 @@ async function runFullAnalysis(options) {
     let totalCars = readyData.length;
     let processedCars = 0;
     
-    // TÜM ARAÇLARI AYNI ANDA (PARALEL) ANALİZ ETMEK İÇİN PROMISE DİZİSİ
-    const allAnalysisPromises = [];
-
+    // Bütün araçları düzleştirilmiş bir listeye alalım
+    const flatCarsList = [];
     for (let g = 0; g < groupNames.length; g++) {
       const gName = groupNames[g];
       const gCars = groups[gName];
-
       for (let i = 0; i < gCars.length; i++) {
-        const carProcessPromise = (async () => {
-          // TEK HAMLEDE TÜM VERİ ANALİZİNİ YAP
-          const finalReport = await analyzeCarData(gCars[i]);
-
-          processedCars++;
-          updateState({ 
-            aiStatusText: `Araçlar Eşzamanlı Analiz Ediliyor (${processedCars}/${totalCars})...`,
-            analysisProgress: 5 + Math.round((processedCars / totalCars) * 80)
-          });
-
-          let cleanTitle = finalReport.clean_title || gCars[i].title;
-          if (!finalReport.clean_title || finalReport.clean_title.length > 50) {
-            const match = gCars[i].title.match(/(?:[12][0-9]{3})/);
-            if (match) {
-              cleanTitle = `${gName} ${match[0]} Model`;
-            } else {
-              cleanTitle = gName;
-            }
-          }
-
-          return {
-            groupName: gName,
-            carData: {
-              title: cleanTitle,
-              price: gCars[i].price,
-              url: gCars[i].url,
-              images: gCars[i].images, // Resimler aynen aktarılır, galeride görünür
-              market_speed_score: finalReport.market_speed_score || null,
-              price_perf_score: finalReport.price_perf_score || null,
-              fair_price_score: finalReport.fair_price_score || null,
-              condition_score: finalReport.condition_score || null,
-              overall_score: finalReport.overall_score || null,
-              ai_report: finalReport.data_report || null,
-              vision_report: null, // Görsel AI tamamen kaldırıldı
-              defects: [],
-              positives: [],
-              competitor_analysis: finalReport.competitor_analysis || null,
-              detailed_specs: finalReport.detailed_specs || [],
-              damage_map: finalReport.damage_map || null
-            }
-          };
-        })();
-        allAnalysisPromises.push(carProcessPromise);
+        flatCarsList.push({ groupName: gName, carData: gCars[i] });
       }
     }
 
-    // Bütün araçların yapay zeka analizlerini PARALEL olarak bekle (Şimşek Hızı)
-    const allProcessedCars = await Promise.all(allAnalysisPromises);
+    // Arabaları 50'şerli "Chunk" (Paketler) haline getirelim
+    const CHUNK_SIZE = 50;
+    const allProcessedCars = [];
+
+    for (let i = 0; i < flatCarsList.length; i += CHUNK_SIZE) {
+      const chunk = flatCarsList.slice(i, i + CHUNK_SIZE);
+      
+      const chunkPromises = chunk.map(async (item) => {
+        const { groupName: gName, carData: cData } = item;
+        
+        // TEK HAMLEDE TÜM VERİ ANALİZİNİ YAP
+        const finalReport = await analyzeCarData(cData);
+
+        processedCars++;
+        updateState({ 
+          aiStatusText: `Araçlar 50'li Paketler Halinde Analiz Ediliyor (${processedCars}/${totalCars})...`,
+          analysisProgress: 5 + Math.round((processedCars / totalCars) * 80)
+        });
+
+        let cleanTitle = finalReport.clean_title || cData.title;
+        if (!finalReport.clean_title || finalReport.clean_title.length > 50) {
+          const match = cData.title.match(/(?:[12][0-9]{3})/);
+          if (match) {
+            cleanTitle = `${gName} ${match[0]} Model`;
+          } else {
+            cleanTitle = gName;
+          }
+        }
+
+        return {
+          groupName: gName,
+          carData: {
+            title: cleanTitle,
+            price: cData.price,
+            url: cData.url,
+            images: cData.images, // Resimler aynen aktarılır, galeride görünür
+            market_speed_score: finalReport.market_speed_score || null,
+            price_perf_score: finalReport.price_perf_score || null,
+            fair_price_score: finalReport.fair_price_score || null,
+            condition_score: finalReport.condition_score || null,
+            overall_score: finalReport.overall_score || null,
+            ai_report: finalReport.data_report || null,
+            vision_report: null, // Görsel AI tamamen kaldırıldı
+            defects: [],
+            positives: [],
+            competitor_analysis: finalReport.competitor_analysis || null,
+            detailed_specs: finalReport.detailed_specs || [],
+            damage_map: finalReport.damage_map || null
+          }
+        };
+      });
+
+      // 50'lik paketi aynı anda çalıştır ve bitmesini bekle, sonraki 50'ye geç
+      const chunkResults = await Promise.all(chunkPromises);
+      allProcessedCars.push(...chunkResults);
+    }
 
     // İşlenmiş araçları gruplarına göre tekrar ayır
     for (let g = 0; g < groupNames.length; g++) {
