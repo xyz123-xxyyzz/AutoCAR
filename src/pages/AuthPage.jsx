@@ -62,34 +62,42 @@ export default function AuthPage() {
         const role = vipUser.role; // 'sahip' veya 'kullanici'
         
         if (role === 'sahip') {
-          // Eğer giriş yapan Sahip ise (2 cihaza kadar izin ver)
-          let adminDevices = vipUser.admin_device_id ? vipUser.admin_device_id.split(',') : [];
-          
-          if (!adminDevices.includes(deviceId)) {
-            if (adminDevices.length < 2) {
-              adminDevices.push(deviceId);
-              await supabase.from('vip_users').update({ admin_device_id: adminDevices.join(',') }).eq('email', email);
-            } else {
-              await supabase.auth.signOut();
-              throw new Error('Bu yönetici hesabı maksimum cihaz sınırına (2) ulaşmıştır. Başka bir bilgisayardan giriş yapılamaz.');
-            }
+          // SAHİP KURALI: Sadece ve sadece Sahip'in kendi bilgisayarı (1 Adet) girebilir.
+          if (!vipUser.admin_device_id) {
+            // İlk kez giriyorsa cihazı Master Device olarak kaydet
+            await supabase.from('vip_users').update({ admin_device_id: deviceId }).eq('email', email);
+          } else if (vipUser.admin_device_id !== deviceId) {
+            // İkinci bir bilgisayardan girmeye çalışıyorsa reddet
+            await supabase.auth.signOut();
+            throw new Error('Güvenlik: Yönetici hesabı yalnızca tanımlı Ana Bilgisayardan (Sizin Bilgisayarınızdan) açılabilir.');
           }
         } else {
-          // Eğer giriş yapan Müşteri (kullanici) ise
-          let adminDevices = vipUser.admin_device_id ? vipUser.admin_device_id.split(',') : [];
-          let customerDevices = vipUser.customer_device_id ? vipUser.customer_device_id.split(',') : [];
+          // MÜŞTERİ KURALI: 
+          // 1. Sahip (Master Device) her zaman girebilir.
+          // 2. Müşteri (Kendi Device'ı) 1 kez kaydedilir ve sadece o bilgisayardan girebilir.
           
-          // 1. Kural: Sahip bilgisayarı her zaman müşteri hesabına da girebilir!
-          if (!adminDevices.includes(deviceId)) {
-            // Sahip değilse, müşteri cihazını kontrol et (2 cihaza kadar izin ver)
-            if (!customerDevices.includes(deviceId)) {
-              if (customerDevices.length < 2) {
-                customerDevices.push(deviceId);
-                await supabase.from('vip_users').update({ customer_device_id: customerDevices.join(',') }).eq('email', email);
-              } else {
-                await supabase.auth.signOut();
-                throw new Error('Bu kullanıcı hesabı maksimum cihaz sınırına (2) ulaşmıştır. Başka bir bilgisayardan giriş yapılamaz.');
-              }
+          // Önce Master Device'ı (Sahibin Cihazını) veritabanından öğrenelim
+          const { data: ownerUser } = await supabase
+            .from('vip_users')
+            .select('admin_device_id')
+            .eq('role', 'sahip')
+            .limit(1)
+            .single();
+            
+          const masterDeviceId = ownerUser?.admin_device_id;
+
+          // Eğer giren kişi SİZSİNİZ (Master Device) ise, müşteri hesabına direkt izin ver.
+          if (deviceId === masterDeviceId) {
+            // Geçiş Serbest (Müşteri slotunu bile harcamaz)
+          } else {
+            // Eğer giren kişi MÜŞTERİ ise (Master Device değilse)
+            if (!vipUser.customer_device_id) {
+              // Müşteri ilk defa giriyorsa, onun bilgisayarını müşteriye ait cihaz olarak kaydet (2. slot doldu)
+              await supabase.from('vip_users').update({ customer_device_id: deviceId }).eq('email', email);
+            } else if (vipUser.customer_device_id !== deviceId) {
+              // Eğer giren bilgisayar ne SİZİN bilgisayarınız, ne de MÜŞTERİNİN ilk girdiği bilgisayar değilse (Yani 3. bir kişi/arkadaşıysa) -> REDDET
+              await supabase.auth.signOut();
+              throw new Error('İzinsiz Erişim: Bu hesap yalnızca tanımlı Müşteri bilgisayarından veya Yönetici bilgisayarından açılabilir.');
             }
           }
         }
