@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Puzzle, Globe, CheckCircle, AlertCircle, LogOut } from 'lucide-react';
+import { Puzzle, Globe, CheckCircle, AlertCircle, LogOut, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { supabase } from '../lib/supabase';
