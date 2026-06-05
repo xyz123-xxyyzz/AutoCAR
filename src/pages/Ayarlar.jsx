@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Puzzle, Globe, CheckCircle, AlertCircle, LogOut, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../layouts/DashboardLayout';
@@ -10,7 +10,21 @@ export default function Ayarlar() {
   const displayPassword = role === 'Sahip' ? 'kz19gll28' : 'AutoCAR2026!1';
   
   const navigate = useNavigate();
-  const [firefoxInstalled, setFirefoxInstalled] = useState(false);
+  const [apiKey, setApiKey] = useState('');
+  const [savingKey, setSavingKey] = useState(false);
+  
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase.from('profiles').select('api_key').eq('id', user.id).single();
+        if (data && data.api_key) {
+          setApiKey(data.api_key);
+        }
+      }
+    };
+    fetchProfile();
+  }, []);
   
   const [toast, setToast] = useState(null); // { type: 'success' | 'warning', message: '' }
 
@@ -19,12 +33,23 @@ export default function Ayarlar() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const handleInstallFirefox = () => {
-    if (firefoxInstalled) {
-      showToast('warning', 'Eklenti zaten eklenmiş!');
-    } else {
-      setFirefoxInstalled(true);
-      showToast('success', 'Firefox tarayıcınıza başarıyla eklendi!');
+  const handleSaveApiKey = async () => {
+    if (!apiKey) {
+      showToast('warning', 'Lütfen bir API anahtarı girin!');
+      return;
+    }
+    setSavingKey(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error } = await supabase.from('profiles').update({ api_key: apiKey }).eq('id', user.id);
+        if (error) throw error;
+        showToast('success', 'OpenAI API Anahtarı başarıyla kaydedildi!');
+      }
+    } catch (err) {
+      showToast('warning', 'API anahtarı kaydedilirken hata oluştu.');
+    } finally {
+      setSavingKey(false);
     }
   };
 
@@ -118,6 +143,29 @@ export default function Ayarlar() {
               >
                 OpenAI Bakiye Yükleme Sayfasına Git <Globe size={16} />
               </a>
+            </div>
+
+            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/10">
+              <h3 className="text-[#FFCC00] font-bold text-lg mb-3 tracking-wide">4. Kişisel API Anahtarınız</h3>
+              <p className="text-sm text-white/80 leading-relaxed font-medium mb-4">
+                Hesabınıza bakiye yükledikten sonra OpenAI'dan aldığınız gizli "sk-" ile başlayan API anahtarınızı buraya yapıştırıp kaydedin. Anahtarınız sadece size özel, güvenli olarak veritabanımızda şifrelenir.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input 
+                  type="password" 
+                  placeholder="sk-proj-..." 
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  className="flex-1 bg-black/50 border border-white/20 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#FFCC00] transition-colors"
+                />
+                <button 
+                  onClick={handleSaveApiKey}
+                  disabled={savingKey}
+                  className="px-8 py-3 bg-[#FFCC00] text-black font-bold text-sm rounded-xl hover:bg-yellow-400 transition-colors disabled:opacity-50 whitespace-nowrap"
+                >
+                  {savingKey ? 'Kaydediliyor...' : 'Anahtarı Kaydet'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
