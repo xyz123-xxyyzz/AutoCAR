@@ -10,7 +10,6 @@ export default function Ayarlar() {
   const displayPassword = role === 'Sahip' ? 'kz19gll28' : 'AutoCAR2026!1';
   
   const navigate = useNavigate();
-  const [chromeInstalled, setChromeInstalled] = useState(false);
   const [firefoxInstalled, setFirefoxInstalled] = useState(false);
   
   const [toast, setToast] = useState(null); // { type: 'success' | 'warning', message: '' }
@@ -18,15 +17,6 @@ export default function Ayarlar() {
   const showToast = (type, message) => {
     setToast({ type, message });
     setTimeout(() => setToast(null), 3000);
-  };
-
-  const handleInstallChrome = () => {
-    if (chromeInstalled) {
-      showToast('warning', 'Eklenti zaten eklenmiş!');
-    } else {
-      setChromeInstalled(true);
-      showToast('success', 'Chrome tarayıcınıza başarıyla eklendi!');
-    }
   };
 
   const handleInstallFirefox = () => {
@@ -65,22 +55,22 @@ export default function Ayarlar() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
-          {/* Chrome Ext */}
-          <div className="bg-[#F5F5F7] rounded-3xl p-8 shadow-inner-embossed flex flex-col items-center text-center border border-transparent hover:bg-white hover:border-black/5 hover:shadow-embossed transition-all duration-300">
-            <div className={`w-20 h-20 rounded-full shadow-embossed flex items-center justify-center mb-6 transition-colors ${chromeInstalled ? 'bg-black text-white' : 'bg-white text-black'}`}>
-              <Globe size={32} />
+          {/* Firefox Ext */}
+          <div className="flex-1 min-w-[280px] p-8 rounded-3xl bg-[#F4F4F4] shadow-inner flex flex-col items-center text-center relative overflow-hidden group">
+            <div className={`w-20 h-20 rounded-full shadow-embossed flex items-center justify-center mb-6 transition-colors ${firefoxInstalled ? 'bg-black text-white' : 'bg-white text-black'}`}>
+              <Globe size={32} strokeWidth={2.5} />
             </div>
-            <h3 className="font-bold text-lg mb-2">Google Chrome</h3>
-            <p className="text-xs font-bold text-black/40 mb-8 leading-relaxed px-4">
-              AutoCAR analiz asistanını Chrome tarayıcınıza ekleyerek ilanları saniyeler içinde okuyun.
+            <h3 className="font-bold text-lg mb-2">Mozilla Firefox</h3>
+            <p className="text-sm font-medium text-black/60 mb-8 leading-relaxed max-w-[240px]">
+              AutoCAR analiz asistanını Firefox tarayıcınıza ekleyerek ilanları saniyeler içinde okuyun.
             </p>
             <button 
-              onClick={handleInstallChrome}
-              className={`w-full py-4 rounded-full font-bold tracking-[0.2em] text-[10px] uppercase transition-all shadow-embossed
-                ${chromeInstalled ? 'bg-white text-black opacity-50' : 'bg-black text-white hover:bg-black/80'}
+              onClick={handleInstallFirefox}
+              className={`px-8 py-3.5 rounded-2xl font-bold text-sm tracking-wide shadow-embossed transition-all duration-300 w-full mt-auto
+                ${firefoxInstalled ? 'bg-white text-black opacity-50' : 'bg-black text-white hover:bg-black/80'}
               `}
             >
-              {chromeInstalled ? 'Eklendi' : 'Chrome\'a Ekle'}
+              {firefoxInstalled ? 'Eklendi' : 'Firefox\'a Ekle'}
             </button>
           </div>
 

@@ -131,8 +131,8 @@ export default function LandingPage() {
                 <span className="text-3xl font-display font-black text-white">1</span>
               </div>
               <h3 className="text-xl font-display font-black mb-4">Eklentiyi Kurun</h3>
-              <p className="text-sm font-bold text-white/60 leading-relaxed max-w-xs">
-                Chrome mağazasından AutoCAR eklentisini tek tıkla tarayıcınıza ekleyin ve üyeliğinizle giriş yapın.
+              <p className="text-sm text-black/60 font-medium leading-relaxed mt-2">
+                Firefox eklentisini sitemizden tek tıkla tarayıcınıza ekleyin ve üyeliğinizle giriş yapın.
               </p>
             </div>
 

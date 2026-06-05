@@ -35,7 +35,7 @@ export default function SatinAlanDashboard() {
                 onClick={() => navigate('/ayarlar')}
                 className="w-full py-5 bg-black text-white font-display font-black tracking-[0.2em] text-[10px] uppercase rounded-full hover:bg-black/80 transition-colors flex items-center justify-center gap-3 shadow-embossed"
               >
-                Chrome'a Ekle <ArrowRight size={14} strokeWidth={3} />
+                Firefox'a Ekle <ArrowRight size={14} strokeWidth={3} />
               </button>
               <button 
                 onClick={() => navigate('/ayarlar')}
