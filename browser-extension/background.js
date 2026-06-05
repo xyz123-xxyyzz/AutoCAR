@@ -208,41 +208,56 @@ async function analyzeCarData(carData) {
 Your goal is to find the ABSOLUTE TRUTH about the car data provided (specs, price, damage history, mileage).
 Do not trust seller exaggerations or marketing fluff. Be 100% realistic and fair based purely on data.
 
-Return ONLY VALID JSON.
-Format:
+CRITICAL JSON OUTPUT FORMAT:
+You must return ONLY a single, valid JSON object exactly matching the structure below. Do not output markdown, do not output explanations outside the JSON.
+
 {
   "clean_title": "Cleaned up Make, Model and Year of the car (e.g., 'Volkswagen Passat 2015'). Remove advertising words.",
+  
   "competitor_analysis": {
     "competitors": ["Competitor 1", "Competitor 2"],
     "text": "Detailed comparison against competitors. Be highly objective, realistic, and highlight any real red flags.",
     "pros": ["Strong point 1", "Strong point 2"],
     "cons": ["Weak point 1", "Weak point 2"]
   },
+  
   "market_speed_score": 85,
   "price_perf_score": 60,
   "fair_price_score": 50,
   "condition_score": 40,
   "overall_score": 61,
-  "data_report": "A very detailed summary report about the car's technical data in Turkish. YOU MUST EXPLICITLY AND TRANSPARENTLY EXPLAIN WHY YOU GAVE THE SPECIFIC SCORES for Satış Hızı, Fiyat/Performans, Uygunluk, and Araç Durumu. Break down the reasoning for the 4 scores. Use exactly ONE EMPTY LINE (\\n\\n) between each score's explanation. (e.g., 'Satış Hızı (75 Puan): [Açıklama]\\n\\nFiyat / Perf. (70 Puan): [Açıklama]'). BE 100% REALISTIC AND OBJECTIVE. Do not sugarcoat, but do not be unnecessarily brutal either. Just the absolute truth.",
+  
+  "data_report": "A very detailed summary report about the car's technical data in Turkish. YOU MUST EXPLICITLY AND TRANSPARENTLY EXPLAIN WHY YOU GAVE THE SPECIFIC SCORES for Satış Hızı, Fiyat/Performans, Uygunluk, and Araç Durumu. Break down the reasoning for the 4 scores. Use exactly ONE EMPTY LINE (\\n\\n) between each score's explanation.",
+  
   "detailed_specs": [
-    { "name": "Spec Name", "value": "Value", "status": "good", "comment": "Detailed expert professional comment explaining why this spec is an advantage or a disadvantage in the real world. Do not just restate the value." }
+    { "name": "Spec Name", "value": "Value", "status": "good", "comment": "Detailed expert professional comment explaining why this spec is an advantage or a disadvantage in the real world." }
   ],
+  
   "damage_map": {
     "kaput": "orijinal"
   }
 }
 
-RULES FOR SCORING (INTEGERS ONLY):
+INSTRUCTIONS FOR SPECIFIC FIELDS:
+
+1. SCORING (INTEGERS ONLY):
 - market_speed_score: 0-100 (Volume of listings / popularity).
 - price_perf_score: 0-100 (Features vs Price).
 - fair_price_score: 0-100 (Is it priced at fair market value? Evaluate realistically).
 - condition_score: 0-100 (Year, Mileage, Damage).
 - overall_score: EXACT ARITHMETIC MEAN of the above 4 scores.
 
-CRITICAL RULES:
+2. DETAILED SPECS (CRITICAL):
+- You MUST EXTRACT AND ANALYZE ALL AVAILABLE SPECS from the data (at least 15-20 specs if available, e.g., Motor Gücü, Model Yılı, Vites Tipi, Yakıt, Renk, Boya/Değişen, Hasar Kaydı vb.).
+- Do NOT just pick 3 features. Put ALL OF THEM in the 'detailed_specs' array.
+- Write detailed, professional comments for every single one. The status must be one of: 'good', 'bad', or 'neutral'.
+
+3. DAMAGE MAP:
+- Map damage values based on user data. Keep keys simple and in Turkish (e.g. 'kaput', 'tavan', 'sag_on_kapi').
+
+GENERAL CRITICAL RULES:
 - All text MUST be in TURKISH. 
 - Be 100% realistic and purely data-driven.
-- You MUST EXTRACT AND ANALYZE ALL AVAILABLE SPECS from the data (at least 15-20 specs if available, e.g., Motor Gücü, Model Yılı, Vites Tipi, Yakıt, Renk, Boya/Değişen, Hasar Kaydı vs.). Do NOT just pick 3 features. Put ALL OF THEM in detailed_specs and write detailed professional comments for every single one.
 - Do not trust seller claims or 'clean' labels if the data (like mileage or damage) says otherwise.
 - Do NOT hallucinate data. Be totally objective and strict.`;
 
