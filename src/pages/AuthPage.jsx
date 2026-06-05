@@ -153,6 +153,13 @@ export default function AuthPage() {
             <span className="text-red-500 font-black">DİKKAT:</span> BU SİSTEME SADECE İLK GİRDİĞİNİZ BİLGİSAYAR İLE GİRİŞ YAPABİLİRSİNİZ.
           </p>
 
+          <div className="mt-8 pt-6 border-t border-black/5 text-center">
+            <p className="text-[10px] font-bold tracking-[0.2em] uppercase text-black/40 mb-3">Sisteme dahil olmak istiyor musunuz?</p>
+            <a href="https://wa.me/905411869513" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-6 py-3 bg-[#F5F5F7] text-black rounded-full text-[10px] font-bold tracking-[0.2em] uppercase hover:bg-[#25D366] hover:text-white transition-colors shadow-inner-embossed">
+              <span>📱</span> WhatsApp'tan Ulaşın
+            </a>
+          </div>
+
         </div>
       </div>
     </div>

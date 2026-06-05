@@ -43,9 +43,9 @@ export default function LandingPage() {
         </p>
 
         {/* Membership Info Alert */}
-        <div className="bg-black text-white p-6 md:p-8 rounded-[2rem] mb-12 max-w-2xl shadow-embossed border border-white/10 flex flex-col items-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#D4AF37]/10 rounded-full text-[#D4AF37] text-[10px] font-bold tracking-widest uppercase mb-4">
-            <Shield size={14} /> Kapalı Devre B2B Sistem
+        <div className="bg-black text-white p-6 md:p-8 rounded-[2rem] mb-12 max-w-2xl shadow-embossed border border-red-500/30 flex flex-col items-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/10 rounded-full text-red-500 text-[10px] font-bold tracking-widest uppercase mb-4 border border-red-500/20">
+            <AlertCircle size={14} /> DİKKAT: Kapalı Devre B2B Sistem
           </div>
           <p className="text-xs md:text-sm text-white/70 font-bold leading-relaxed mb-6">
             AutoCAR, kurumsal galeri ve al-sat uzmanları için geliştirilmiş kapalı devre bir sistemdir. Sisteme dahil olmak ve premium paketlerimiz hakkında bilgi almak için lütfen bizimle iletişime geçin.
