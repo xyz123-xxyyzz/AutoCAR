@@ -42,12 +42,24 @@ export default function LandingPage() {
           İkinci el araç alım satımında devrim yaratıyoruz. Farklı ilan sitelerindeki araçları tek tıkla yapay zeka havuzunuza atın; sistem gizli kusurları bulsun, fiyatın şişirme olup olmadığını analiz etsin ve size en karlı yatırımı söylesin.
         </p>
 
-        <Link to="/login" className="group px-12 py-6 bg-white border border-white rounded-full flex items-center gap-6 shadow-embossed hover:shadow-embossed-hover transition-all duration-500 hover:-translate-y-2">
-          <span className="text-xs font-bold tracking-[0.2em] uppercase text-black">Müşteri Girişi Yap</span>
-          <div className="w-10 h-10 bg-[#F5F5F7] shadow-inner-embossed rounded-full flex items-center justify-center group-hover:bg-black group-hover:text-white transition-colors">
-            <ArrowRight size={18} strokeWidth={2} />
+        {/* Membership Info Alert */}
+        <div className="bg-black text-white p-6 md:p-8 rounded-[2rem] mb-12 max-w-2xl shadow-embossed border border-white/10 flex flex-col items-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#D4AF37]/10 rounded-full text-[#D4AF37] text-[10px] font-bold tracking-widest uppercase mb-4">
+            <Shield size={14} /> Kapalı Devre B2B Sistem
           </div>
-        </Link>
+          <p className="text-xs md:text-sm text-white/70 font-bold leading-relaxed mb-6">
+            AutoCAR, kurumsal galeri ve al-sat uzmanları için geliştirilmiş kapalı devre bir sistemdir. Sisteme dahil olmak ve premium paketlerimiz hakkında bilgi almak için lütfen bizimle iletişime geçin.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <a href="#iletisim" className="px-8 py-4 bg-white text-black text-[10px] font-bold tracking-[0.2em] uppercase rounded-full hover:bg-gray-200 transition-colors shadow-embossed">
+              İletişime Geçin
+            </a>
+            <Link to="/login" className="px-8 py-4 bg-transparent border border-white/20 text-white text-[10px] font-bold tracking-[0.2em] uppercase rounded-full hover:bg-white/10 transition-colors">
+              Müşteri Girişi
+            </Link>
+          </div>
+        </div>
+        
       </main>
 
       {/* Supported Platforms Section */}
@@ -257,10 +269,53 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 px-6 border-t border-black/5 text-center">
-        <div className="font-display font-black text-xl tracking-[0.2em] uppercase mb-4 opacity-30">AutoCAR</div>
-        <p className="text-xs font-bold tracking-widest text-black/30 uppercase">© {new Date().getFullYear()} AutoCAR AI Technologies. Tüm hakları saklıdır.</p>
+      {/* Footer / Contact Section */}
+      <footer id="iletisim" className="bg-[#111] text-white py-16 px-6">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+          
+          <div className="lg:col-span-2">
+            <div className="font-display font-black text-2xl tracking-[0.2em] uppercase flex items-center gap-2 mb-6">
+              <div className="w-8 h-8 bg-white text-black flex items-center justify-center rounded-lg">A</div>
+              AutoCAR
+            </div>
+            <p className="text-white/50 text-sm font-bold leading-relaxed max-w-sm">
+              İkinci el araç alım satımında devrim yaratan, işletmelere özel otonom tarayıcı asistanı ve B2B SaaS platformu.
+            </p>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-display font-black tracking-widest uppercase text-white/40 mb-6">İletişim Bilgileri</h4>
+            <ul className="space-y-4">
+              <li className="flex items-center gap-3 text-white/80 font-bold text-sm">
+                <span>📞</span> Telefon: 0541 186 95 13
+              </li>
+              <li className="flex items-center gap-3 text-white/80 font-bold text-sm">
+                <span>✉️</span> E-posta: kagulle31@gmail.com
+              </li>
+              <li className="flex items-center gap-3 text-white/80 font-bold text-sm">
+                <span>📍</span> Adres: Kocaeli / Darıca
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-display font-black tracking-widest uppercase text-white/40 mb-6">Hızlı Destek</h4>
+            <a 
+              href="https://wa.me/905411869513" 
+              target="_blank" 
+              rel="noreferrer"
+              className="inline-flex items-center gap-3 px-6 py-3 bg-[#25D366] text-white rounded-full font-bold text-sm shadow-lg hover:scale-105 transition-transform"
+            >
+              <span>📱</span> WhatsApp ile İletişime Geç
+            </a>
+          </div>
+
+        </div>
+
+        <div className="max-w-7xl mx-auto border-t border-white/10 mt-16 pt-8 flex flex-col md:flex-row items-center justify-between text-xs font-bold text-white/30 tracking-widest uppercase">
+          <p>© {new Date().getFullYear()} AutoCAR AI Technologies.</p>
+          <p className="mt-4 md:mt-0">Şeffaf, faturalı ve yasal ticari altyapı güvencesiyle.</p>
+        </div>
       </footer>
 
     </div>
