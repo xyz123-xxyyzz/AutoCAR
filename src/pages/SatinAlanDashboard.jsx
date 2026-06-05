@@ -41,7 +41,7 @@ export default function SatinAlanDashboard() {
                 onClick={() => navigate('/ayarlar')}
                 className="w-full py-5 bg-[#F5F5F7] text-black font-display font-black tracking-[0.2em] text-[10px] uppercase rounded-full hover:bg-black hover:text-white transition-colors flex items-center justify-center gap-3 shadow-inner-embossed"
               >
-                Firefox'a Ekle <ArrowRight size={14} strokeWidth={3} />
+                Kurulum Kılavuzu <ArrowRight size={14} strokeWidth={3} />
               </button>
             </div>
           </div>
