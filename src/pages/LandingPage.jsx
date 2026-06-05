@@ -64,6 +64,32 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Video Showcase Section */}
+      <section className="relative z-10 py-24 px-6 bg-[#F5F5F7] shadow-inner-embossed">
+        <div className="max-w-5xl mx-auto text-center">
+          <div className="inline-flex items-center gap-3 px-6 py-3 bg-white rounded-full mb-8 shadow-embossed border border-black/5">
+            <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-red-600">Sistemi Canlı İzleyin</span>
+          </div>
+          <h2 className="text-4xl md:text-5xl font-display font-black tracking-tighter mb-12">Yapay Zeka Nasıl Çalışır?</h2>
+          
+          <div className="relative w-full aspect-video bg-black rounded-[2rem] shadow-embossed overflow-hidden border-8 border-white group cursor-pointer">
+            {/* Placeholder Image/Video Cover */}
+            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542362567-b07e54358753?q=80&w=2070')] bg-cover bg-center opacity-60 group-hover:scale-105 transition-transform duration-700"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-center justify-center">
+              {/* Play Button */}
+              <div className="w-24 h-24 bg-[#FFCC00] rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(255,204,0,0.5)] group-hover:scale-110 transition-transform duration-300">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="black"><path d="M8 5v14l11-7z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/></svg>
+              </div>
+            </div>
+            <div className="absolute bottom-6 left-8 text-left">
+              <div className="text-white font-display font-black text-2xl tracking-tight drop-shadow-md">AutoCAR Kullanım Rehberi</div>
+              <div className="text-white/80 font-bold text-sm">5 saniyede ilan analizi nasıl yapılır?</div>
+            </div>
+          </div>
+          <p className="mt-8 text-black/50 font-bold text-sm tracking-wide">*(Bu alana yakında sizin çekeceğiniz tanıtım videosu eklenecektir.)*</p>
+        </div>
+      </section>
+
       {/* What is AutoCAR AI? (Features) */}
       <section className="relative z-10 py-32 px-6 bg-white shadow-[0_-30px_60px_rgba(0,0,0,0.02)]">
         <div className="max-w-7xl mx-auto">
