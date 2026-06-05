@@ -66,7 +66,6 @@ export default function Ayarlar() {
             </p>
             <a 
               href="/autocar.xpi"
-              download
               className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl bg-black text-white font-bold text-sm hover:bg-black/80 transition-all shadow-embossed w-full mt-auto"
             >
               Firefox'a Ekle <ArrowRight size={14} strokeWidth={3} />
