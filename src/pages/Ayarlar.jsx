@@ -53,11 +53,11 @@ export default function Ayarlar() {
           Tarayıcı Eklentileri
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="flex justify-center mb-12">
           
           {/* Firefox Ext */}
-          <div className="flex-1 min-w-[280px] p-8 rounded-3xl bg-[#F4F4F4] shadow-inner flex flex-col items-center text-center relative overflow-hidden group">
-            <div className={`w-20 h-20 rounded-full shadow-embossed flex items-center justify-center mb-6 transition-colors ${firefoxInstalled ? 'bg-black text-white' : 'bg-white text-black'}`}>
+          <div className="w-full max-w-sm p-8 rounded-3xl bg-[#F4F4F4] shadow-inner flex flex-col items-center text-center relative overflow-hidden group">
+            <div className={`w-20 h-20 rounded-full shadow-embossed flex items-center justify-center mb-6 transition-colors bg-black text-white`}>
               <Globe size={32} strokeWidth={2.5} />
             </div>
             <h3 className="font-bold text-lg mb-2">Mozilla Firefox</h3>
@@ -73,25 +73,6 @@ export default function Ayarlar() {
             </a>
           </div>
 
-          {/* Firefox Ext */}
-          <div className="bg-[#F5F5F7] rounded-3xl p-8 shadow-inner-embossed flex flex-col items-center text-center border border-transparent hover:bg-white hover:border-black/5 hover:shadow-embossed transition-all duration-300">
-            <div className={`w-20 h-20 rounded-full shadow-embossed flex items-center justify-center mb-6 transition-colors ${firefoxInstalled ? 'bg-black text-white' : 'bg-white text-black'}`}>
-              {/* Globe icon for Firefox mock */}
-              <Puzzle size={32} />
-            </div>
-            <h3 className="font-bold text-lg mb-2">Mozilla Firefox</h3>
-            <p className="text-xs font-bold text-black/40 mb-8 leading-relaxed px-4">
-              AutoCAR analiz asistanını Firefox tarayıcınıza ekleyerek ilanları saniyeler içinde okuyun.
-            </p>
-            <button 
-              onClick={handleInstallFirefox}
-              className={`w-full py-4 rounded-full font-bold tracking-[0.2em] text-[10px] uppercase transition-all shadow-embossed
-                ${firefoxInstalled ? 'bg-white text-black opacity-50' : 'bg-black text-white hover:bg-black/80'}
-              `}
-            >
-              {firefoxInstalled ? 'Eklendi' : 'Firefox\'a Ekle'}
-            </button>
-          </div>
         </div>
         
         {/* Kullanım Kılavuzu & Bilgilendirme (PDF Formatında) */}
