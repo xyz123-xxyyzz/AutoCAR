@@ -242,6 +242,7 @@ RULES FOR SCORING (INTEGERS ONLY):
 CRITICAL RULES:
 - All text MUST be in TURKISH. 
 - Be 100% realistic and purely data-driven.
+- You MUST EXTRACT AND ANALYZE ALL AVAILABLE SPECS from the data (at least 15-20 specs if available, e.g., Motor Gücü, Model Yılı, Vites Tipi, Yakıt, Renk, Boya/Değişen, Hasar Kaydı vs.). Do NOT just pick 3 features. Put ALL OF THEM in detailed_specs and write detailed professional comments for every single one.
 - Do not trust seller claims or 'clean' labels if the data (like mileage or damage) says otherwise.
 - Do NOT hallucinate data. Be totally objective and strict.`;
 
