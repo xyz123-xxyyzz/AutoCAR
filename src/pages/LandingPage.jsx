@@ -42,25 +42,7 @@ export default function LandingPage() {
           İkinci el araç alım satımında devrim yaratıyoruz. Farklı ilan sitelerindeki araçları tek tıkla yapay zeka havuzunuza atın; sistem gizli kusurları bulsun, fiyatın şişirme olup olmadığını analiz etsin ve size en karlı yatırımı söylesin.
         </p>
 
-        {/* Promotional Video Section */}
-        <div className="w-full max-w-4xl mx-auto mb-16 flex flex-col items-center">
-          <div className="w-full rounded-[2rem] overflow-hidden shadow-embossed border border-black/5 mb-6 bg-black relative group">
-            <video 
-              controls 
-              className="w-full h-auto aspect-video object-cover"
-              poster=""
-            >
-              <source src="/autocar-tanitim.mp4" type="video/mp4" />
-              Tarayıcınız video etiketini desteklemiyor.
-            </video>
-          </div>
-          <div className="bg-white p-6 md:p-8 rounded-[2rem] shadow-embossed border border-black/5 w-full">
-            <p className="text-sm md:text-base text-black/70 font-bold leading-relaxed text-center">
-              "20 farklı ilanı tek tek incelemek, fiyat/performans hesabı yapmak saatlerinizi alırdı. <br/>
-              <span className="text-black font-black">AutoCAR Yapay Zeka Sistemi</span> ile 20 ilanın en ince detayına kadar analiz edilmesi ve en kârlı 3 aracın seçilmesi sadece <span className="text-green-600 font-black">1-2 dakika</span> sürüyor!"
-            </p>
-          </div>
-        </div>
+
 
         {/* Membership Info Alert */}
         <div className="bg-black text-white p-6 md:p-8 rounded-[2rem] mb-12 max-w-2xl mx-auto shadow-embossed border border-red-500/30 flex flex-col items-center text-center">
@@ -108,21 +90,24 @@ export default function LandingPage() {
           </div>
           <h2 className="text-4xl md:text-5xl font-display font-black tracking-tighter mb-12">Yapay Zeka Nasıl Çalışır?</h2>
           
-          <div className="relative w-full aspect-video bg-black rounded-[2rem] shadow-embossed overflow-hidden border-8 border-white group cursor-pointer">
-            {/* Placeholder Image/Video Cover */}
-            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1542362567-b07e54358753?q=80&w=2070')] bg-cover bg-center opacity-60 group-hover:scale-105 transition-transform duration-700"></div>
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-center justify-center">
-              {/* Play Button */}
-              <div className="w-24 h-24 bg-[#FFCC00] rounded-full flex items-center justify-center shadow-[0_0_50px_rgba(255,204,0,0.5)] group-hover:scale-110 transition-transform duration-300">
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="black"><path d="M8 5v14l11-7z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/></svg>
-              </div>
+          <div className="w-full max-w-4xl mx-auto mb-8 flex flex-col items-center">
+            <div className="w-full rounded-[2rem] overflow-hidden shadow-embossed border-8 border-white mb-6 bg-black relative">
+              <video 
+                controls 
+                className="w-full h-auto aspect-video object-cover"
+                poster=""
+              >
+                <source src="/autocar-tanitim.mp4" type="video/mp4" />
+                Tarayıcınız video etiketini desteklemiyor.
+              </video>
             </div>
-            <div className="absolute bottom-6 left-8 text-left">
-              <div className="text-white font-display font-black text-2xl tracking-tight drop-shadow-md">AutoCAR Kullanım Rehberi</div>
-              <div className="text-white/80 font-bold text-sm">5 saniyede ilan analizi nasıl yapılır?</div>
+            <div className="bg-white p-6 md:p-8 rounded-[2rem] shadow-embossed border border-black/5 w-full">
+              <p className="text-sm md:text-base text-black/70 font-bold leading-relaxed text-center">
+                "20 farklı ilanı tek tek incelemek, fiyat/performans hesabı yapmak saatlerinizi alırdı. <br/>
+                <span className="text-black font-black">AutoCAR Yapay Zeka Sistemi</span> ile 20 ilanın en ince detayına kadar analiz edilmesi ve en kârlı 3 aracın seçilmesi sadece <span className="text-green-600 font-black">1-2 dakika</span> sürüyor!"
+              </p>
             </div>
           </div>
-          <p className="mt-8 text-black/50 font-bold text-sm tracking-wide">*(Bu alana yakında sizin çekeceğiniz tanıtım videosu eklenecektir.)*</p>
         </div>
       </section>
 
