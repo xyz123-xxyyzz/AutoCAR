@@ -42,11 +42,32 @@ export default function LandingPage() {
           İkinci el araç alım satımında devrim yaratıyoruz. Farklı ilan sitelerindeki araçları tek tıkla yapay zeka havuzunuza atın; sistem gizli kusurları bulsun, fiyatın şişirme olup olmadığını analiz etsin ve size en karlı yatırımı söylesin.
         </p>
 
+        {/* Promotional Video Section */}
+        <div className="w-full max-w-4xl mx-auto mb-16 flex flex-col items-center">
+          <div className="w-full rounded-[2rem] overflow-hidden shadow-embossed border border-black/5 mb-6 bg-black relative group">
+            <video 
+              controls 
+              className="w-full h-auto aspect-video object-cover"
+              poster=""
+            >
+              <source src="/autocar-tanitim.mp4" type="video/mp4" />
+              Tarayıcınız video etiketini desteklemiyor.
+            </video>
+          </div>
+          <div className="bg-white p-6 md:p-8 rounded-[2rem] shadow-embossed border border-black/5 w-full">
+            <p className="text-sm md:text-base text-black/70 font-bold leading-relaxed text-center">
+              "20 farklı ilanı tek tek incelemek, fiyat/performans hesabı yapmak saatlerinizi alırdı. <br/>
+              <span className="text-black font-black">AutoCAR Yapay Zeka Sistemi</span> ile 20 ilanın en ince detayına kadar analiz edilmesi ve en kârlı 3 aracın seçilmesi sadece <span className="text-green-600 font-black">1-2 dakika</span> sürüyor!"
+            </p>
+          </div>
+        </div>
+
         {/* Membership Info Alert */}
-        <div className="bg-black text-white p-6 md:p-8 rounded-[2rem] mb-12 max-w-2xl shadow-embossed border border-red-500/30 flex flex-col items-center">
+        <div className="bg-black text-white p-6 md:p-8 rounded-[2rem] mb-12 max-w-2xl mx-auto shadow-embossed border border-red-500/30 flex flex-col items-center text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/10 rounded-full text-red-500 text-[10px] font-bold tracking-widest uppercase mb-4 border border-red-500/20">
             <AlertCircle size={14} /> DİKKAT: Kapalı Devre B2B Sistem
           </div>
+          
           <p className="text-xs md:text-sm text-white/70 font-bold leading-relaxed mb-6">
             AutoCAR, kurumsal galeri ve al-sat uzmanları için geliştirilmiş kapalı devre bir sistemdir. Sisteme dahil olmak ve premium paketlerimiz hakkında bilgi almak için lütfen bizimle iletişime geçin.
           </p>
