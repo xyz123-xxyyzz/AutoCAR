@@ -80,21 +80,20 @@ export default function Ayarlar() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           
-          {/* Chrome/Edge Ext */}
+          {/* Firefox Ext */}
           <div className="w-full p-8 rounded-3xl bg-[#F4F4F4] shadow-inner flex flex-col items-center text-center relative overflow-hidden group">
-            <div className={`w-20 h-20 rounded-full shadow-embossed flex items-center justify-center mb-6 transition-colors bg-black text-[#FFCC00]`}>
+            <div className={`w-20 h-20 rounded-full shadow-embossed flex items-center justify-center mb-6 transition-colors bg-black text-white`}>
               <Globe size={32} strokeWidth={2.5} />
             </div>
-            <h3 className="font-bold text-lg mb-2">Chrome & Edge</h3>
-            <p className="text-sm font-medium text-black/60 mb-6 leading-relaxed max-w-[240px]">
-              Geliştirici modunu kullanarak eklentiyi kurun ve hiçbir engele takılmadan kalıcı olarak kullanın.
+            <h3 className="font-bold text-lg mb-2">Mozilla Firefox</h3>
+            <p className="text-sm font-medium text-black/60 mb-8 leading-relaxed max-w-[240px]">
+              AutoCAR analiz asistanını Firefox tarayıcınıza ekleyerek ilanları saniyeler içinde okuyun.
             </p>
             <a 
-              href="/autocar-kurulum.zip"
-              download="autocar-kurulum.zip"
-              className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl bg-black text-[#FFCC00] font-bold text-sm hover:bg-black/80 transition-all shadow-embossed w-full mt-auto tracking-[0.1em] uppercase"
+              href="/autocar.xpi"
+              className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl bg-black text-white font-bold text-sm hover:bg-black/80 transition-all shadow-embossed w-full mt-auto"
             >
-              Kurulum Dosyasını İndir <ArrowRight size={14} strokeWidth={3} />
+              Firefox'a Ekle <ArrowRight size={14} strokeWidth={3} />
             </a>
           </div>
 
@@ -138,38 +137,17 @@ export default function Ayarlar() {
           </h2>
           
           <div className="relative z-10 space-y-8">
-            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-[#FFCC00]/30 shadow-[0_0_30px_rgba(255,204,0,0.1)]">
-              <h3 className="text-[#FFCC00] font-bold text-lg mb-3 tracking-wide flex items-center gap-2">
-                <span className="bg-[#FFCC00] text-black w-6 h-6 rounded-full flex items-center justify-center text-sm">1</span> 
-                Eklentiyi Nasıl Kurarım? (ÖNEMLİ)
-              </h3>
-              <div className="text-sm text-white/80 leading-relaxed font-medium space-y-2">
-                <p>Chrome veya Edge tarayıcıları dışarıdan yüklenen özel B2B yazılımlarını "Geliştirici Modu" ile kabul eder. Bu 3 adımı sadece bir kez yapmanız yeterlidir:</p>
-                <ol className="list-decimal list-inside space-y-1 ml-2 text-white/90">
-                  <li>Yukarıdaki butondan <strong>autocar-kurulum.zip</strong> dosyasını indirin ve klasöre çıkartın.</li>
-                  <li>Tarayıcınızın adres çubuğuna <code className="bg-black/50 px-2 py-0.5 rounded text-[#FFCC00]">chrome://extensions</code> (veya edge://extensions) yazıp gidin.</li>
-                  <li>Sağ üstten <strong>Geliştirici Modu'nu</strong> açın. Ardından sol üstten <strong>Paketlenmemiş Öğe Yükle</strong> (Load Unpacked) butonuna basıp çıkarttığınız klasörü seçin. Bitti! 🎉</li>
-                </ol>
-              </div>
-            </div>
-
             <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/10">
-              <h3 className="text-[#FFCC00] font-bold text-lg mb-3 tracking-wide flex items-center gap-2">
-                <span className="bg-white/20 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">2</span>
-                Nasıl Analiz Yaparım?
-              </h3>
+              <h3 className="text-[#FFCC00] font-bold text-lg mb-3 tracking-wide">1. Nasıl Analiz Yaparım?</h3>
               <p className="text-sm text-white/80 leading-relaxed font-medium">
-                Eklentiyi kurduktan sonra desteklenen sitelere (sahibinden, arabam vb.) girip ilgilendiğiniz ilanları yeni sekmelerde açın. 
+                Öncelikle yukarıdaki tarayıcı eklentisini kurmalısınız. Ardından desteklenen sitelere (sahibinden, arabam vb.) girip ilgilendiğiniz ilanları yeni sekmelerde açın. 
                 Sağ üstteki AutoCAR eklentisine tıkladığınızda sistem sekmeleri otomatik algılar. "Analiz Et" diyerek işlemi başlatabilirsiniz. 
                 <strong>Unutmayın, sistem güvenliği için aynı anda en fazla 50 araç analiz edilebilir.</strong>
               </p>
             </div>
             
             <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/10">
-              <h3 className="text-[#FFCC00] font-bold text-lg mb-3 tracking-wide flex items-center gap-2">
-                <span className="bg-white/20 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">3</span>
-                Hesabım ve Bilgilerim
-              </h3>
+              <h3 className="text-[#FFCC00] font-bold text-lg mb-3 tracking-wide">2. Hesabım ve Bilgilerim</h3>
               <p className="text-sm text-white/80 leading-relaxed font-medium">
                 Size tahsis edilmiş e-posta adresiniz: <strong className="text-white bg-black/50 px-2 py-1 rounded">{displayEmail}</strong> ve 
                 şifreniz: <strong className="text-white bg-black/50 px-2 py-1 rounded">{displayPassword}</strong> olarak ayarlanmıştır. Bu bilgiler yapay zeka 
@@ -178,10 +156,7 @@ export default function Ayarlar() {
             </div>
 
             <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/10">
-              <h3 className="text-[#FFCC00] font-bold text-lg mb-3 tracking-wide flex items-center gap-2">
-                <span className="bg-white/20 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">4</span>
-                Fatura ve OpenAI (Yapay Zeka) Ödemeleri
-              </h3>
+              <h3 className="text-[#FFCC00] font-bold text-lg mb-3 tracking-wide">3. Fatura ve OpenAI (Yapay Zeka) Ödemeleri</h3>
               <p className="text-sm text-white/80 leading-relaxed font-medium mb-4">
                 AutoCAR sistemi, gücünü doğrudan OpenAI API sistemlerinden alır. Sistemin sorunsuz çalışmaya devam edebilmesi için OpenAI hesabınızda 
                 her zaman bakiye (kredi) bulunması gerekmektedir. Analiz başı ortalama harcama çok düşüktür (Örn: 100 araç için ~1 TL). 
