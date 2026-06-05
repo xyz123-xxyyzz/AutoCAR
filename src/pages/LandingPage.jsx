@@ -51,9 +51,12 @@ export default function LandingPage() {
             AutoCAR, kurumsal galeri ve al-sat uzmanları için geliştirilmiş kapalı devre bir sistemdir. Sisteme dahil olmak ve premium paketlerimiz hakkında bilgi almak için lütfen bizimle iletişime geçin.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <a href="#iletisim" className="px-8 py-4 bg-white text-black text-[10px] font-bold tracking-[0.2em] uppercase rounded-full hover:bg-gray-200 transition-colors shadow-embossed">
+            <button 
+              onClick={() => document.getElementById('iletisim')?.scrollIntoView({ behavior: 'smooth' })}
+              className="px-8 py-4 bg-white text-black text-[10px] font-bold tracking-[0.2em] uppercase rounded-full hover:bg-gray-200 transition-colors shadow-embossed cursor-pointer"
+            >
               İletişime Geçin
-            </a>
+            </button>
             <Link to="/login" className="px-8 py-4 bg-transparent border border-white/20 text-white text-[10px] font-bold tracking-[0.2em] uppercase rounded-full hover:bg-white/10 transition-colors">
               Müşteri Girişi
             </Link>
