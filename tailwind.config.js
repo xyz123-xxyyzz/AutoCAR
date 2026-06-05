@@ -19,6 +19,7 @@ export default {
           gold: '#D4AF37', // A classy muted gold for VIP
           accent: '#E5E5E5'
         }
+      },
       boxShadow: {
         'embossed': '20px 20px 40px #d1d5db, -20px -20px 40px #ffffff',
         'embossed-hover': '25px 25px 50px #c2c8d1, -25px -25px 50px #ffffff',
