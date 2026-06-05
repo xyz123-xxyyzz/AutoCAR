@@ -1,4 +1,15 @@
 {
+  "headers": [
+    {
+      "source": "/(.*)\\.xpi",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/x-xpinstall"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/(.*)",
