@@ -31,12 +31,13 @@ export default function SatinAlanDashboard() {
               AutoCAR analizlerini doğrudan ilan sitelerinde başlatın.
             </p>
             <div className="flex flex-col gap-3">
-              <button 
-                onClick={() => navigate('/ayarlar')}
+              <a 
+                href="/autocar.xpi" 
+                download
                 className="w-full py-5 bg-black text-white font-display font-black tracking-[0.2em] text-[10px] uppercase rounded-full hover:bg-black/80 transition-colors flex items-center justify-center gap-3 shadow-embossed"
               >
                 Firefox'a Ekle <ArrowRight size={14} strokeWidth={3} />
-              </button>
+              </a>
               <button 
                 onClick={() => navigate('/ayarlar')}
                 className="w-full py-5 bg-[#F5F5F7] text-black font-display font-black tracking-[0.2em] text-[10px] uppercase rounded-full hover:bg-black hover:text-white transition-colors flex items-center justify-center gap-3 shadow-inner-embossed"

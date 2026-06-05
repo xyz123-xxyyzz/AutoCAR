@@ -64,14 +64,13 @@ export default function Ayarlar() {
             <p className="text-sm font-medium text-black/60 mb-8 leading-relaxed max-w-[240px]">
               AutoCAR analiz asistanını Firefox tarayıcınıza ekleyerek ilanları saniyeler içinde okuyun.
             </p>
-            <button 
-              onClick={handleInstallFirefox}
-              className={`px-8 py-3.5 rounded-2xl font-bold text-sm tracking-wide shadow-embossed transition-all duration-300 w-full mt-auto
-                ${firefoxInstalled ? 'bg-white text-black opacity-50' : 'bg-black text-white hover:bg-black/80'}
-              `}
+            <a 
+              href="/autocar.xpi"
+              download
+              className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl bg-black text-white font-bold text-sm hover:bg-black/80 transition-all shadow-embossed w-full mt-auto"
             >
-              {firefoxInstalled ? 'Eklendi' : 'Firefox\'a Ekle'}
-            </button>
+              Firefox'a Ekle <ArrowRight size={14} strokeWidth={3} />
+            </a>
           </div>
 
           {/* Firefox Ext */}
