@@ -6,9 +6,6 @@ const CONFIG = {
 };
 // ==========================================
 
-const SUPABASE_URL = "https://jwffcfjuydjjzqtwjitn.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_ESKWW6qt0VZL9_GwNEM3Uw_Z8wUMnOM";
-
 let trackedTabs = [];
 let isAnalyzing = false;
 let analysisProgress = 0;

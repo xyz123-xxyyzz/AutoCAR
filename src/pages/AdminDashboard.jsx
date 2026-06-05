@@ -10,7 +10,7 @@ export default function AdminDashboard() {
     fetchUsers();
   }, []);
 
-  const fetchUsers = async () => {
+  async function fetchUsers() {
     setLoading(true);
     // Gerçek uygulamada edge function veya admin yetkileri (Service Role) üzerinden yapılmalı.
     // Şimdilik demo amaçlı RLS "true" veya admin bypass ile alınıyor varsayalım.

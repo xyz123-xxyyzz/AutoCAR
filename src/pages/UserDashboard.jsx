@@ -15,14 +15,14 @@ export default function UserDashboard() {
     detectBrowser();
   }, []);
 
-  const detectBrowser = () => {
+  function detectBrowser() {
     const userAgent = navigator.userAgent;
     if (userAgent.match(/firefox|fxios/i)) {
       setBrowserType('Firefox');
     }
   };
 
-  const fetchProfile = async () => {
+  async function fetchProfile() {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const { data } = await supabase
@@ -35,7 +35,7 @@ export default function UserDashboard() {
     }
   };
 
-  const fetchAnalyses = async () => {
+  async function fetchAnalyses() {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const { data } = await supabase
