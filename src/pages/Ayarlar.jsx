@@ -78,10 +78,10 @@ export default function Ayarlar() {
           Tarayıcı Eklentileri
         </h2>
 
-        <div className="flex justify-center mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           
           {/* Firefox Ext */}
-          <div className="w-full max-w-sm p-8 rounded-3xl bg-[#F4F4F4] shadow-inner flex flex-col items-center text-center relative overflow-hidden group">
+          <div className="w-full p-8 rounded-3xl bg-[#F4F4F4] shadow-inner flex flex-col items-center text-center relative overflow-hidden group">
             <div className={`w-20 h-20 rounded-full shadow-embossed flex items-center justify-center mb-6 transition-colors bg-black text-white`}>
               <Globe size={32} strokeWidth={2.5} />
             </div>
@@ -95,6 +95,33 @@ export default function Ayarlar() {
             >
               Firefox'a Ekle <ArrowRight size={14} strokeWidth={3} />
             </a>
+          </div>
+
+          {/* API Key Input */}
+          <div className="w-full p-8 rounded-3xl bg-[#F5F5F7] shadow-inner-embossed flex flex-col items-center text-center border border-transparent hover:bg-white hover:border-black/5 hover:shadow-embossed transition-all duration-300">
+            <div className="w-20 h-20 rounded-full shadow-embossed flex items-center justify-center mb-6 bg-black text-[#FFCC00]">
+              <Puzzle size={32} />
+            </div>
+            <h3 className="font-bold text-lg mb-2">OpenAI API Anahtarı</h3>
+            <p className="text-xs font-bold text-black/40 mb-8 leading-relaxed px-4">
+              Yapay zeka analizlerinin çalışması için gizli API anahtarınızı (sk-...) buraya kaydedin.
+            </p>
+            <div className="w-full mt-auto space-y-3">
+              <input 
+                type="password" 
+                placeholder="sk-proj-..." 
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="w-full bg-white shadow-inner-embossed border border-transparent rounded-2xl px-4 py-3 text-sm text-black focus:outline-none focus:border-black/20 transition-colors text-center font-mono"
+              />
+              <button 
+                onClick={handleSaveApiKey}
+                disabled={savingKey}
+                className="w-full py-4 rounded-full font-bold tracking-[0.2em] text-[10px] uppercase transition-all shadow-embossed bg-black text-[#FFCC00] hover:bg-black/80 disabled:opacity-50"
+              >
+                {savingKey ? 'Kaydediliyor...' : 'Anahtarı Kaydet'}
+              </button>
+            </div>
           </div>
 
         </div>
@@ -143,29 +170,6 @@ export default function Ayarlar() {
               >
                 OpenAI Bakiye Yükleme Sayfasına Git <Globe size={16} />
               </a>
-            </div>
-
-            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/10">
-              <h3 className="text-[#FFCC00] font-bold text-lg mb-3 tracking-wide">4. Kişisel API Anahtarınız</h3>
-              <p className="text-sm text-white/80 leading-relaxed font-medium mb-4">
-                Hesabınıza bakiye yükledikten sonra OpenAI'dan aldığınız gizli "sk-" ile başlayan API anahtarınızı buraya yapıştırıp kaydedin. Anahtarınız sadece size özel, güvenli olarak veritabanımızda şifrelenir.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <input 
-                  type="password" 
-                  placeholder="sk-proj-..." 
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  className="flex-1 bg-black/50 border border-white/20 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#FFCC00] transition-colors"
-                />
-                <button 
-                  onClick={handleSaveApiKey}
-                  disabled={savingKey}
-                  className="px-8 py-3 bg-[#FFCC00] text-black font-bold text-sm rounded-xl hover:bg-yellow-400 transition-colors disabled:opacity-50 whitespace-nowrap"
-                >
-                  {savingKey ? 'Kaydediliyor...' : 'Anahtarı Kaydet'}
-                </button>
-              </div>
             </div>
           </div>
         </div>
