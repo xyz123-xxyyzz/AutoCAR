@@ -49,7 +49,7 @@ export default function LandingPage() {
             <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-black/40">Tek Seferde Tarama</div>
           </div>
           <div className="bg-white p-6 rounded-3xl shadow-embossed flex flex-col items-center">
-            <div className="text-3xl font-display font-black tracking-tighter mb-1">5 Dk</div>
+            <div className="text-3xl font-display font-black tracking-tighter mb-1">15-20 Dk</div>
             <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-black/40">Ortalama Analiz Süresi</div>
           </div>
           <div className="bg-white p-6 rounded-3xl shadow-embossed flex flex-col items-center">
@@ -110,7 +110,7 @@ export default function LandingPage() {
             <div className="bg-white p-6 md:p-8 rounded-[2rem] shadow-embossed border border-black/5 w-full">
               <p className="text-sm md:text-base text-black/70 font-bold leading-relaxed text-center">
                 Bir araç arama sayfasındaki 1000 ilanı tek tek incelemek, ekspertizlerine bakıp fiyat/performans hesabı yapmak saatlerinizi ve günlerinizi alır. <br/>
-                <span className="text-black font-black">AutoCAR Yapay Zeka Sistemi</span> ile ilanların eş zamanlı çekilip, kötülerin elenmesi ve sadece en kârlı 'İlk 10' aracın masanıza gelmesi <span className="text-green-600 font-black">sadece 5 dakika</span> sürüyor!
+                <span className="text-black font-black">AutoCAR Yapay Zeka Sistemi</span> ile ilanların güvenlik sınırlarına takılmadan eş zamanlı çekilip, kötülerin elenmesi ve sadece en kârlı 'İlk 10' aracın masanıza gelmesi <span className="text-green-600 font-black">sadece 15-20 dakika</span> sürüyor!
               </p>
             </div>
           </div>
