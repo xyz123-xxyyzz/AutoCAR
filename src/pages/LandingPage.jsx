@@ -45,7 +45,7 @@ export default function LandingPage() {
         {/* Hero Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 max-w-4xl mx-auto mb-16 w-full">
           <div className="bg-white p-6 rounded-3xl shadow-embossed flex flex-col items-center">
-            <div className="text-3xl font-display font-black tracking-tighter mb-1">Maks. 1000</div>
+            <div className="text-3xl font-display font-black tracking-tighter mb-1">1000</div>
             <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-black/40">Tek Seferde Tarama</div>
           </div>
           <div className="bg-white p-6 rounded-3xl shadow-embossed flex flex-col items-center">
