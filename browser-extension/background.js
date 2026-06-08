@@ -221,7 +221,7 @@ You must return ONLY a single, valid JSON object exactly matching the structure 
   "condition_score": 40,
   "overall_score": 61,
   
-  "data_report": "A very detailed summary report about the car's technical data in Turkish. YOU MUST EXPLICITLY AND TRANSPARENTLY EXPLAIN WHY YOU GAVE THE SPECIFIC SCORES for Satış Hızı, Fiyat/Performans, Uygunluk, and Araç Durumu. Break down the reasoning for the 4 scores. Use exactly ONE EMPTY LINE (\\n\\n) between each score's explanation.",
+  "ai_report": "A very detailed summary report about the car's technical data in Turkish. YOU MUST EXPLICITLY AND TRANSPARENTLY EXPLAIN WHY YOU GAVE THE SPECIFIC SCORES for Satış Hızı, Fiyat/Performans, Uygunluk, and Araç Durumu. Break down the reasoning for the 4 scores. Use exactly ONE EMPTY LINE (\\n\\n) between each score's explanation.",
   
   "detailed_specs": [
     { "name": "Spec Name", "value": "Value", "status": "good", "comment": "Detailed expert professional comment explaining why this spec is an advantage or a disadvantage in the real world." }
@@ -395,7 +395,7 @@ async function runFullAnalysis(options) {
             fair_price_score: finalReport.fair_price_score || null,
             condition_score: finalReport.condition_score || null,
             overall_score: finalReport.overall_score || null,
-            ai_report: finalReport.data_report || null,
+            ai_report: finalReport.ai_report || finalReport.data_report || "Bu araç için özel analiz oluşturulamadı (AI zaman aşımı veya veri eksikliği).",
             vision_report: null, // Görsel AI tamamen kaldırıldı
             defects: [],
             positives: [],
@@ -432,7 +432,30 @@ async function runFullAnalysis(options) {
     }
 
     updateState({ aiStatusText: `Master AI Tüm Grupları Kıyaslıyor...`, analysisProgress: 85 });
-    const globalSummary = await generateGlobalMasterReport(allGroupReports);
+
+    // YENİ MANTIK: Tüm arabaları alıp overall_score'a göre yüksekten düşüğe sırala ve en iyi 3 aracı seç.
+    let topCars = [];
+    for (let g of allGroupReports) {
+      for (let c of g.cars) {
+        topCars.push({ groupName: g.groupName, car: c });
+      }
+    }
+    
+    topCars.sort((a, b) => {
+      let scoreA = parseInt(a.car.overall_score, 10) || 0;
+      let scoreB = parseInt(b.car.overall_score, 10) || 0;
+      return scoreB - scoreA;
+    });
+
+    const top3Cars = topCars.slice(0, 3);
+    
+    // Master AI için bu en iyi 3 aracı grup formatına geri çevir
+    const masterGroupReports = top3Cars.map(item => ({
+      groupName: item.groupName,
+      cars: [item.car]
+    }));
+
+    const globalSummary = await generateGlobalMasterReport(masterGroupReports);
 
     updateState({
       analysisProgress: 100,

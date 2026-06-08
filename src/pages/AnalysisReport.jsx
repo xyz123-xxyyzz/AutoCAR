@@ -241,13 +241,7 @@ export default function AnalysisReport() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {[...(summaryData?.podium || [])].map((item) => {
-                // Skoru ve resimleri zorla gruptan al
-                const realGroup = groups.find(g => g.groupName.toLowerCase().includes(item.title.toLowerCase().substring(0, 10)) || item.title.toLowerCase().includes(g.groupName.toLowerCase()));
-                const realScore = realGroup ? (parseInt(realGroup.cars[0]?.overall_score, 10) || 0) : (parseInt(item.score, 10) || 0);
-                const realImages = realGroup && realGroup.cars[0]?.images ? realGroup.cars[0].images.slice(0, 3) : [];
-                return { ...item, realScore: realScore, realImages: realImages };
-              }).sort((a, b) => b.realScore - a.realScore).map((item, idx) => (
+              {[...(summaryData?.podium || [])].map((item, idx) => (
                 <div key={idx} className="bg-white rounded-[2rem] p-8 border border-black/5 shadow-embossed relative overflow-hidden group hover:shadow-embossed-hover transition-all duration-500 flex flex-col">
                   <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-150 group-hover:rotate-12 transition-transform duration-700">
                     <Trophy size={80} className={item.color || 'text-[#C0C0C0]'} />
@@ -257,7 +251,7 @@ export default function AnalysisReport() {
                     <span className="font-display font-black text-2xl">{item.rank || idx + 1}</span>
                   </div>
                   <h3 className="text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase mb-2 text-left">
-                    {item.medal} Madalya — {item.realScore} Puan
+                    {item.medal} Madalya — {item.score} Puan
                   </h3>
                   <h4 className="text-xl font-display font-black tracking-tight text-black mb-4 pr-12 line-clamp-2 text-left">
                     {item.title || 'Bilinmeyen Araç'}
@@ -423,7 +417,7 @@ export default function AnalysisReport() {
             </div>
 
             {/* Section 2: Detaylı Araç Özellikleri */}
-            {currentCar.ai_report && currentCar.detailed_specs && currentCar.detailed_specs.length > 0 && (
+            {currentCar.detailed_specs && currentCar.detailed_specs.length > 0 && (
               <>
                 <div className="mb-20">
                   <h3 className="text-2xl font-display font-black tracking-tight text-black mb-8 flex items-center gap-4">
@@ -463,7 +457,7 @@ export default function AnalysisReport() {
             )}
 
             {/* Section 3: Kıyaslama ve Rakip Analizi */}
-            {currentCar.ai_report && currentCar.competitor_analysis && (
+            {currentCar.competitor_analysis && (
               <>
                 <div className="mb-20">
                   <h3 className="text-2xl font-display font-black tracking-tight text-black mb-8 flex items-center gap-4">
