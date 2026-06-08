@@ -75,5 +75,35 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ error: error.toString() });
     }
   }
+
+  if (request.action === 'extract_urls') {
+    try {
+      const isSahibinden = window.location.href.includes('sahibinden.com');
+      const isArabam = window.location.href.includes('arabam.com');
+      let urls = [];
+
+      if (isSahibinden) {
+        // Sahibinden arama sonuç sayfasındaki ilan linkleri
+        const links = document.querySelectorAll('a.classifiedTitle');
+        links.forEach(a => {
+          if (a.href && a.href.includes('/ilan/')) urls.push(a.href);
+        });
+      } else if (isArabam) {
+        // Arabam.com arama sonuç sayfasındaki ilan linkleri
+        const links = document.querySelectorAll('a.link-default-blue'); // Arabam.com'un classı değişebilir, genel ilan yapısına bakıyoruz.
+        links.forEach(a => {
+          if (a.href && a.href.includes('/ilan/')) urls.push(a.href);
+        });
+      }
+
+      // Benzersiz URL'leri al
+      const uniqueUrls = [...new Set(urls)];
+      sendResponse({ urls: uniqueUrls });
+    } catch (error) {
+      console.error("AutoCAR Extract URLs Error:", error);
+      sendResponse({ error: error.toString(), urls: [] });
+    }
+  }
+
   return true;
 });

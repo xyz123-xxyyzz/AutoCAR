@@ -261,43 +261,36 @@ GENERAL CRITICAL RULES:
 }
 
 async function generateGlobalMasterReport(groupReports) {
-  const systemPrompt = `Sen sistemin 'Master AI' yöneticisisin. Tüm araç gruplarının analiz raporları sana geliyor. Bu grupları birbiriyle kıyasla, FİYAT-PERFORMANS ve SEGMENT mantığını dikkate alarak en iyileri seç ve genel podyumu belirle.
+  const systemPrompt = `Sen sistemin 'Master AI' yöneticisisin. Tüm araç gruplarının analiz raporları sana geliyor. Bu grupları birbiriyle kıyasla, FİYAT-PERFORMANS ve SEGMENT mantığını dikkate alarak gelen araçları sırala ve sadece İLK 10 aracı belirle.
 SADECE GEÇERLİ BİR JSON DÖNDÜR.
 Format:
 {
-  "title": "Master AI Derinlemesine Kıyaslama Raporu",
-  "logic": "Hangi aracın neden 1., 2. veya 3. seçildiğine dair çok detaylı, ikna edici ve profesyonel bir analiz yaz.",
-  "podium": [
-    { "medal": "gold", "title": "1. Araç (Grubun Başlığı)", "reason": "Neden altın madalya aldı? Detaylıca açıkla.", "score": 95, "color": "text-[#D4AF37]" },
-    { "medal": "silver", "title": "2. Araç (Grubun Başlığı)", "reason": "Neden 2. oldu?", "score": 85, "color": "text-[#C0C0C0]" },
-    { "medal": "bronze", "title": "3. Araç (Grubun Başlığı)", "reason": "Neden 3. oldu?", "score": 75, "color": "text-[#CD7F32]" }
+  "title": "Master AI Derinlemesine Kıyaslama Raporu (Top 10)",
+  "logic": "Bu liste neye göre hazırlandı? Kısaca açıkla.",
+  "top_10": [
+    { 
+      "rank": 1,
+      "title": "Volkswagen Passat 2015", 
+      "score": 95, 
+      "comment": "Piyasanın en dolu paketi, fiyatı ise emsallerine göre %10 daha ucuz." 
+    },
+    { 
+      "rank": 2,
+      "title": "Skoda Superb 2018", 
+      "score": 92, 
+      "comment": "Düşük kilometresi ve temiz ekspertizi ile uzun yıllar masrafsız binilecek bir araç." 
+    }
   ],
   "details": [
-    { "icon": "info", "title": "Rakipleri Neler?", "desc": "Volkswagen Passat: Rakibi Skoda Superb. Audi A3: Rakibi Mercedes A Serisi... şeklinde her aracın rakibini yaz." },
-    { "icon": "check", "title": "Kıyaslama Ekseni (Kim Daha Üstün?)", "desc": "Performans: [Hangi araç motor/hız olarak neden üstün?]\\n\\nFiyat/Performans: [Hangisi fiyata göre en çok donanımı veriyor?]\\n\\nSatış Hızı: [Piyasada hangisi daha hızlı satılır?]" },
-    { "icon": "star", "title": "Bütçe ve Kitle", "desc": "Hangi bütçeye ve hangi kitleye hitap ediyor?" }
-  ],
-  "tableData": [
-    { "feature": "Özellik Adı (Model Yılı, Bagaj, vb.)", "Gold": "2015 ✅", "Silver": "2015 ⚪", "Bronze": "2012 ❌" }
+    { "icon": "info", "title": "Rakipleri Neler?", "desc": "Gelen araçların genel bir piyasa analizi." },
+    { "icon": "star", "title": "Bütçe ve Kitle", "desc": "Hangi kitleye hitap ediyorlar?" }
   ]
 }
 Kurallar:
-- "score" alanlarına kafandan puan uydurma! Sana verilen verideki O GRUBUN "overall_score" değeri neyse BİREBİR aynısını yaz.
-- "podium" içindeki "title" kısmına ASLA HAM İLAN BAŞLIĞINI KOPYALAMA! Sadece aracın MARKASI, MODELİ ve YILINI tertemiz bir şekilde yaz (Örn: "Volkswagen Passat 2015" veya "Ford Focus 2018"). "KASKO SİGORTAYA", "BAYİYE VERICEM" gibi ilan başlıkları KESİNLİKLE YASAKTIR.
-- Eğer sana sadece 2 farklı grup gönderildiyse, sadece 2 madalya (gold, silver) ver.
-- "details" bölümündeki kısımlara yazacağın metinleri MADDELER HALİNDE veya \\n\\n (çift yeni satır) kullanarak ALT ALTA yaz. Asla tek bir uzun paragraf halinde birleştirme!
-- Özellikle "Rakipleri Neler?" kısmında her bir aracın rakibini sırayla yazarken şu formatı kullan (Örn: \\n\\n1. Volkswagen Passat (Rakibi: Skoda Superb) \\n\\n2. BMW 520 (Rakibi: Audi A6)...).
-    Ardından ŞU 2 ALT BAŞLIĞI YİNE \\n\\n İLE YENİ SATIRA GEÇEREK LİSTELE:
-    (a) Fiyat-Performans Kıyaslaması (Hangi araç daha çok tercih ediliyor?)
-    (b) Bütçe ve Kitle Sınıflandırması (Kime hitap ediyor? Örn: Megane/Egea -> Fabrika işçileri/Alt-orta gelir. Tesla -> Orta gelirli aileler. Audi A3/BMW 1 -> Kadın kullanıcılar vb.)
-- "tableData" kısmında SÜTUN BAŞLIKLARI KESİNLİKLE "Gold", "Silver", "Bronze" olmalıdır. Asla Grup 1, Grup 2 yazma!
-- **ÇOK ÖNEMLİ MATEMATİK KURALI:** "tableData" hücrelerine "Veri + Emoji" koyacaksın (Örn: "2015 ✅"). Ancak emojileri koyarken **DİKKAT KESİL!** Sayısal verilerde daima matematiksel kıyaslama yap.
-- HÜCRE İÇİNE SADECE BİR TANE EMOJİ KOY. ASLA "More ✅", "✅✅", "Yok ❌" gibi İngilizce veya gereksiz kelimeler yazma. Sadece net veri ve yanına TEK BİR emoji koy.
-- SADECE ŞU 3 SİMGEYİ KULLANABİLİRSİN, BAŞKA HİÇBİR EMOJİ VEYA HARF YASAKTIR: 
-  1. Çarpı (❌): Zayıf, yetersiz, düşük donanım veya eski model
-  2. Tik (✅): Üstün, çok iyi, güçlü donanım veya yeni model
-  3. Daire (⚪): Ortalama, nötr, orta seviye
-- "tableData" (Kıyaslama tablosu) KESİNLİKLE ÇOK UZUN OLMALIDIR. En az 15 farklı kıyaslama satırı ekle (Model Yılı, Güç, Tork, Şanzıman, Ekran, Cam Tavan, Fiyat vb.).
+- "score" alanlarına kafandan puan uydurma! Sana verilen verideki "overall_score" değeri neyse BİREBİR aynısını yaz.
+- "title" kısmına ASLA HAM İLAN BAŞLIĞINI KOPYALAMA! Sadece aracın MARKASI, MODELİ ve YILINI tertemiz bir şekilde yaz (Örn: "Volkswagen Passat 2015").
+- "comment" kısmı kesinlikle SADECE 1 CÜMLE olmalı. O aracın neden öne çıktığını çok vurucu, ilgi çekici ve galericiyi cezbedecek şekilde yaz.
+- Sadece top_10 listesi oluştur. Eğer 10'dan az araç varsa olanları sırala. 10'dan fazlaysa sadece en iyi 10'unu al.
 `;
 
   // Master AI'a giden veriden gereksiz yer kaplayan kısımları (url, boş özellikler vb.) silerek SIKIŞTIRIYORUZ.
@@ -354,22 +347,22 @@ async function runFullAnalysis(options) {
       }
     }
 
-    // Arabaları 50'şerli "Chunk" (Paketler) haline getirelim
-    const CHUNK_SIZE = 50;
+    // Arabaları 100'erli "Chunk" (Paketler) haline getirelim
+    const CHUNK_SIZE = 100;
     const allProcessedCars = [];
 
     for (let i = 0; i < flatCarsList.length; i += CHUNK_SIZE) {
+      const chunkStartTime = Date.now(); // Paketin API'ye gönderilmeye başladığı an
+      
       const chunk = flatCarsList.slice(i, i + CHUNK_SIZE);
       
       const chunkPromises = chunk.map(async (item) => {
         const { groupName: gName, carData: cData } = item;
-        
-        // TEK HAMLEDE TÜM VERİ ANALİZİNİ YAP
         const finalReport = await analyzeCarData(cData);
 
         processedCars++;
         updateState({ 
-          aiStatusText: `Araçlar 50'li Paketler Halinde Analiz Ediliyor (${processedCars}/${totalCars})...`,
+          aiStatusText: `Araçlar 100'lü Paketler Halinde Analiz Ediliyor (${processedCars}/${totalCars})...`,
           analysisProgress: 5 + Math.round((processedCars / totalCars) * 80)
         });
 
@@ -389,14 +382,14 @@ async function runFullAnalysis(options) {
             title: cleanTitle,
             price: cData.price,
             url: cData.url,
-            images: cData.images, // Resimler aynen aktarılır, galeride görünür
+            images: cData.images, 
             market_speed_score: finalReport.market_speed_score || null,
             price_perf_score: finalReport.price_perf_score || null,
             fair_price_score: finalReport.fair_price_score || null,
             condition_score: finalReport.condition_score || null,
             overall_score: finalReport.overall_score || null,
             ai_report: finalReport.ai_report || finalReport.data_report || "Bu araç için özel analiz oluşturulamadı (AI zaman aşımı veya veri eksikliği).",
-            vision_report: null, // Görsel AI tamamen kaldırıldı
+            vision_report: null,
             defects: [],
             positives: [],
             competitor_analysis: finalReport.competitor_analysis || null,
@@ -406,9 +399,22 @@ async function runFullAnalysis(options) {
         };
       });
 
-      // 50'lik paketi aynı anda çalıştır ve bitmesini bekle, sonraki 50'ye geç
+      // 100'lük paketi aynı anda çalıştır ve bitmesini bekle, sonraki 100'e geç
       const chunkResults = await Promise.all(chunkPromises);
       allProcessedCars.push(...chunkResults);
+      
+      // Eğer bu son paket değilse, tam 70 saniyelik döngüyü tamamla.
+      if (i + CHUNK_SIZE < flatCarsList.length) {
+        const elapsed = Date.now() - chunkStartTime;
+        const waitTime = Math.max(0, 70000 - elapsed); // 70 saniyeden kalanı hesapla
+        
+        if (waitTime > 0) {
+           updateState({ 
+             aiStatusText: `API Güvenliği: Kalan ${(waitTime / 1000).toFixed(0)} saniye bekleniyor...`,
+           });
+           await new Promise(r => setTimeout(r, waitTime));
+        }
+      }
     }
 
     // İşlenmiş araçları gruplarına göre tekrar ayır
@@ -444,13 +450,14 @@ async function runFullAnalysis(options) {
     topCars.sort((a, b) => {
       let scoreA = parseInt(a.car.overall_score, 10) || 0;
       let scoreB = parseInt(b.car.overall_score, 10) || 0;
-      return scoreB - scoreA;
+      if (scoreB !== scoreA) return scoreB - scoreA;
+      return (a.car.url || "").localeCompare(b.car.url || "");
     });
 
-    const top3Cars = topCars.slice(0, 3);
+    const top10Cars = topCars.slice(0, 10);
     
-    // Master AI için bu en iyi 3 aracı grup formatına geri çevir
-    const masterGroupReports = top3Cars.map(item => ({
+    // Master AI için bu en iyi 10 aracı grup formatına geri çevir
+    const masterGroupReports = top10Cars.map(item => ({
       groupName: item.groupName,
       cars: [item.car]
     }));
@@ -595,6 +602,163 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       aiError: false,
       finalReport: null
     });
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (request.action === 'start_deep_scan') {
+    chrome.storage.local.set({ autocar_running: false });
+    
+    // Aktif sekmeyi bul
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs.length === 0) {
+        sendResponse({ success: false, error: "Aktif sekme bulunamadı." });
+        return;
+      }
+      
+      const activeTab = tabs[0];
+      
+      updateState({
+        isAnalyzing: true,
+        aiError: false,
+        analysisProgress: 2,
+        aiStatusText: "Sayfadaki ilanlar toplanıyor...",
+        finalReport: null,
+        trackedTabs: []
+      });
+
+      // URL'leri topla
+      chrome.scripting.executeScript({
+        target: { tabId: activeTab.id },
+        files: ['content.js']
+      }, () => {
+        chrome.tabs.sendMessage(activeTab.id, { action: "extract_urls" }, (response) => {
+          if (!response || !response.urls || response.urls.length === 0) {
+            updateState({
+              aiError: true,
+              isAnalyzing: false,
+              analysisProgress: 100,
+              aiStatusText: "Bu sayfada ilan bulunamadı. Lütfen bir arama sonuç sayfasında deneyin."
+            });
+            return;
+          }
+
+          // Sahibinden'de sayfalar dolusu ilan olabilir.
+          // MAX_DEEP_SCAN_LIMIT ile sistemi kilitlenmekten kurtarıyoruz.
+          const MAX_DEEP_SCAN_LIMIT = 1000;
+          let urls = response.urls;
+          
+          if (urls.length > MAX_DEEP_SCAN_LIMIT) {
+             urls = urls.slice(0, MAX_DEEP_SCAN_LIMIT);
+          }
+          
+          const totalUrls = urls.length;
+          
+          updateState({
+            aiStatusText: `Sistem güvenliği için maksimum ${MAX_DEEP_SCAN_LIMIT} sınırıyla toplam ${totalUrls} ilan işleniyor...`,
+            analysisProgress: 5
+          });
+
+          // Hayalet Sekme İşçileri (Workers) Oluştur
+          const MAX_CONCURRENT_TABS = 2;
+          let currentIndex = 0;
+          let successCount = 0;
+          let currentTrackedTabs = [];
+
+          const processNextUrl = async (ghostTabId) => {
+            let i;
+            // Lock index safely
+            synchronized: {
+              if (currentIndex >= urls.length) return;
+              i = currentIndex++;
+            }
+
+            const url = urls[i];
+            
+            updateState({
+              aiStatusText: `İlanlar Çekiliyor (${Math.min(successCount+1, totalUrls)} / ${totalUrls}). Lütfen bekleyin...`,
+              analysisProgress: 5 + Math.round((successCount/totalUrls) * 40)
+            });
+
+            // Ghost tabı yönlendir
+            await new Promise(resolve => {
+              chrome.tabs.update(ghostTabId, { url: url }, () => {
+                const listener = (tabId, info) => {
+                  if (tabId === ghostTabId && info.status === 'complete') {
+                    chrome.tabs.onUpdated.removeListener(listener);
+                    resolve();
+                  }
+                };
+                chrome.tabs.onUpdated.addListener(listener);
+              });
+            });
+
+            // Sayfa yüklendi, DOM'un oturması için 1 saniye bekle
+            await new Promise(r => setTimeout(r, 1000));
+
+            // Veriyi çek
+            const data = await new Promise(resolve => {
+              chrome.scripting.executeScript({
+                target: { tabId: ghostTabId },
+                files: ['content.js']
+              }, () => {
+                chrome.tabs.sendMessage(ghostTabId, { action: "extract_data" }, (res) => {
+                  resolve(res);
+                });
+              });
+            });
+
+            if (data && data.title) {
+              currentTrackedTabs.push({
+                tabId: `ghost_${i}`,
+                url: url,
+                title: data.title,
+                status: 'Yüklendi',
+                data: data
+              });
+              successCount++;
+            }
+
+            // Bot korumasına takılmamak için 2.5 saniye bekle
+            await new Promise(r => setTimeout(r, 2500));
+            
+            // Sıradaki URL'ye geç
+            await processNextUrl(ghostTabId);
+          };
+
+          const workerPromises = [];
+          const numWorkers = Math.min(MAX_CONCURRENT_TABS, urls.length);
+          
+          for (let w = 0; w < numWorkers; w++) {
+            workerPromises.push(new Promise(resolveWorker => {
+              chrome.tabs.create({ url: "about:blank", active: false }, async (ghostTab) => {
+                await processNextUrl(ghostTab.id);
+                chrome.tabs.remove(ghostTab.id);
+                resolveWorker();
+              });
+            }));
+          }
+
+          // Bütün işçilerin (sekmelerin) bitmesini bekle
+          Promise.all(workerPromises).then(() => {
+            if (successCount === 0) {
+              updateState({
+                aiError: true,
+                isAnalyzing: false,
+                analysisProgress: 100,
+                aiStatusText: "İlan verileri çekilemedi. Sahibinden engeli olabilir."
+              });
+              return;
+            }
+
+            // Tracked tabs güncellendi, AI'ya yolla
+            updateState({ trackedTabs: currentTrackedTabs });
+            runFullAnalysis({ runData: true });
+          });
+        });
+      });
+    });
+    
     sendResponse({ success: true });
     return true;
   }

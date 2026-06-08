@@ -140,9 +140,9 @@ export default function Ayarlar() {
             <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/10">
               <h3 className="text-[#FFCC00] font-bold text-lg mb-3 tracking-wide">1. Nasıl Analiz Yaparım?</h3>
               <p className="text-sm text-white/80 leading-relaxed font-medium">
-                Öncelikle yukarıdaki tarayıcı eklentisini kurmalısınız. Ardından desteklenen sitelere (sahibinden, arabam vb.) girip ilgilendiğiniz ilanları yeni sekmelerde açın. 
-                Sağ üstteki AutoCAR eklentisine tıkladığınızda sistem sekmeleri otomatik algılar. "Analiz Et" diyerek işlemi başlatabilirsiniz. 
-                <strong>Unutmayın, sistem güvenliği için aynı anda en fazla 50 araç analiz edilebilir.</strong>
+                Öncelikle yukarıdaki tarayıcı eklentisini kurmalısınız. Ardından desteklenen sitelere (sahibinden, arabam vb.) girip ilgilendiğiniz araçların listelendiği arama sayfasına gidin. 
+                Sağ üstteki AutoCAR eklentisine tıkladığınızda sistem sayfayı otomatik algılar. "Derin Tarama" butonuna tıklayarak işlemi başlatabilirsiniz. Sistem arka planda 'Hayalet Sekmeler' ile ilanları çekecektir.
+                <strong>Unutmayın, sistem API limitleri gereği bir aramada en fazla 1000 ilana kadar Derin Tarama yapabilir.</strong>
               </p>
             </div>
             
@@ -159,7 +159,7 @@ export default function Ayarlar() {
               <h3 className="text-[#FFCC00] font-bold text-lg mb-3 tracking-wide">3. Fatura ve OpenAI (Yapay Zeka) Ödemeleri</h3>
               <p className="text-sm text-white/80 leading-relaxed font-medium mb-4">
                 AutoCAR sistemi, gücünü doğrudan OpenAI API sistemlerinden alır. Sistemin sorunsuz çalışmaya devam edebilmesi için OpenAI hesabınızda 
-                her zaman bakiye (kredi) bulunması gerekmektedir. Analiz başı ortalama harcama çok düşüktür (Örn: 100 araç için ~1 TL). 
+                her zaman bakiye (kredi) bulunması gerekmektedir. Analiz başı ortalama harcama 100'lü paket mimarisi sayesinde çok düşüktür (Örn: Yüzlerce araç için ~3-5 TL). 
                 Kredi kartınızı sisteme tanımlamak ve bakiye yüklemek için aşağıdaki OpenAI faturalandırma paneline gitmelisiniz.
               </p>
               <a 

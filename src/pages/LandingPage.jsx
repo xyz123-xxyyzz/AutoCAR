@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Zap, CheckCircle, Star, TrendingUp, Shield, Gauge, Maximize, MousePointerClick, Cpu, LineChart, AlertCircle } from 'lucide-react';
+import { ArrowRight, Zap, CheckCircle, Star, TrendingUp, Shield, Gauge, Maximize, MousePointerClick, Cpu, LineChart, AlertCircle, Users, Activity, BarChart3, Clock } from 'lucide-react';
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#F0F2F5] text-black overflow-hidden font-sans selection:bg-black selection:text-white">
       
       {/* Background Ambience */}
-      <div className="absolute top-0 left-0 w-full h-[800px] bg-gradient-to-b from-[#F5F5F7] to-transparent pointer-events-none"></div>
+      <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-gray-200 via-[#F0F2F5] to-[#F0F2F5] pointer-events-none"></div>
 
       {/* Top Navbar */}
       <nav className="relative z-50 flex items-center justify-between px-6 md:px-10 py-8 max-w-7xl mx-auto">
@@ -19,7 +19,7 @@ export default function LandingPage() {
         
         <div className="flex items-center gap-6">
           <Link to="/login" className="px-8 py-4 bg-black text-white text-[10px] font-bold tracking-[0.2em] uppercase rounded-full hover:bg-black/80 transition-colors shadow-embossed hover:shadow-embossed-hover">
-            Giriş Yap / Kaydol
+            Müşteri Girişi
           </Link>
         </div>
       </nav>
@@ -29,43 +29,48 @@ export default function LandingPage() {
         
         <div className="inline-flex items-center gap-3 px-6 py-3 bg-white rounded-full mb-10 shadow-embossed border border-black/5 animate-slide-in">
           <Star size={16} className="text-[#D4AF37]" fill="#D4AF37" />
-          <span className="text-[10px] font-bold tracking-[0.2em] uppercase">Dünyanın İlk Yapay Zeka Destekli Araç Analiz Sistemi</span>
+          <span className="text-[10px] font-bold tracking-[0.2em] uppercase">Galericiler ve Al-Sat Uzmanları İçin Geliştirildi</span>
         </div>
 
         <h1 className="text-6xl md:text-8xl lg:text-9xl font-display font-black tracking-tighter leading-[0.9] mb-8 text-black drop-shadow-sm">
-          GELECEĞİN <br/>
-          OTOMOBİL <br/>
-          ANALİZİ.
+          PİYASANIN <br/>
+          RÖNTGENİNİ <br/>
+          ÇEKİN.
         </h1>
         
         <p className="max-w-3xl text-base md:text-xl font-bold tracking-wide text-black/50 mb-12 leading-relaxed">
-          İkinci el araç alım satımında devrim yaratıyoruz. Farklı ilan sitelerindeki araçları tek tıkla yapay zeka havuzunuza atın; sistem gizli kusurları bulsun, fiyatın şişirme olup olmadığını analiz etsin ve size en karlı yatırımı söylesin.
+          Türkiye'nin ilk ve tek "Büyük Veri" destekli otonom araç analiz asistanı. İlan sitelerindeki binlerce aracı saniyeler içinde tarayın, fiyat/performans hesaplamasını yapın ve Master AI'ın sizin için seçtiği en kârlı "İlk 10" araca yatırım yapın.
         </p>
 
-
-
-        {/* Membership Info Alert */}
-        <div className="bg-black text-white p-6 md:p-8 rounded-[2rem] mb-12 max-w-2xl mx-auto shadow-embossed border border-red-500/30 flex flex-col items-center text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/10 rounded-full text-red-500 text-[10px] font-bold tracking-widest uppercase mb-4 border border-red-500/20">
-            <AlertCircle size={14} /> DİKKAT: Kapalı Devre B2B Sistem
+        {/* Hero Metrics */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 max-w-4xl mx-auto mb-16 w-full">
+          <div className="bg-white p-6 rounded-3xl shadow-embossed flex flex-col items-center">
+            <div className="text-3xl font-display font-black tracking-tighter mb-1">1000+</div>
+            <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-black/40">Tek Seferde Tarama</div>
           </div>
-          
-          <p className="text-xs md:text-sm text-white/70 font-bold leading-relaxed mb-6">
-            AutoCAR, kurumsal galeri ve al-sat uzmanları için geliştirilmiş kapalı devre bir sistemdir. Sisteme dahil olmak ve premium paketlerimiz hakkında bilgi almak için lütfen bizimle iletişime geçin.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <button 
-              onClick={() => document.getElementById('iletisim')?.scrollIntoView({ behavior: 'smooth' })}
-              className="px-8 py-4 bg-white text-black text-[10px] font-bold tracking-[0.2em] uppercase rounded-full hover:bg-gray-200 transition-colors shadow-embossed cursor-pointer"
-            >
-              İletişime Geçin
-            </button>
-            <Link to="/login" className="px-8 py-4 bg-transparent border border-white/20 text-white text-[10px] font-bold tracking-[0.2em] uppercase rounded-full hover:bg-white/10 transition-colors">
-              Müşteri Girişi
-            </Link>
+          <div className="bg-white p-6 rounded-3xl shadow-embossed flex flex-col items-center">
+            <div className="text-3xl font-display font-black tracking-tighter mb-1">5 Dk</div>
+            <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-black/40">Ortalama Analiz Süresi</div>
+          </div>
+          <div className="bg-white p-6 rounded-3xl shadow-embossed flex flex-col items-center">
+            <div className="text-3xl font-display font-black tracking-tighter mb-1 text-[#32D74B]">%100</div>
+            <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-black/40">Ban Koruması</div>
+          </div>
+          <div className="bg-white p-6 rounded-3xl shadow-embossed flex flex-col items-center">
+            <div className="text-3xl font-display font-black tracking-tighter mb-1 text-[#D4AF37]">Top 10</div>
+            <div className="text-[10px] font-bold tracking-[0.2em] uppercase text-black/40">Rafine Edilmiş Liste</div>
           </div>
         </div>
-        
+
+        {/* CTA Buttons */}
+        <div className="flex flex-wrap justify-center gap-4">
+          <button 
+            onClick={() => document.getElementById('iletisim')?.scrollIntoView({ behavior: 'smooth' })}
+            className="px-10 py-5 bg-black text-white text-[12px] font-bold tracking-[0.2em] uppercase rounded-full hover:bg-black/80 transition-all duration-300 shadow-2xl hover:scale-105 flex items-center gap-4"
+          >
+            Kurumsal Demo Talep Et <ArrowRight size={16} />
+          </button>
+        </div>
       </main>
 
       {/* Supported Platforms Section */}
@@ -88,10 +93,11 @@ export default function LandingPage() {
           <div className="inline-flex items-center gap-3 px-6 py-3 bg-white rounded-full mb-8 shadow-embossed border border-black/5">
             <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-red-600">Sistemi Canlı İzleyin</span>
           </div>
-          <h2 className="text-4xl md:text-5xl font-display font-black tracking-tighter mb-12">Yapay Zeka Nasıl Çalışır?</h2>
+          <h2 className="text-4xl md:text-5xl font-display font-black tracking-tighter mb-12">Büyük Veri Nasıl Çalışır?</h2>
           
           <div className="w-full max-w-4xl mx-auto mb-8 flex flex-col items-center">
             <div className="w-full rounded-[2rem] overflow-hidden shadow-embossed border-8 border-white mb-6 bg-black relative">
+              {/* VIDEO PLACEHOLDER (Do not remove this video tag) */}
               <video 
                 controls 
                 className="w-full h-auto aspect-video object-cover"
@@ -103,183 +109,196 @@ export default function LandingPage() {
             </div>
             <div className="bg-white p-6 md:p-8 rounded-[2rem] shadow-embossed border border-black/5 w-full">
               <p className="text-sm md:text-base text-black/70 font-bold leading-relaxed text-center">
-                "20 farklı ilanı tek tek incelemek, fiyat/performans hesabı yapmak saatlerinizi alırdı. <br/>
-                <span className="text-black font-black">AutoCAR Yapay Zeka Sistemi</span> ile 20 ilanın en ince detayına kadar analiz edilmesi ve en kârlı 3 aracın seçilmesi sadece <span className="text-green-600 font-black">1-2 dakika</span> sürüyor!"
+                Bir araç arama sayfasındaki 1000 ilanı tek tek incelemek, ekspertizlerine bakıp fiyat/performans hesabı yapmak saatlerinizi ve günlerinizi alır. <br/>
+                <span className="text-black font-black">AutoCAR Yapay Zeka Sistemi</span> ile ilanların eş zamanlı çekilip, kötülerin elenmesi ve sadece en kârlı 'İlk 10' aracın masanıza gelmesi <span className="text-green-600 font-black">sadece 5 dakika</span> sürüyor!
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* What is AutoCAR AI? (Features) */}
+      {/* Core Features Overview */}
       <section className="relative z-10 py-32 px-6 bg-white shadow-[0_-30px_60px_rgba(0,0,0,0.02)]">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
-            <h2 className="text-4xl md:text-5xl font-display font-black tracking-tighter mb-6">AutoCAR AI Ne Yapar?</h2>
+            <div className="inline-flex items-center gap-3 px-6 py-3 bg-[#F5F5F7] rounded-full mb-6">
+              <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-black">Neden AutoCAR?</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-display font-black tracking-tighter mb-6">Rakiplerinizin Göremediğini Görün</h2>
             <p className="text-lg font-bold text-black/50 max-w-2xl mx-auto">
-              Sıradan bir ekspertiz raporunun ötesine geçerek piyasa dinamiklerini, finansal verileri ve araç kondisyonunu tek bir potada eritir.
+              Sadece hasar durumuna bakan standart yazılımları unutun. AutoCAR, finansal bir algoritmadır. Bir aracın ne kadar sürede satılabileceğini ve gerçek piyasa değerini hesaplar.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="bg-[#F5F5F7] p-10 rounded-[3rem] shadow-inner-embossed flex flex-col items-center text-center group hover:bg-black hover:text-white transition-colors duration-500">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-8 shadow-embossed group-hover:bg-[#333] transition-colors duration-500">
-                <Cpu size={32} className="text-black group-hover:text-[#D4AF37] transition-colors" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Feature 1 */}
+            <div className="bg-[#F5F5F7] p-8 rounded-[2.5rem] shadow-inner-embossed flex flex-col items-start group hover:bg-black hover:text-white transition-colors duration-500">
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-8 shadow-embossed group-hover:bg-[#333] transition-colors duration-500">
+                <Cpu size={24} className="text-black group-hover:text-[#D4AF37] transition-colors" />
               </div>
-              <h3 className="text-2xl font-display font-black tracking-tight mb-4">Çoklu Araç Kıyaslama</h3>
-              <p className="text-sm font-bold opacity-60 leading-relaxed">
-                Birbiriyle alakasız sekmelerdeki 5 farklı ilanı bile saniyeler içinde yan yana getirir. Motor güçlerinden tutun, bagaj hacimlerine kadar tüm teknik verileri tek bir tabloda kıyaslar.
+              <h3 className="text-xl font-display font-black tracking-tight mb-3">Hayalet Tarayıcı</h3>
+              <p className="text-xs font-bold opacity-60 leading-relaxed">
+                İlan sitelerinin bot korumalarına yakalanmadan, "Derin Tarama" modülü ile yüzlerce ilanı asenkron sekmelerde paralel olarak çeker. Hesabınız %100 güvendedir.
               </p>
             </div>
 
-            <div className="bg-[#F5F5F7] p-10 rounded-[3rem] shadow-inner-embossed flex flex-col items-center text-center group hover:bg-black hover:text-white transition-colors duration-500">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-8 shadow-embossed group-hover:bg-[#333] transition-colors duration-500">
-                <TrendingUp size={32} className="text-black group-hover:text-green-400 transition-colors" />
+            {/* Feature 2 */}
+            <div className="bg-[#F5F5F7] p-8 rounded-[2.5rem] shadow-inner-embossed flex flex-col items-start group hover:bg-black hover:text-white transition-colors duration-500">
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-8 shadow-embossed group-hover:bg-[#333] transition-colors duration-500">
+                <Activity size={24} className="text-black group-hover:text-blue-400 transition-colors" />
               </div>
-              <h3 className="text-2xl font-display font-black tracking-tight mb-4">Piyasa Değeri & Satılma Hızı</h3>
-              <p className="text-sm font-bold opacity-60 leading-relaxed">
-                İlandaki fiyatın o anki piyasa şartlarına göre pahalı mı ucuz mu olduğunu anlar. Dahası, o model bir aracın ortalama kaç gün içinde nakite çevrilebileceğinin (likidite) skorunu verir.
+              <h3 className="text-xl font-display font-black tracking-tight mb-3">100'lü AI Paketleme</h3>
+              <p className="text-xs font-bold opacity-60 leading-relaxed">
+                OpenAI API limitlerine çarpmadan, toplanan verileri yüzerlik (100) paketler halinde gönderir. Dakikada yüzlerce aracı analiz eder ve maliyeti dibe çeker.
               </p>
             </div>
 
-            <div className="bg-[#F5F5F7] p-10 rounded-[3rem] shadow-inner-embossed flex flex-col items-center text-center group hover:bg-black hover:text-white transition-colors duration-500">
-              <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mb-8 shadow-embossed group-hover:bg-[#333] transition-colors duration-500">
-                <Shield size={32} className="text-black group-hover:text-red-400 transition-colors" />
+            {/* Feature 3 */}
+            <div className="bg-[#F5F5F7] p-8 rounded-[2.5rem] shadow-inner-embossed flex flex-col items-start group hover:bg-black hover:text-white transition-colors duration-500">
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-8 shadow-embossed group-hover:bg-[#333] transition-colors duration-500">
+                <LineChart size={24} className="text-black group-hover:text-green-400 transition-colors" />
               </div>
-              <h3 className="text-2xl font-display font-black tracking-tight mb-4">Veriye Dayalı Rasyonalite</h3>
-              <p className="text-sm font-bold opacity-60 leading-relaxed">
-                İlan açıklamalarındaki kelime oyunlarına takılmaz. Büyük veriyi okur, şeffaf skorlamalar yapar ve sadece finansal olarak en kârlı/uygun araca yatırım yapmanızı sağlar.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works (Steps) */}
-      <section className="py-32 px-6 bg-black text-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-32 opacity-5 pointer-events-none">
-          <Zap size={400} />
-        </div>
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="text-center mb-24">
-            <div className="inline-flex items-center gap-3 px-6 py-3 bg-white/10 rounded-full mb-6">
-              <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/80">Kullanımı Çok Kolay</span>
-            </div>
-            <h2 className="text-4xl md:text-6xl font-display font-black tracking-tighter">Süreç Nasıl İşliyor?</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
-            {/* Connecting Line (Desktop) */}
-            <div className="hidden md:block absolute top-12 left-1/6 right-1/6 h-[2px] bg-white/10 z-0"></div>
-
-            {/* Step 1 */}
-            <div className="relative z-10 flex flex-col items-center text-center">
-              <div className="w-24 h-24 bg-black border-4 border-[#333] rounded-full flex items-center justify-center mb-8 shadow-[0_0_30px_rgba(255,255,255,0.1)]">
-                <span className="text-3xl font-display font-black text-white">1</span>
-              </div>
-              <h3 className="text-xl font-display font-black mb-4">Eklentiyi Kurun</h3>
-              <p className="text-sm text-black/60 font-medium leading-relaxed mt-2">
-                Firefox eklentisini sitemizden tek tıkla tarayıcınıza ekleyin ve üyeliğinizle giriş yapın.
+              <h3 className="text-xl font-display font-black tracking-tight mb-3">Piyasa Skorlaması</h3>
+              <p className="text-xs font-bold opacity-60 leading-relaxed">
+                Her ilana "Satılma Hızı", "Fiyat/Performans", "Araç Kondisyonu" gibi metriklerle 100 üzerinden şeffaf ve matematiksel puanlar verir.
               </p>
             </div>
 
-            {/* Step 2 */}
-            <div className="relative z-10 flex flex-col items-center text-center">
-              <div className="w-24 h-24 bg-black border-4 border-[#333] rounded-full flex items-center justify-center mb-8 shadow-[0_0_30px_rgba(255,255,255,0.1)]">
-                <span className="text-3xl font-display font-black text-white">2</span>
+            {/* Feature 4 */}
+            <div className="bg-[#F5F5F7] p-8 rounded-[2.5rem] shadow-inner-embossed flex flex-col items-start group hover:bg-black hover:text-white transition-colors duration-500">
+              <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-8 shadow-embossed group-hover:bg-[#333] transition-colors duration-500">
+                <Star size={24} className="text-black group-hover:text-[#D4AF37] transition-colors" />
               </div>
-              <h3 className="text-xl font-display font-black mb-4">İlanları Gezin</h3>
-              <p className="text-sm font-bold text-white/60 leading-relaxed max-w-xs">
-                Herhangi bir araç ilan sitesine girin. İlanın yanında beliren sihirli "AutoCAR ile Analiz Et" butonuna tıklayarak aracı havuza ekleyin.
-              </p>
-            </div>
-
-            {/* Step 3 */}
-            <div className="relative z-10 flex flex-col items-center text-center">
-              <div className="w-24 h-24 bg-black border-4 border-[#D4AF37] rounded-full flex items-center justify-center mb-8 shadow-[0_0_30px_rgba(212,175,55,0.3)]">
-                <span className="text-3xl font-display font-black text-[#D4AF37]">3</span>
-              </div>
-              <h3 className="text-xl font-display font-black mb-4 text-[#D4AF37]">Raporu Alın</h3>
-              <p className="text-sm font-bold text-white/60 leading-relaxed max-w-xs">
-                Panele dönün ve eklediğiniz araçların matematiksel olarak nasıl sıralandığını, kimin kazandığını kusursuz bir raporla görün.
+              <h3 className="text-xl font-display font-black tracking-tight mb-3">Master AI Top 10</h3>
+              <p className="text-xs font-bold opacity-60 leading-relaxed">
+                Yorulmadan karar verin. Sistem tüm piyasayı eledikten sonra sadece yatırım yapılmaya değer en iyi İlk 10 Aracı satış-odaklı özetlerle önünüze dizer.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Visual Examples Section */}
+      {/* Visual Examples / Output Section */}
       <section className="py-32 px-6 bg-[#F0F2F5]">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
             <h2 className="text-4xl md:text-5xl font-display font-black tracking-tighter mb-6">Mükemmel Analiz Çıktıları</h2>
             <p className="text-lg font-bold text-black/50 max-w-2xl mx-auto">
-              Yapay Zeka raporları size düz metin okutmaz. Finansal özetleri görselleştirir ve fiyatı gerçekten uygun olanı podyuma çıkarır.
+              AutoCAR, size düz metinler okutmaz. En çok kazandıracak araçları doğrudan yüzdelik skorlar ve rekabet analizleriyle sunar.
             </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Mockup Card 1 */}
-            <div className="bg-white rounded-[3rem] p-8 md:p-12 shadow-embossed border border-black/5 transform hover:scale-[1.02] transition-transform duration-500 cursor-pointer">
+            {/* Mockup Card 1: Top 10 List */}
+            <div className="bg-white rounded-[3rem] p-8 md:p-12 shadow-embossed border border-black/5 transform hover:scale-[1.02] transition-transform duration-500">
               <div className="flex items-center justify-between mb-8">
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#F5F5F7] rounded-full text-[10px] font-bold tracking-widest uppercase">
-                  <LineChart size={14} className="text-green-500"/> Fiyat/Performans
+                  <Star size={14} className="text-[#D4AF37]" fill="#D4AF37"/> Top 10 Karar Sistemi
                 </div>
-                <div className="text-[10px] font-bold tracking-widest text-black/30">ÖRNEK RAPOR</div>
               </div>
-              <h3 className="text-2xl font-display font-black tracking-tight mb-4">Mercedes vs BMW Kıyaslaması</h3>
+              <h3 className="text-2xl font-display font-black tracking-tight mb-4">Gereksiz İlanları Eler</h3>
               <p className="text-sm font-bold text-black/60 mb-8 leading-relaxed">
-                Algoritma, Mercedes C200'ün 204 beygirlik motoru ve hatasız kondisyonuyla BMW 320i'yi nasıl geride bıraktığını matematiksel olarak kanıtlar.
+                778 ilanın tamamını inceleyen Yapay Zeka, size yorucu bir liste sunmak yerine puanı düşük ilanları atar ve zirvedeki 10 aracı listeler.
               </p>
               
-              <div className="flex gap-4">
-                <div className="flex-1 h-32 bg-gray-100 rounded-2xl overflow-hidden relative">
-                  <img src="https://placehold.co/400x300/111/fff?text=MERCEDES" alt="MERCEDES" className="w-full h-full object-cover opacity-80" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-4">
-                    <span className="text-white font-bold text-xs uppercase tracking-widest">Skor: 92</span>
+              <div className="bg-[#F5F5F7] p-6 rounded-2xl border-l-4 border-[#32D74B] relative overflow-hidden flex flex-col gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-black text-white rounded-xl flex items-center justify-center font-display font-black text-2xl shadow-lg">1</div>
+                  <div className="flex-1">
+                    <h4 className="font-black text-lg text-black">Volkswagen Passat 2015</h4>
+                    <p className="text-xs font-bold text-black/50">Skor: <span className="text-[#32D74B] text-lg">94</span></p>
                   </div>
                 </div>
-                <div className="flex-1 h-32 bg-gray-100 rounded-2xl overflow-hidden relative">
-                  <img src="https://placehold.co/400x300/222/fff?text=BMW" alt="BMW" className="w-full h-full object-cover opacity-80" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-4">
-                    <span className="text-white font-bold text-xs uppercase tracking-widest">Skor: 88</span>
-                  </div>
-                </div>
+                <p className="text-xs font-bold text-black/70 italic border-l-2 border-[#D4AF37] pl-3">
+                  "Düşük kilometresi ve temiz ekspertizi ile fiyatının çok üzerinde bir performans. Hızlı satılma potansiyeli yüksek."
+                </p>
               </div>
             </div>
 
-            {/* Mockup Card 2 */}
-            <div className="bg-white rounded-[3rem] p-8 md:p-12 shadow-embossed border border-black/5 transform hover:scale-[1.02] transition-transform duration-500 cursor-pointer">
+            {/* Mockup Card 2: Risk and Spec Analysis */}
+            <div className="bg-white rounded-[3rem] p-8 md:p-12 shadow-embossed border border-black/5 transform hover:scale-[1.02] transition-transform duration-500">
               <div className="flex items-center justify-between mb-8">
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#F5F5F7] rounded-full text-[10px] font-bold tracking-widest uppercase">
-                  <AlertCircle size={14} className="text-red-500"/> Risk Analizi
+                  <AlertCircle size={14} className="text-red-500"/> Yapay Zeka Ekspertizi
                 </div>
-                <div className="text-[10px] font-bold tracking-widest text-black/30">ÖRNEK TESPİT</div>
               </div>
-              <h3 className="text-2xl font-display font-black tracking-tight mb-4">Büyük Veri ile Şeffaflık</h3>
+              <h3 className="text-2xl font-display font-black tracking-tight mb-4">Açıklamalardaki Yalanları Yakalar</h3>
               <p className="text-sm font-bold text-black/60 mb-8 leading-relaxed">
-                Araçların fiyatı ve teknik özelliklerinden yola çıkarak satılma hızını matematiksel formüllere döker ve sizi riskli ilanlardan uzak tutar.
+                Satıcının "Tertemiz, Çizik Yok" yazdığı ilan açıklamasını okur, ancak teknik veri tablosundaki tramer/değişen bilgileriyle eşleşmiyorsa sizi derhal uyarır.
               </p>
               
               <div className="bg-[#F5F5F7] p-6 rounded-2xl border-l-4 border-red-500 relative overflow-hidden">
                 <div className="absolute right-0 top-0 opacity-5 p-4"><AlertCircle size={64}/></div>
-                <div className="text-[10px] font-bold tracking-widest text-red-500 uppercase mb-2">Yapay Zeka Uyarısı</div>
-                <div className="text-sm font-bold text-black/80">Bu aracın donanım paketindeki eksiklikler sebebiyle piyasada satılma hızı ortalamanın altındadır.</div>
+                <div className="text-[10px] font-bold tracking-widest text-red-500 uppercase mb-2">Güvenlik Uyarısı</div>
+                <div className="text-sm font-bold text-black/80 mb-2">Bu aracın açıklamasında hatasız olduğu belirtilmiş ancak hasar sorgusunda 2 değişen görünmektedir. Fiyat/Performans skoru bu sebeple düşürülmüştür.</div>
               </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          <div className="mt-16 flex justify-center">
-            <Link to="/login" className="px-10 py-5 bg-black text-white text-xs font-bold tracking-[0.2em] uppercase rounded-full hover:bg-black/80 transition-all duration-300 shadow-2xl hover:scale-105 flex items-center gap-4">
-              <MousePointerClick size={16} /> Kullanıcı Paneline Git
-            </Link>
+      {/* Target Audience / B2B Section */}
+      <section className="py-32 px-6 bg-black text-white relative overflow-hidden">
+        <div className="absolute top-0 left-0 p-32 opacity-5 pointer-events-none">
+          <Users size={400} />
+        </div>
+        <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row items-center gap-16">
+          <div className="flex-1">
+            <h2 className="text-4xl md:text-6xl font-display font-black tracking-tighter mb-6">Kimler İçin Geliştirildi?</h2>
+            <p className="text-white/60 font-medium leading-relaxed mb-8 text-lg">
+              AutoCAR, son kullanıcılar için değil; zamanın nakit olduğu otomotiv profesyonelleri için üretilmiş bir B2B (Business to Business) yazılımıdır.
+            </p>
+            <ul className="space-y-6">
+              <li className="flex items-start gap-4">
+                <div className="mt-1 w-6 h-6 rounded-full bg-[#D4AF37] flex items-center justify-center shrink-0">
+                  <CheckCircle size={14} className="text-black" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-xl mb-1">Kurumsal Galeriler</h4>
+                  <p className="text-sm text-white/50">Stoklarına hızlıca değerinde araç katmak ve piyasa araştırması maliyetini sıfıra indirmek isteyen işletmeler.</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-4">
+                <div className="mt-1 w-6 h-6 rounded-full bg-[#D4AF37] flex items-center justify-center shrink-0">
+                  <CheckCircle size={14} className="text-black" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-xl mb-1">Al-Sat Uzmanları</h4>
+                  <p className="text-sm text-white/50">Yatırım yaptığı bütçeyi riske atmak istemeyen ve fırsat ilanlarını rakiplerinden önce görmek isteyen uzmanlar.</p>
+                </div>
+              </li>
+              <li className="flex items-start gap-4">
+                <div className="mt-1 w-6 h-6 rounded-full bg-[#D4AF37] flex items-center justify-center shrink-0">
+                  <CheckCircle size={14} className="text-black" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-xl mb-1">Oto Ekspertiz Merkezleri</h4>
+                  <p className="text-sm text-white/50">Müşterilerine yalnızca aracın fiziki durumunu değil, "finansal değerini" de rapor olarak sunmak isteyen vizyoner firmalar.</p>
+                </div>
+              </li>
+            </ul>
           </div>
-
+          
+          <div className="flex-1 w-full">
+            <div className="bg-[#111] border border-white/10 p-10 rounded-[3rem] shadow-2xl flex flex-col items-center text-center">
+              <Shield size={48} className="text-[#D4AF37] mb-6" />
+              <h3 className="text-3xl font-display font-black tracking-tight mb-4">Kapalı Devre Sistem</h3>
+              <p className="text-sm text-white/60 mb-8 leading-relaxed">
+                Platforma dışarıdan açık üyelik alımı yapılmamaktadır. Bütün kurumsal üyelikler, referans veya tarafımızla yapılacak ön görüşme sonucunda onaylanarak açılır.
+              </p>
+              <button 
+                onClick={() => document.getElementById('iletisim')?.scrollIntoView({ behavior: 'smooth' })}
+                className="w-full py-5 rounded-full bg-white text-black font-display font-black tracking-[0.2em] text-[10px] uppercase transition-all duration-300 hover:bg-gray-200"
+              >
+                Başvuru Formunu Doldur
+              </button>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Footer / Contact Section */}
-      <footer id="iletisim" className="bg-[#111] text-white py-16 px-6">
+      <footer id="iletisim" className="bg-[#111] text-white py-16 px-6 border-t border-white/5">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           
           <div className="lg:col-span-2">
@@ -288,7 +307,7 @@ export default function LandingPage() {
               AutoCAR
             </div>
             <p className="text-white/50 text-sm font-bold leading-relaxed max-w-sm">
-              İkinci el araç alım satımında devrim yaratan, işletmelere özel otonom tarayıcı asistanı ve B2B SaaS platformu.
+              İkinci el araç alım satımında devrim yaratan, işletmelere özel Büyük Veri tarayıcı asistanı ve B2B SaaS platformu.
             </p>
           </div>
 
@@ -308,7 +327,7 @@ export default function LandingPage() {
           </div>
 
           <div>
-            <h4 className="text-sm font-display font-black tracking-widest uppercase text-white/40 mb-6">Hızlı Destek</h4>
+            <h4 className="text-sm font-display font-black tracking-widest uppercase text-white/40 mb-6">Hızlı Başvuru</h4>
             <a 
               href="https://wa.me/905411869513" 
               target="_blank" 

@@ -29,7 +29,9 @@ function App() {
         
         {/* Ortak Korumalı Rotalar */}
         <Route path="/analiz" element={<ProtectedRoute><AnalysisReport /></ProtectedRoute>} />
-        <Route path="/analiz/:id" element={<ProtectedRoute><AnalysisReport /></ProtectedRoute>} />
+        
+        {/* Herkese Açık Paylaşım Rotası */}
+        <Route path="/analiz/:id" element={<AnalysisReport />} />
         <Route path="/gecmis" element={<ProtectedRoute><GecmisIslemler /></ProtectedRoute>} />
         <Route path="/kullanici-detay" element={<ProtectedRoute><KullaniciDetay /></ProtectedRoute>} />
         <Route path="/eklenti-onizleme" element={<ProtectedRoute><ExtensionPreview /></ProtectedRoute>} />

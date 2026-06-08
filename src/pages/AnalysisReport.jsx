@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, TrendingUp, Zap, CheckCircle, Star, Settings, Shield, Gauge, Maximize, AlertTriangle, AlertCircle, XCircle, Minus, HelpCircle, Trophy, Target, Sparkles, ArrowRight, Table2, Image as ImageIcon, Users, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp, Zap, CheckCircle, Star, Settings, Shield, Gauge, Maximize, AlertTriangle, AlertCircle, XCircle, Minus, HelpCircle, Trophy, Target, Sparkles, ArrowRight, Table2, Image as ImageIcon, Users, X, Link } from 'lucide-react';
 import DamageMap from '../components/DamageMap';
 import { supabase } from '../lib/supabase';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
 export default function AnalysisReport() {
   const { id: routeId } = useParams();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [groups, setGroups] = useState([]);
   const [summaryData, setSummaryData] = useState(null);
@@ -20,7 +21,13 @@ export default function AnalysisReport() {
   const [lightboxImages, setLightboxImages] = useState([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
+  const [copySuccess, setCopySuccess] = useState(false);
 
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 2000);
+  };
   useEffect(() => {
     const processData = async () => {
       // 1. EĞER LİNK İLE GELDİYSE (Örn: /analiz/AC-45)
@@ -67,7 +74,7 @@ export default function AnalysisReport() {
         if (storedData !== lastSaved) {
           window.localStorage.setItem('last_saved_report', storedData);
           
-          const userEmail = localStorage.getItem('userEmail');
+          const userEmail = localStorage.getItem('userEmail') || 'demo@autocar.com';
           const userRole = localStorage.getItem('userRole') || 'Kullanıcı';
           
           if (userEmail) {
@@ -103,8 +110,8 @@ export default function AnalysisReport() {
             if (error) {
               console.error("Geçmiş kaydetme hatası:", error);
             } else if (insertedData && insertedData[0]) {
-              // YENİ BENZERSİZ LİNK (AC-ID) OLUŞTUR VE ADRES ÇUBUĞUNU GÜNCELLE
-              window.history.replaceState(null, '', `/analiz/AC-${insertedData[0].id}`);
+              // YENİ BENZERSİZ LİNK (AC-ID) OLUŞTUR VE REACT ROUTER İLE YÖNLENDİR
+              navigate(`/analiz/AC-${insertedData[0].id}`, { replace: true });
             }
           }
         }
@@ -185,28 +192,46 @@ export default function AnalysisReport() {
       {!isLoading && (
         <div className="w-full flex justify-center mb-12 px-4 max-w-7xl mx-auto z-50 relative mt-4">
           <div className="bg-white rounded-[2rem] shadow-embossed border border-black/5 flex items-center p-2 gap-4">
-            <button 
-              onClick={() => handleTabChange(activeTab > -1 ? activeTab - 1 : groups.length - 1)}
-              className="p-3 bg-[#F5F5F7] rounded-full hover:bg-black hover:text-white transition-all duration-300"
-            >
-              <ChevronLeft size={24} />
-            </button>
+            {activeTab !== -1 && (
+               <button 
+                onClick={() => handleTabChange(-1)}
+                className="p-3 bg-black text-white rounded-full hover:scale-105 transition-all duration-300 flex items-center gap-2 px-6 font-bold text-xs uppercase tracking-widest"
+              >
+                Ana Sayfaya Dön
+              </button>
+            )}
             
-            <div className="px-6 text-[11px] md:text-xs font-bold tracking-[0.2em] uppercase text-black w-[250px] text-center">
-              {(() => {
-                const hasMaster = summaryData?.podium?.length > 0;
-                const totalTabs = groups.length + (hasMaster ? 1 : 0);
-                const currentTabIndex = activeTab === -1 ? 1 : activeTab + (hasMaster ? 2 : 1);
-                return `${totalTabs}'te ${currentTabIndex}`;
-              })()}
-            </div>
+            {activeTab !== -1 && (
+              <>
+                <button 
+                  onClick={() => handleTabChange(activeTab > 0 ? activeTab - 1 : groups.length - 1)}
+                  className="p-3 bg-[#F5F5F7] rounded-full hover:bg-black hover:text-white transition-all duration-300 ml-4"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+                
+                <div className="px-6 text-[11px] md:text-xs font-bold tracking-[0.2em] uppercase text-black w-[250px] text-center">
+                  {groups.length} Gruptan {activeTab + 1}.
+                </div>
 
-            <button 
-              onClick={() => handleTabChange(activeTab < groups.length - 1 ? activeTab + 1 : -1)}
-              className="p-3 bg-[#F5F5F7] rounded-full hover:bg-black hover:text-white transition-all duration-300"
-            >
-              <ChevronRight size={24} />
-            </button>
+                <button 
+                  onClick={() => handleTabChange(activeTab < groups.length - 1 ? activeTab + 1 : 0)}
+                  className="p-3 bg-[#F5F5F7] rounded-full hover:bg-black hover:text-white transition-all duration-300"
+                >
+                  <ChevronRight size={24} />
+                </button>
+              </>
+            )}
+            
+            {routeId && (
+              <button 
+                onClick={handleCopyLink}
+                className="ml-2 p-3 bg-[#FFCC00] text-black rounded-full hover:scale-105 transition-all duration-300 flex items-center gap-2 px-6 shadow-xl shadow-[#FFCC00]/20"
+              >
+                {copySuccess ? <CheckCircle size={18} /> : <Link size={18} />}
+                <span className="font-bold text-xs uppercase tracking-widest">{copySuccess ? 'Kopyalandı' : 'Linki Paylaş'}</span>
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -240,27 +265,72 @@ export default function AnalysisReport() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {[...(summaryData?.podium || [])].map((item, idx) => (
-                <div key={idx} className="bg-white rounded-[2rem] p-8 border border-black/5 shadow-embossed relative overflow-hidden group hover:shadow-embossed-hover transition-all duration-500 flex flex-col">
-                  <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-150 group-hover:rotate-12 transition-transform duration-700">
-                    <Trophy size={80} className={item.color || 'text-[#C0C0C0]'} />
-                  </div>
-                  
-                  <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl mb-6 relative z-10 ${item.bg || 'bg-gray-100'} ${item.color || 'text-black'}`}>
-                    <span className="font-display font-black text-2xl">{item.rank || idx + 1}</span>
-                  </div>
-                  <h3 className="text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase mb-2 text-left">
-                    {item.medal} Madalya — {item.score} Puan
-                  </h3>
-                  <h4 className="text-xl font-display font-black tracking-tight text-black mb-4 pr-12 line-clamp-2 text-left">
-                    {item.title || 'Bilinmeyen Araç'}
-                  </h4>
-                  <div className="text-sm font-bold text-black/70 leading-relaxed relative z-10 flex-1 whitespace-pre-line text-left">
-                    {item.reason}
-                  </div>
-                </div>
-              ))}
+            {/* Top 10 Araç Listesi */}
+            <div className="flex flex-col gap-4 max-w-4xl mx-auto">
+              {(() => {
+                // Tüm araçları puanına göre sırala
+                const allCarsFlat = [];
+                groups.forEach((g, gIdx) => {
+                  g.cars?.forEach((c, cIdx) => {
+                    allCarsFlat.push({ ...c, gIdx, cIdx });
+                  });
+                });
+                allCarsFlat.sort((a, b) => {
+                  let scoreA = parseInt(a.overall_score, 10) || 0;
+                  let scoreB = parseInt(b.overall_score, 10) || 0;
+                  if (scoreB !== scoreA) return scoreB - scoreA;
+                  return (a.url || "").localeCompare(b.url || "");
+                });
+                
+                const top10Cars = allCarsFlat.slice(0, 10);
+                
+                return top10Cars.map((car, idx) => {
+                  const aiComment = summaryData?.top_10?.[idx]?.comment || "Fiyat ve kondisyon açısından piyasadaki mantıklı seçeneklerden biri.";
+                  return (
+                    <div 
+                      key={idx} 
+                      onClick={() => { setActiveTab(car.gIdx); setCurrentCarIndex(car.cIdx); }}
+                      className="bg-white rounded-3xl p-6 border border-black/5 shadow-embossed hover:shadow-embossed-hover transition-all duration-300 cursor-pointer flex flex-col md:flex-row items-center gap-6 group"
+                    >
+                      <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center shrink-0 font-display font-black text-3xl shadow-lg">
+                        {idx + 1}
+                      </div>
+                      
+                      <div className="flex-1 text-center md:text-left">
+                        <h4 className="text-xl md:text-2xl font-display font-black tracking-tight text-black mb-1 group-hover:text-blue-600 transition-colors">
+                          {car.title}
+                        </h4>
+                        <div className="text-2xl font-bold text-black/80 mb-2">
+                          {car.price}
+                        </div>
+                        <p className="text-sm font-bold text-black/60 italic border-l-2 border-[#FFCC00] pl-3">
+                          "{aiComment}"
+                        </p>
+                      </div>
+                      
+                      <div className="flex items-center gap-6 shrink-0">
+                        <div className="text-center">
+                          <div className="text-[10px] font-bold tracking-[0.2em] text-black/40 uppercase mb-1">Skor</div>
+                          <div className="text-3xl font-display font-black tracking-tighter text-[#32D74B]">{parseInt(car.overall_score, 10) || 0}</div>
+                        </div>
+                        <div className="w-10 h-10 bg-[#F5F5F7] rounded-full flex items-center justify-center group-hover:bg-black group-hover:text-white transition-colors">
+                          <ChevronRight size={20} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+            
+            {/* Tüm İlanları İncele Butonu */}
+            <div className="mt-12 flex justify-center">
+              <button 
+                onClick={() => { setActiveTab(0); setCurrentCarIndex(0); }}
+                className="bg-black text-white px-10 py-5 rounded-full font-bold tracking-widest text-xs uppercase hover:scale-105 transition-all duration-300 shadow-2xl flex items-center justify-center gap-3"
+              >
+                Tüm İlanları ({groups.reduce((acc, g) => acc + (g.cars?.length || 0), 0)}) Detaylı İncele <ArrowRight size={18} />
+              </button>
             </div>
 
             <div className="bg-black text-white rounded-[2.5rem] p-10 md:p-16 text-center shadow-[0_20px_50px_rgba(0,0,0,0.3)] relative overflow-hidden mt-10">
@@ -605,6 +675,29 @@ export default function AnalysisReport() {
           </div>
         ) : null}
       </div>
+
+      {/* Marketing CTA for Shared Viewers */}
+      {!isLoading && routeId && (
+        <div className="w-full max-w-4xl mx-auto px-4 mt-4 mb-12 relative z-10 animation-fade-in">
+          <div className="bg-gradient-to-r from-black to-gray-900 rounded-[2.5rem] p-10 md:p-14 shadow-2xl text-center border border-white/10 relative overflow-hidden group hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500">
+            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-700">
+              <Sparkles size={120} className="text-white" />
+            </div>
+            <h2 className="text-3xl md:text-5xl font-display font-black tracking-tighter text-white mb-6 relative z-10">
+              AutoCAR İlan Analiz Sistemi
+            </h2>
+            <p className="text-white/80 font-bold text-sm md:text-base leading-relaxed max-w-2xl mx-auto mb-8 relative z-10">
+              Siz de beğendiğiniz araçların tüm sırlarını saniyeler içinde çözün, zararına araç almayın. Sadece kurumsal işletmelere özel sınırsız ilan analizi sağlayan yapay zeka sistemini şimdi satın alın.
+            </p>
+            <div className="inline-flex items-center gap-4 bg-white/10 p-2 rounded-full border border-white/20 relative z-10">
+               <div className="bg-[#FFCC00] text-black px-8 py-3 rounded-full font-black text-lg">15.000 TL <span className="text-xs text-black/60">+KDV</span></div>
+               <a href="/" className="text-white font-bold text-sm uppercase tracking-widest px-6 hover:text-[#FFCC00] transition-colors flex items-center gap-2">
+                 Detaylı Bilgi <ArrowRight size={16} />
+               </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Lightbox Modal */}
       {lightboxOpen && lightboxImages.length > 0 && (

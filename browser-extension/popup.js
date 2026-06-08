@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const tabList = document.getElementById('tab-list');
   const statusCounter = document.getElementById('status-counter');
   const btnStart = document.getElementById('btn-start');
+  const btnDeepScan = document.getElementById('btn-deep-scan');
   const btnAnalyze = document.getElementById('btn-analyze');
   const btnReport = document.getElementById('btn-report');
   const windowBtn = document.getElementById('window-btn');
@@ -46,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   btnStart.addEventListener('click', () => {
-    if (btnStart.textContent === 'Çalıştır') {
+    if (btnStart.textContent === 'Manuel Çalıştır') {
       chrome.runtime.sendMessage({ action: 'start_system' }, () => {
         checkState();
       });
@@ -55,6 +56,12 @@ document.addEventListener('DOMContentLoaded', () => {
         checkState();
       });
     }
+  });
+
+  btnDeepScan.addEventListener('click', () => {
+    chrome.runtime.sendMessage({ action: 'start_deep_scan' }, () => {
+      checkState();
+    });
   });
 
   btnAnalyze.addEventListener('click', () => {
@@ -102,6 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (isAnalyzing || isError) {
         btnStart.style.display = 'none';
+        btnDeepScan.style.display = 'none';
         tabList.style.display = 'none';
         btnAnalyze.style.display = 'none';
         
@@ -138,14 +146,16 @@ document.addEventListener('DOMContentLoaded', () => {
           statusCounter.textContent = 'Bekleniyor...';
           statusCounter.className = 'status active';
           btnStart.style.display = 'block';
+          btnDeepScan.style.display = 'none';
           tabList.style.display = 'block';
           
           renderTabs(tabs);
         } else {
-          btnStart.textContent = 'Çalıştır';
+          btnStart.textContent = 'Manuel Çalıştır';
           statusCounter.textContent = 'Sistem Kapalı';
           statusCounter.className = 'status';
           btnStart.style.display = 'block';
+          btnDeepScan.style.display = 'block';
           tabList.style.display = 'none';
           btnAnalyze.style.display = 'none';
         }
