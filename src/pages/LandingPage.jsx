@@ -237,65 +237,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Target Audience / B2B Section */}
-      <section className="py-32 px-6 bg-black text-white relative overflow-hidden">
-        <div className="absolute top-0 left-0 p-32 opacity-5 pointer-events-none">
-          <Users size={400} />
-        </div>
-        <div className="max-w-7xl mx-auto relative z-10 flex flex-col md:flex-row items-center gap-16">
-          <div className="flex-1">
-            <h2 className="text-4xl md:text-6xl font-display font-black tracking-tighter mb-6">Kimler İçin Geliştirildi?</h2>
-            <p className="text-white/60 font-medium leading-relaxed mb-8 text-lg">
-              AutoCAR, son kullanıcılar için değil; zamanın nakit olduğu otomotiv profesyonelleri için üretilmiş bir B2B (Business to Business) yazılımıdır.
-            </p>
-            <ul className="space-y-6">
-              <li className="flex items-start gap-4">
-                <div className="mt-1 w-6 h-6 rounded-full bg-[#D4AF37] flex items-center justify-center shrink-0">
-                  <CheckCircle size={14} className="text-black" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-xl mb-1">Kurumsal Galeriler</h4>
-                  <p className="text-sm text-white/50">Stoklarına hızlıca değerinde araç katmak ve piyasa araştırması maliyetini sıfıra indirmek isteyen işletmeler.</p>
-                </div>
-              </li>
-              <li className="flex items-start gap-4">
-                <div className="mt-1 w-6 h-6 rounded-full bg-[#D4AF37] flex items-center justify-center shrink-0">
-                  <CheckCircle size={14} className="text-black" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-xl mb-1">Al-Sat Uzmanları</h4>
-                  <p className="text-sm text-white/50">Yatırım yaptığı bütçeyi riske atmak istemeyen ve fırsat ilanlarını rakiplerinden önce görmek isteyen uzmanlar.</p>
-                </div>
-              </li>
-              <li className="flex items-start gap-4">
-                <div className="mt-1 w-6 h-6 rounded-full bg-[#D4AF37] flex items-center justify-center shrink-0">
-                  <CheckCircle size={14} className="text-black" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-xl mb-1">Oto Ekspertiz Merkezleri</h4>
-                  <p className="text-sm text-white/50">Müşterilerine yalnızca aracın fiziki durumunu değil, "finansal değerini" de rapor olarak sunmak isteyen vizyoner firmalar.</p>
-                </div>
-              </li>
-            </ul>
-          </div>
-          
-          <div className="flex-1 w-full">
-            <div className="bg-[#111] border border-white/10 p-10 rounded-[3rem] shadow-2xl flex flex-col items-center text-center">
-              <Shield size={48} className="text-[#D4AF37] mb-6" />
-              <h3 className="text-3xl font-display font-black tracking-tight mb-4">Kapalı Devre Sistem</h3>
-              <p className="text-sm text-white/60 mb-8 leading-relaxed">
-                Platforma dışarıdan açık üyelik alımı yapılmamaktadır. Bütün kurumsal üyelikler, referans veya tarafımızla yapılacak ön görüşme sonucunda onaylanarak açılır.
-              </p>
-              <button 
-                onClick={() => document.getElementById('iletisim')?.scrollIntoView({ behavior: 'smooth' })}
-                className="w-full py-5 rounded-full bg-white text-black font-display font-black tracking-[0.2em] text-[10px] uppercase transition-all duration-300 hover:bg-gray-200"
-              >
-                Başvuru Formunu Doldur
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
+
 
       {/* Footer / Contact Section */}
       <footer id="iletisim" className="bg-[#111] text-white py-16 px-6 border-t border-white/5">
