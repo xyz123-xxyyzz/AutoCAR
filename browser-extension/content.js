@@ -80,14 +80,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     try {
       const isSahibinden = window.location.href.includes('sahibinden.com');
       const isArabam = window.location.href.includes('arabam.com');
-      let urls = [];
+      let vehicles = [];
       let nextPageUrl = null;
 
       if (isSahibinden) {
-        // Sahibinden arama sonuç sayfasındaki ilan linkleri
-        const links = document.querySelectorAll('a.classifiedTitle');
-        links.forEach(a => {
-          if (a.href && a.href.includes('/ilan/')) urls.push(a.href);
+        // Sahibinden arama sonuç sayfasındaki ilan linkleri ve satır verileri
+        const rows = document.querySelectorAll('tr.searchResultsItem, .searchResultsItem');
+        rows.forEach(row => {
+          const a = row.querySelector('a.classifiedTitle');
+          if (a && a.href && a.href.includes('/ilan/')) {
+            // Sadece benzersiz URL'leri ekle
+            if (!vehicles.find(v => v.url === a.href)) {
+              let priceEl = row.querySelector('.searchResultsPriceValue');
+              let rawText = row.innerText.replace(/\s+/g, ' ').trim();
+              vehicles.push({
+                url: a.href,
+                title: a.innerText.trim(),
+                price: priceEl ? priceEl.innerText.trim() : '',
+                fullText: rawText // Satırdaki Model, Yıl, KM, Fiyat gibi özet bilgileri barındırır
+              });
+            }
+          }
         });
         
         // Sonraki sayfa linkini bul (Pagination)
@@ -97,9 +110,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
       } else if (isArabam) {
         // Arabam.com arama sonuç sayfasındaki ilan linkleri
-        const links = document.querySelectorAll('a.link-default-blue, a.listing-text-new'); 
-        links.forEach(a => {
-          if (a.href && a.href.includes('/ilan/')) urls.push(a.href);
+        const rows = document.querySelectorAll('.listing-list-item, .list-item, tr'); 
+        rows.forEach(row => {
+          const a = row.querySelector('a.link-default-blue, a.listing-text-new');
+          if (a && a.href && a.href.includes('/ilan/')) {
+            if (!vehicles.find(v => v.url === a.href)) {
+              let rawText = row.innerText.replace(/\s+/g, ' ').trim();
+              let priceEl = row.querySelector('.product-price, .price');
+              vehicles.push({
+                url: a.href,
+                title: a.innerText.trim() || rawText.substring(0, 50),
+                price: priceEl ? priceEl.innerText.trim() : '',
+                fullText: rawText
+              });
+            }
+          }
         });
         
         // Sonraki sayfa linkini bul
@@ -109,12 +134,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         }
       }
 
-      // Benzersiz URL'leri al
-      const uniqueUrls = [...new Set(urls)];
-      sendResponse({ urls: uniqueUrls, nextPageUrl: nextPageUrl });
+      sendResponse({ vehicles: vehicles, nextPageUrl: nextPageUrl });
     } catch (error) {
       console.error("AutoCAR Extract URLs Error:", error);
-      sendResponse({ error: error.toString(), urls: [], nextPageUrl: null });
+      sendResponse({ error: error.toString(), vehicles: [], nextPageUrl: null });
     }
   }
 

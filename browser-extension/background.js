@@ -512,7 +512,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'get_state') {
-    chrome.storage.local.get(['trackedTabs', 'isAnalyzing', 'analysisProgress', 'aiStatusText', 'finalReport', 'aiError'], (res) => {
     sendResponse({
       tabs: trackedTabs,
       isAnalyzing: isAnalyzing,
@@ -524,7 +523,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     });
     return true;
   }
-  
+
   if (request.action === 'remove_tab') {
     const newTabs = trackedTabs.filter(t => t.tabId !== request.tabId);
     updateState({ trackedTabs: newTabs });
