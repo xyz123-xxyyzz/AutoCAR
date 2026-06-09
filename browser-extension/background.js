@@ -690,11 +690,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       }
 
       updateState({
-         aiStatusText: "İlan verileri çekiliyor ve sekmeler kapatılıyor...",
+         aiStatusText: "Sekmelerin yüklenmesi ve verilerin çekilmesi bekleniyor...",
          analysisProgress: 40
       });
 
-      // 2. Açılan tüm sekmeleri sırayla bekle, veriyi çek ve kapat
+      // 2. Açılan tüm sekmelerin yüklenmesini bekle ve veriyi çek (ASLA KAPATMA)
       for (let i = 0; i < ghostTabIds.length; i++) {
         const isRun = await new Promise(r => chrome.storage.local.get(['autocar_running'], res => r(res.autocar_running)));
         if (!isRun) {
@@ -742,12 +742,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           collectedVehicles.push(data);
           newlyCollected++;
         }
-
-        // Sekmeyi kapat
-        chrome.tabs.remove(tabId);
         
         updateState({
-           analysisProgress: 40 + Math.floor(((i+1)/ghostTabIds.length) * 55)
+           analysisProgress: 40 + Math.floor(((i+1)/ghostTabIds.length) * 40)
+        });
+      }
+
+      updateState({
+         aiStatusText: "Tüm veriler alındı. Sekmeler teker teker kapatılıyor...",
+         analysisProgress: 85
+      });
+
+      // 3. Tüm veriler alındıktan sonra sekmeleri teker teker kapat
+      for (let i = 0; i < ghostTabIds.length; i++) {
+        chrome.tabs.remove(ghostTabIds[i]);
+        await new Promise(r => setTimeout(r, 200)); // Teker teker yavaşça kapat
+        updateState({
+           analysisProgress: 85 + Math.floor(((i+1)/ghostTabIds.length) * 15)
         });
       }
 
