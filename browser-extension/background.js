@@ -656,47 +656,83 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const pageUrls = response.vehicles.map(v => v.url);
       let newlyCollected = 0;
 
-      for (let i = 0; i < pageUrls.length; i++) {
+      let targetUrls = pageUrls.filter(u => !collectedVehicles.find(c => c.url === u));
+      if (collectedVehicles.length + targetUrls.length > MAX_LIMIT) {
+         targetUrls = targetUrls.slice(0, MAX_LIMIT - collectedVehicles.length);
+      }
+
+      if (targetUrls.length === 0) {
+        updateState({ isAnalyzing: false, aiStatusText: "Yeni ilan bulunamadı veya sınır aşıldı." });
+        return;
+      }
+
+      updateState({
+         aiStatusText: `Bu sayfadaki ${targetUrls.length} ilan tek seferde açılıyor...`,
+         analysisProgress: 20
+      });
+
+      // 1. Tüm sekmeleri hızla aç (Fare tekerleğiyle basmış gibi)
+      const ghostTabIds = [];
+      for (let i = 0; i < targetUrls.length; i++) {
         const isRun = await new Promise(r => chrome.storage.local.get(['autocar_running'], res => r(res.autocar_running)));
         if (!isRun) {
           updateState({ isAnalyzing: false, aiStatusText: "İşlem iptal edildi." });
           return;
         }
 
-        const targetUrl = pageUrls[i];
-        if (collectedVehicles.find(c => c.url === targetUrl)) continue;
-        if (collectedVehicles.length >= MAX_LIMIT) break;
-
-        updateState({
-           aiStatusText: `Bu Sayfa Çekiliyor: ${i+1}/${pageUrls.length}... (Hafıza: ${collectedVehicles.length})`,
-           analysisProgress: Math.min(95, 5 + Math.floor(((i+1)/pageUrls.length) * 90))
+        const tab = await new Promise(res => {
+          chrome.tabs.create({ url: targetUrls[i], active: false }, t => res(t));
         });
+        ghostTabIds.push(tab.id);
+        
+        // Çok hızlı arka arkaya aç
+        await new Promise(r => setTimeout(r, 150));
+      }
 
-        const ghostTab = await new Promise(res => {
-          chrome.tabs.create({ url: targetUrl, active: false }, (tab) => res(tab));
-        });
+      updateState({
+         aiStatusText: "İlan verileri çekiliyor ve sekmeler kapatılıyor...",
+         analysisProgress: 40
+      });
 
+      // 2. Açılan tüm sekmeleri sırayla bekle, veriyi çek ve kapat
+      for (let i = 0; i < ghostTabIds.length; i++) {
+        const isRun = await new Promise(r => chrome.storage.local.get(['autocar_running'], res => r(res.autocar_running)));
+        if (!isRun) {
+          updateState({ isAnalyzing: false, aiStatusText: "İşlem iptal edildi." });
+          return;
+        }
+
+        const tabId = ghostTabIds[i];
+
+        // Sayfanın tamamen yüklenmesini bekle
         await new Promise(res => {
-          let timeout = setTimeout(() => {
-            chrome.tabs.onUpdated.removeListener(listener);
-            res();
-          }, 15000);
-
-          const listener = (tabId, info) => {
-            if (tabId === ghostTab.id && info.status === 'complete') {
-              clearTimeout(timeout);
-              chrome.tabs.onUpdated.removeListener(listener);
+          chrome.tabs.get(tabId, (t) => {
+            if (chrome.runtime.lastError || !t) { res(); return; }
+            if (t.status === 'complete') {
               res();
+            } else {
+              let timeout = setTimeout(() => {
+                chrome.tabs.onUpdated.removeListener(listener);
+                res();
+              }, 15000);
+
+              const listener = (tid, info) => {
+                if (tid === tabId && info.status === 'complete') {
+                  clearTimeout(timeout);
+                  chrome.tabs.onUpdated.removeListener(listener);
+                  res();
+                }
+              };
+              chrome.tabs.onUpdated.addListener(listener);
             }
-          };
-          chrome.tabs.onUpdated.addListener(listener);
+          });
         });
 
-        await new Promise(r => setTimeout(r, 800));
-
+        // Veriyi çek
         const data = await new Promise(resolve => {
-          chrome.scripting.executeScript({ target: { tabId: ghostTab.id }, files: ['content.js'] }, () => {
-            chrome.tabs.sendMessage(ghostTab.id, { action: "extract_data" }, (res) => {
+          chrome.scripting.executeScript({ target: { tabId: tabId }, files: ['content.js'] }, () => {
+            if (chrome.runtime.lastError) { resolve(null); return; }
+            chrome.tabs.sendMessage(tabId, { action: "extract_data" }, (res) => {
               resolve(res);
             });
           });
@@ -707,8 +743,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           newlyCollected++;
         }
 
-        chrome.tabs.remove(ghostTab.id);
-        await new Promise(r => setTimeout(r, 1200));
+        // Sekmeyi kapat
+        chrome.tabs.remove(tabId);
+        
+        updateState({
+           analysisProgress: 40 + Math.floor(((i+1)/ghostTabIds.length) * 55)
+        });
       }
 
       updateState({
