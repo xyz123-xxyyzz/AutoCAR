@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AutoCAR Analiz Edici",
-  "version": "2.8",
+  "version": "2.9",
   "description": "Açık sekmelerdeki araç ilanlarını AutoCAR sistemiyle analiz et.",
   "permissions": [
     "tabs",
@@ -20,7 +20,7 @@
   ],
   "content_scripts": [
     {
-      "matches": ["http://localhost/*", "https://*.vercel.app/*", "https://auto-car-gold.vercel.app/*"],
+      "matches": ["http://localhost/*", "https://*.vercel.app/*", "https://auto-car-gold.vercel.app/*", "*://*.sahibinden.com/*", "*://*.arabam.com/*"],
       "js": ["content.js"],
       "run_at": "document_idle"
     }

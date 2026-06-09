@@ -17,5 +17,5 @@ def create_zip(zip_filename, source_dir):
 
 if __name__ == '__main__':
     source = r'C:\Users\CASPER\Desktop\gunluk_program\projeler\AutoCAR\browser-extension'
-    dest = r'C:\Users\CASPER\Desktop\gunluk_program\projeler\AutoCAR\autocar-v2.8-passive.zip'
+    dest = r'C:\Users\CASPER\Desktop\gunluk_program\projeler\AutoCAR\autocar-v2.9.zip'
     create_zip(dest, source)

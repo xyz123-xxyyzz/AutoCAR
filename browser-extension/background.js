@@ -13,6 +13,7 @@ let aiStatusText = "Hazır";
 let finalReport = null;
 let aiError = false;
 let collectedVehicles = [];
+let isCollecting = false;
 
 // Initialize state from storage
 chrome.storage.local.get(['trackedTabs', 'isAnalyzing', 'analysisProgress', 'aiStatusText', 'finalReport', 'aiError', 'collectedVehicles'], (res) => {
@@ -23,6 +24,7 @@ chrome.storage.local.get(['trackedTabs', 'isAnalyzing', 'analysisProgress', 'aiS
   if (res.finalReport) finalReport = res.finalReport;
   if (res.aiError !== undefined) aiError = res.aiError;
   if (res.collectedVehicles) collectedVehicles = res.collectedVehicles;
+  if (res.isCollecting !== undefined) isCollecting = res.isCollecting;
 });
 
 function updateState(updates) {
@@ -33,6 +35,7 @@ function updateState(updates) {
   if (updates.finalReport !== undefined) finalReport = updates.finalReport;
   if (updates.aiError !== undefined) aiError = updates.aiError;
   if (updates.collectedVehicles !== undefined) collectedVehicles = updates.collectedVehicles;
+  if (updates.isCollecting !== undefined) isCollecting = updates.isCollecting;
   chrome.storage.local.set(updates);
 }
 
@@ -520,8 +523,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       hasReport: finalReport !== null,
       isError: aiError,
       collectedCount: collectedVehicles.length,
-      collectedVehicles: collectedVehicles
+      collectedVehicles: collectedVehicles,
+      isCollecting: isCollecting
     });
+    return true;
+  }
+
+  if (request.action === 'set_collecting') {
+    updateState({ isCollecting: request.value });
+    sendResponse({ success: true });
     return true;
   }
 
@@ -615,6 +625,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'passive_extract') {
+    if (!isCollecting) {
+      sendResponse({ success: false, reason: "not_collecting" });
+      return true;
+    }
+
     const data = request.data;
     // Eğer araç zaten hafızada yoksa ekle
     if (!collectedVehicles.find(v => v.url === data.url)) {

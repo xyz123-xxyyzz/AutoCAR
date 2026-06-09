@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const circularProgress = document.getElementById('circular-progress');
   const progressValue = document.getElementById('progress-value');
   const aiText = document.getElementById('ai-text');
+  
+  const btnStartCollect = document.getElementById('btn-start-collect');
+  const btnStopCollect = document.getElementById('btn-stop-collect');
 
   // Modal elements
   const modal = document.getElementById('analysis-modal');
@@ -58,6 +61,14 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.runtime.sendMessage({ action: 'reset_memory' }, () => {
       checkState();
     });
+  });
+
+  btnStartCollect.addEventListener('click', () => {
+    chrome.runtime.sendMessage({ action: 'set_collecting', value: true }, () => checkState());
+  });
+
+  btnStopCollect.addEventListener('click', () => {
+    chrome.runtime.sendMessage({ action: 'set_collecting', value: false }, () => checkState());
   });
 
   let currentAdsCount = 0;
@@ -113,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.runtime.sendMessage({ action: 'get_state' }, (response) => {
       if (!response) return;
 
-      const { tabs, isAnalyzing, progress, aiText: statusText, hasReport, isError } = response;
+      const { tabs, isAnalyzing, progress, aiText: statusText, hasReport, isError, isCollecting } = response;
       const btnLastReport = document.getElementById('btn-last-report');
 
       if (hasReport) {
@@ -141,6 +152,8 @@ document.addEventListener('DOMContentLoaded', () => {
         btnReset.style.display = 'none';
         btnAnalyze.style.display = 'none';
         tabList.style.display = 'none';
+        btnStartCollect.style.display = 'none';
+        btnStopCollect.style.display = 'none';
         
         aiLoadingContainer.style.display = 'flex';
         document.getElementById('btn-cancel-analysis').style.display = 'block';
@@ -160,6 +173,18 @@ document.addEventListener('DOMContentLoaded', () => {
         btnReset.style.display = 'block';
         aiLoadingContainer.style.display = 'none';
         document.getElementById('btn-cancel-analysis').style.display = 'none';
+
+        if (isCollecting) {
+          btnStartCollect.style.display = 'none';
+          btnStopCollect.style.display = 'block';
+          statusCounter.textContent = "Dinleniyor...";
+          statusCounter.classList.add('active');
+        } else {
+          btnStartCollect.style.display = 'block';
+          btnStopCollect.style.display = 'none';
+          statusCounter.textContent = "Durduruldu";
+          statusCounter.classList.remove('active');
+        }
         
         if (hasReport) {
           btnReport.style.display = 'block';
