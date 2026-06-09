@@ -519,7 +519,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       aiText: aiStatusText,
       hasReport: finalReport !== null,
       isError: aiError,
-      collectedCount: collectedVehicles.length
+      collectedCount: collectedVehicles.length,
+      collectedVehicles: collectedVehicles
     });
     return true;
   }
@@ -613,165 +614,25 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
-  if (request.action === 'collect_page') {
-    chrome.storage.local.set({ autocar_running: true });
-    
-    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-      if (tabs.length === 0) {
-        sendResponse({ success: false, error: "Aktif sekme bulunamadı." });
-        return;
-      }
-      
-      const MAX_LIMIT = 1000;
-      let currentScanTabId = tabs[0].id;
-      
+  if (request.action === 'passive_extract') {
+    const data = request.data;
+    // Eğer araç zaten hafızada yoksa ekle
+    if (!collectedVehicles.find(v => v.url === data.url)) {
+      collectedVehicles.push(data);
       updateState({
-        isAnalyzing: true,
-        aiStatusText: "Sayfaya bağlanılıyor...",
-        analysisProgress: 5
-      });
-
-      await new Promise(r => {
-        chrome.scripting.executeScript({
-          target: { tabId: currentScanTabId },
-          files: ['content.js']
-        }, () => r());
-      });
-
-      const response = await new Promise(resolve => {
-        chrome.tabs.sendMessage(currentScanTabId, { action: "extract_urls" }, (res) => {
-          resolve(res);
-        });
-      });
-
-      if (!response || !response.vehicles || response.vehicles.length === 0) {
-        updateState({
-          isAnalyzing: false,
-          aiError: true,
-          aiStatusText: "Bu sayfada ilan bulunamadı."
-        });
-        return;
-      }
-
-      const pageUrls = response.vehicles.map(v => v.url);
-      let newlyCollected = 0;
-
-      let targetUrls = pageUrls.filter(u => !collectedVehicles.find(c => c.url === u));
-      if (collectedVehicles.length + targetUrls.length > MAX_LIMIT) {
-         targetUrls = targetUrls.slice(0, MAX_LIMIT - collectedVehicles.length);
-      }
-
-      if (targetUrls.length === 0) {
-        updateState({ isAnalyzing: false, aiStatusText: "Yeni ilan bulunamadı veya sınır aşıldı." });
-        return;
-      }
-
-      updateState({
-         aiStatusText: `Bu sayfadaki ${targetUrls.length} ilan tek seferde açılıyor...`,
-         analysisProgress: 20
-      });
-
-      // 1. Tüm sekmeleri hızla aç (Fare tekerleğiyle basmış gibi)
-      const ghostTabIds = [];
-      for (let i = 0; i < targetUrls.length; i++) {
-        const isRun = await new Promise(r => chrome.storage.local.get(['autocar_running'], res => r(res.autocar_running)));
-        if (!isRun) {
-          updateState({ isAnalyzing: false, aiStatusText: "İşlem iptal edildi." });
-          return;
-        }
-
-        const tab = await new Promise(res => {
-          chrome.tabs.create({ url: targetUrls[i], active: false }, t => res(t));
-        });
-        ghostTabIds.push(tab.id);
-        
-        // Çok hızlı arka arkaya aç
-        await new Promise(r => setTimeout(r, 150));
-      }
-
-      updateState({
-         aiStatusText: "Sekmelerin yüklenmesi ve verilerin çekilmesi bekleniyor...",
-         analysisProgress: 40
-      });
-
-      // 2. Açılan tüm sekmelerin yüklenmesini bekle ve veriyi çek (ASLA KAPATMA)
-      for (let i = 0; i < ghostTabIds.length; i++) {
-        const isRun = await new Promise(r => chrome.storage.local.get(['autocar_running'], res => r(res.autocar_running)));
-        if (!isRun) {
-          updateState({ isAnalyzing: false, aiStatusText: "İşlem iptal edildi." });
-          return;
-        }
-
-        const tabId = ghostTabIds[i];
-
-        // Sayfanın tamamen yüklenmesini bekle
-        await new Promise(res => {
-          chrome.tabs.get(tabId, (t) => {
-            if (chrome.runtime.lastError || !t) { res(); return; }
-            if (t.status === 'complete') {
-              res();
-            } else {
-              let timeout = setTimeout(() => {
-                chrome.tabs.onUpdated.removeListener(listener);
-                res();
-              }, 15000);
-
-              const listener = (tid, info) => {
-                if (tid === tabId && info.status === 'complete') {
-                  clearTimeout(timeout);
-                  chrome.tabs.onUpdated.removeListener(listener);
-                  res();
-                }
-              };
-              chrome.tabs.onUpdated.addListener(listener);
-            }
-          });
-        });
-
-        // Veriyi çek
-        const data = await new Promise(resolve => {
-          chrome.scripting.executeScript({ target: { tabId: tabId }, files: ['content.js'] }, () => {
-            if (chrome.runtime.lastError) { resolve(null); return; }
-            chrome.tabs.sendMessage(tabId, { action: "extract_data" }, (res) => {
-              resolve(res);
-            });
-          });
-        });
-
-        if (data && data.title) {
-          collectedVehicles.push(data);
-          newlyCollected++;
-        }
-        
-        updateState({
-           analysisProgress: 40 + Math.floor(((i+1)/ghostTabIds.length) * 40)
-        });
-      }
-
-      updateState({
-         aiStatusText: "Tüm veriler alındı. Sekmeler teker teker kapatılıyor...",
-         analysisProgress: 85
-      });
-
-      // 3. Tüm veriler alındıktan sonra sekmeleri teker teker kapat
-      for (let i = 0; i < ghostTabIds.length; i++) {
-        chrome.tabs.remove(ghostTabIds[i]);
-        await new Promise(r => setTimeout(r, 200)); // Teker teker yavaşça kapat
-        updateState({
-           analysisProgress: 85 + Math.floor(((i+1)/ghostTabIds.length) * 15)
-        });
-      }
-
-      updateState({
-        isAnalyzing: false,
-        aiError: false,
-        aiStatusText: `${newlyCollected} ilan daha hafızaya eklendi. Toplam: ${collectedVehicles.length}`,
-        analysisProgress: 100,
         collectedVehicles: collectedVehicles
       });
-      
+    }
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (request.action === 'remove_vehicle') {
+    const urlToRemove = request.url;
+    collectedVehicles = collectedVehicles.filter(v => v.url !== urlToRemove);
+    updateState({
+      collectedVehicles: collectedVehicles
     });
-    
     sendResponse({ success: true });
     return true;
   }
@@ -808,7 +669,3 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-chrome.tabs.onRemoved.addListener((tabId) => {
-  const newTabs = trackedTabs.filter(t => t.tabId !== tabId);
-  updateState({ trackedTabs: newTabs });
-});

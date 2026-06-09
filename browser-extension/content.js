@@ -33,6 +33,55 @@ if (window.location.href.includes('vercel.app') || window.location.href.includes
   setInterval(syncApiKey, 2000);
 }
 
+function extractPageData() {
+  const isSahibinden = window.location.href.includes('sahibinden.com');
+  const isArabam = window.location.href.includes('arabam.com');
+
+  if (!isSahibinden && !isArabam) return null;
+
+  let title = document.title;
+  let price = '';
+  
+  if (isSahibinden) {
+    title = document.querySelector('.classifiedDetailTitle h1')?.innerText || title;
+    price = document.querySelector('.classifiedInfo h3')?.innerText || '';
+  } else if (isArabam) {
+    title = document.querySelector('.product-name-container h1')?.innerText || title;
+    price = document.querySelector('.product-price')?.innerText || '';
+  }
+
+  let fullText = document.body.innerText;
+  fullText = fullText.slice(0, 10000);
+
+  let cleanPrice = price.trim();
+  if (cleanPrice.includes('Kredi')) {
+    cleanPrice = cleanPrice.split('Kredi')[0].trim();
+  }
+
+  // Sadece başlığı veya fiyatı olan (gerçek bir ilan) sayfaları kabul et
+  if (!cleanPrice && !document.querySelector('.classifiedDetailTitle h1')) {
+     return null;
+  }
+
+  return {
+    title: title.trim().replace(/\s+/g, ' '),
+    price: cleanPrice,
+    url: window.location.href,
+    fullText: fullText
+  };
+}
+
+// Pasif Toplayıcı: Sayfa açıldığında otomatik veriyi çek ve background'a gönder
+if (window.location.href.includes('/ilan/')) {
+  // DOM'un yüklenmesini biraz bekle ki fiyat vs. tam dolsun
+  setTimeout(() => {
+    const data = extractPageData();
+    if (data && data.title) {
+      chrome.runtime.sendMessage({ action: 'passive_extract', data: data });
+    }
+  }, 1000);
+}
+
 // Sayfadaki araç verilerini çeken ana fonksiyon
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'extract_data') {

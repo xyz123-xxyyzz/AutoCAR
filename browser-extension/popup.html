@@ -208,6 +208,48 @@
       cursor: pointer;
       text-decoration: underline;
     }
+
+    /* Modal CSS */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      width: 280px;
+      text-align: center;
+    }
+    .modal-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+    .modal-text {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .modal-highlight {
+      font-size: 15px;
+      color: var(--accent);
+      font-weight: bold;
+      margin-bottom: 16px;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    .modal-buttons button {
+      flex: 1;
+    }
   </style>
 </head>
 <body>
@@ -225,13 +267,15 @@
     </div>
   </div>
 
-  
+  <div style="font-size: 11px; text-align: center; color: var(--text-muted); margin-bottom: 10px;">
+    İlanları farenin orta tuşuyla yan sekmede açın. Otomatik toplanacaktır.
+  </div>
+
   <button id="btn-last-report" class="action-btn" style="background-color: #38383A; margin-bottom: 8px; display: none;">En Sonki Raporu Göster</button>
-  <button id="btn-collect-page" class="action-btn" style="background-color: #0A84FF;">Bu Sayfayı Topla</button>
-  <button id="btn-reset-memory" class="action-btn" style="background-color: #FF453A; margin-top: 8px;">Hafızayı Sıfırla</button>
-  <div style="text-align: center; margin-top: 12px; font-weight: bold; font-size: 16px; color: #32D74B;" id="collected-counter-text">Toplanan İlan: 0</div>
+  <button id="btn-reset-memory" class="action-btn" style="background-color: #FF453A; margin-bottom: 8px;">Hafızayı Sıfırla</button>
+  <div style="text-align: center; margin-bottom: 8px; font-weight: bold; font-size: 16px; color: #32D74B;" id="collected-counter-text">Toplanan İlan: 0</div>
   
-  <div class="tab-list" id="tab-list">
+  <div class="tab-list" id="tab-list" style="display: block;">
     <!-- Tabs buraya gelecek -->
   </div>
 
@@ -250,6 +294,21 @@
 
   <div class="tools">
     <button id="window-btn" class="window-btn">Kapanmaması İçin Pencere Olarak Aç</button>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="analysis-modal">
+    <div class="modal-content">
+      <div class="modal-title">Analizi Başlat</div>
+      <div class="modal-text" id="modal-ads-count"></div>
+      <div class="modal-text" id="modal-time"></div>
+      <div class="modal-highlight" id="modal-cost"></div>
+      <div class="modal-text" style="font-size: 11px; margin-bottom: 16px;">(Tahmini süre 100 ilanlık bot parçalarına göre hesaplanmıştır.)</div>
+      <div class="modal-buttons">
+        <button id="modal-cancel" class="action-btn" style="background-color: #38383A;">İptal</button>
+        <button id="modal-confirm" class="action-btn" style="background-color: var(--accent);">Onayla</button>
+      </div>
+    </div>
   </div>
 
   <script src="popup.js"></script>

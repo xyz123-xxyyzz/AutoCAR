@@ -3,7 +3,6 @@ let refreshInterval;
 document.addEventListener('DOMContentLoaded', () => {
   const tabList = document.getElementById('tab-list');
   const statusCounter = document.getElementById('status-counter');
-  const btnCollect = document.getElementById('btn-collect-page');
   const btnReset = document.getElementById('btn-reset-memory');
   const collectedCounterText = document.getElementById('collected-counter-text');
   const btnAnalyze = document.getElementById('btn-analyze');
@@ -13,6 +12,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const circularProgress = document.getElementById('circular-progress');
   const progressValue = document.getElementById('progress-value');
   const aiText = document.getElementById('ai-text');
+
+  // Modal elements
+  const modal = document.getElementById('analysis-modal');
+  const modalAdsCount = document.getElementById('modal-ads-count');
+  const modalTime = document.getElementById('modal-time');
+  const modalCost = document.getElementById('modal-cost');
+  const btnModalCancel = document.getElementById('modal-cancel');
+  const btnModalConfirm = document.getElementById('modal-confirm');
 
   // Checkboxes removed as system is Data-Only now
 
@@ -47,19 +54,37 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshInterval = setInterval(checkState, 500);
   }
 
-  btnCollect.addEventListener('click', () => {
-    chrome.runtime.sendMessage({ action: 'collect_page' }, () => {
-      checkState();
-    });
-  });
-
   btnReset.addEventListener('click', () => {
     chrome.runtime.sendMessage({ action: 'reset_memory' }, () => {
       checkState();
     });
   });
 
+  let currentAdsCount = 0;
+
   btnAnalyze.addEventListener('click', () => {
+    if (currentAdsCount === 0) return;
+    
+    // Zaman hesabı (Her 100 ilan 1 parça, parça başı 2 dakika)
+    const chunks = Math.ceil(currentAdsCount / 100);
+    const estimatedTime = chunks * 2;
+    
+    // Maliyet hesabı (1 İlan = 0.033 TL)
+    const costTL = (currentAdsCount * 0.033).toFixed(2);
+    
+    modalAdsCount.textContent = `Toplam Seçilen İlan: ${currentAdsCount}`;
+    modalTime.textContent = `Tahmini Süre: ~${estimatedTime} dakika (${chunks} işlem parçası)`;
+    modalCost.textContent = `Tahmini Maliyet: ~${costTL} TL`;
+    
+    modal.style.display = 'flex';
+  });
+
+  btnModalCancel.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
+
+  btnModalConfirm.addEventListener('click', () => {
+    modal.style.display = 'none';
     chrome.runtime.sendMessage({ 
       action: 'start_analysis', 
       options: { runData: true } 
@@ -103,8 +128,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (response.collectedCount !== undefined) {
-        collectedCounterText.textContent = `Toplanan İlan: ${response.collectedCount}`;
-        if (response.collectedCount > 0) {
+        currentAdsCount = response.collectedCount;
+        collectedCounterText.textContent = `Toplanan İlan: ${currentAdsCount}`;
+        if (currentAdsCount > 0) {
           btnAnalyze.style.display = 'block';
         } else {
           btnAnalyze.style.display = 'none';
@@ -112,7 +138,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (isAnalyzing) {
-        btnCollect.style.display = 'none';
         btnReset.style.display = 'none';
         btnAnalyze.style.display = 'none';
         tabList.style.display = 'none';
@@ -132,16 +157,21 @@ document.addEventListener('DOMContentLoaded', () => {
           aiText.style.color = 'var(--text-muted)';
         }
       } else {
-        btnCollect.style.display = 'block';
         btnReset.style.display = 'block';
         aiLoadingContainer.style.display = 'none';
         document.getElementById('btn-cancel-analysis').style.display = 'none';
         
         if (hasReport) {
           btnReport.style.display = 'block';
+          tabList.style.display = 'none';
         } else {
           btnReport.style.display = 'none';
+          tabList.style.display = 'block';
         }
+      }
+
+      if (!isAnalyzing && !hasReport && response.collectedVehicles) {
+        renderTabs(response.collectedVehicles);
       }
     });
   }
@@ -150,25 +180,8 @@ document.addEventListener('DOMContentLoaded', () => {
     tabList.innerHTML = '';
     
     if (!tabs || tabs.length === 0) {
-      tabList.innerHTML = '<div class="empty-state">İlanları yeni sekmede açın. Sistem otomatik yükleyecektir.</div>';
-      btnAnalyze.style.display = 'none';
+      tabList.innerHTML = '<div class="empty-state">İlanları farenin orta tuşuyla yan sekmede açın. Otomatik toplanacaktır.</div>';
       return;
-    }
-
-    const readyCount = tabs.filter(t => t.status === 'Yüklendi').length;
-    statusCounter.textContent = `Toplandı (${readyCount}/${tabs.length})`;
-    
-    if (readyCount > 0) {
-      btnAnalyze.style.display = 'block';
-      if (tabs.length > 50) {
-        btnAnalyze.disabled = true;
-        btnAnalyze.textContent = 'Maks. 50 İlan Aşılmıştır';
-      } else {
-        btnAnalyze.disabled = false;
-        btnAnalyze.textContent = 'Analiz Et';
-      }
-    } else {
-      btnAnalyze.style.display = 'none';
     }
 
     tabs.forEach((tab) => {
@@ -187,8 +200,8 @@ document.addEventListener('DOMContentLoaded', () => {
       subtitle.style.fontSize = '11px';
       subtitle.style.marginTop = '2px';
       subtitle.style.fontWeight = 'bold';
-      subtitle.style.color = tab.status === 'Yüklendi' ? 'var(--accent)' : 'var(--text-muted)';
-      subtitle.textContent = tab.status;
+      subtitle.style.color = 'var(--accent)';
+      subtitle.textContent = tab.price || "Fiyat Bekleniyor";
       
       titleWrapper.appendChild(title);
       titleWrapper.appendChild(subtitle);
@@ -197,13 +210,14 @@ document.addEventListener('DOMContentLoaded', () => {
       removeBtn.className = 'remove-btn';
       removeBtn.innerHTML = '✕';
       removeBtn.onclick = () => {
-        chrome.runtime.sendMessage({ action: 'remove_tab', tabId: tab.tabId }, () => {
+        chrome.runtime.sendMessage({ action: 'remove_vehicle', url: tab.url }, () => {
           checkState();
         });
       };
-      
+
       tabEl.appendChild(titleWrapper);
       tabEl.appendChild(removeBtn);
+      
       tabList.appendChild(tabEl);
     });
   }
