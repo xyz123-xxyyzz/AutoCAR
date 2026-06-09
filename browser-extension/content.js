@@ -81,6 +81,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const isSahibinden = window.location.href.includes('sahibinden.com');
       const isArabam = window.location.href.includes('arabam.com');
       let urls = [];
+      let nextPageUrl = null;
 
       if (isSahibinden) {
         // Sahibinden arama sonuç sayfasındaki ilan linkleri
@@ -88,20 +89,32 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         links.forEach(a => {
           if (a.href && a.href.includes('/ilan/')) urls.push(a.href);
         });
+        
+        // Sonraki sayfa linkini bul (Pagination)
+        const nextBtn = document.querySelector('a.prevNextBut[title="Sonraki"]');
+        if (nextBtn && nextBtn.href) {
+          nextPageUrl = nextBtn.href;
+        }
       } else if (isArabam) {
         // Arabam.com arama sonuç sayfasındaki ilan linkleri
-        const links = document.querySelectorAll('a.link-default-blue'); // Arabam.com'un classı değişebilir, genel ilan yapısına bakıyoruz.
+        const links = document.querySelectorAll('a.link-default-blue, a.listing-text-new'); 
         links.forEach(a => {
           if (a.href && a.href.includes('/ilan/')) urls.push(a.href);
         });
+        
+        // Sonraki sayfa linkini bul
+        const nextBtn = document.querySelector('a.page-link.next') || document.querySelector('a[aria-label="Next"]');
+        if (nextBtn && nextBtn.href) {
+          nextPageUrl = nextBtn.href;
+        }
       }
 
       // Benzersiz URL'leri al
       const uniqueUrls = [...new Set(urls)];
-      sendResponse({ urls: uniqueUrls });
+      sendResponse({ urls: uniqueUrls, nextPageUrl: nextPageUrl });
     } catch (error) {
       console.error("AutoCAR Extract URLs Error:", error);
-      sendResponse({ error: error.toString(), urls: [] });
+      sendResponse({ error: error.toString(), urls: [], nextPageUrl: null });
     }
   }
 

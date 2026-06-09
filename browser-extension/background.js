@@ -610,7 +610,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     chrome.storage.local.set({ autocar_running: false });
     
     // Aktif sekmeyi bul
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
       if (tabs.length === 0) {
         sendResponse({ success: false, error: "Aktif sekme bulunamadı." });
         return;
@@ -622,44 +622,92 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         isAnalyzing: true,
         aiError: false,
         analysisProgress: 2,
-        aiStatusText: "Sayfadaki ilanlar toplanıyor...",
+        aiStatusText: "Sayfalardaki ilanlar taranıyor (Sayfa 1)...",
         finalReport: null,
         trackedTabs: []
       });
 
-      // URL'leri topla
-      chrome.scripting.executeScript({
-        target: { tabId: activeTab.id },
-        files: ['content.js']
-      }, () => {
-        chrome.tabs.sendMessage(activeTab.id, { action: "extract_urls" }, (response) => {
-          if (!response || !response.urls || response.urls.length === 0) {
-            updateState({
-              aiError: true,
-              isAnalyzing: false,
-              analysisProgress: 100,
-              aiStatusText: "Bu sayfada ilan bulunamadı. Lütfen bir arama sonuç sayfasında deneyin."
-            });
-            return;
-          }
+      const MAX_DEEP_SCAN_LIMIT = 1000;
+      let allUrls = [];
+      let hasNextPage = true;
+      let currentScanTabId = activeTab.id;
+      let pageCount = 1;
 
-          // Sahibinden'de sayfalar dolusu ilan olabilir.
-          // MAX_DEEP_SCAN_LIMIT ile sistemi kilitlenmekten kurtarıyoruz.
-          const MAX_DEEP_SCAN_LIMIT = 1000;
-          let urls = response.urls;
-          
-          if (urls.length > MAX_DEEP_SCAN_LIMIT) {
-             urls = urls.slice(0, MAX_DEEP_SCAN_LIMIT);
+      while (hasNextPage && allUrls.length < MAX_DEEP_SCAN_LIMIT) {
+        // Eklenti scriptini sayfaya her ihtimale karşı inject et
+        await new Promise(r => {
+          chrome.scripting.executeScript({
+            target: { tabId: currentScanTabId },
+            files: ['content.js']
+          }, () => r());
+        });
+
+        // Sayfadan URL'leri ve sonraki sayfa linkini iste
+        const response = await new Promise(resolve => {
+          chrome.tabs.sendMessage(currentScanTabId, { action: "extract_urls" }, (res) => {
+            resolve(res);
+          });
+        });
+
+        if (!response || !response.urls || response.urls.length === 0) {
+          break; // İlan bulunamadıysa döngüyü kır
+        }
+
+        // Bulunan eşsiz URL'leri ana havuza ekle
+        response.urls.forEach(u => {
+          if (!allUrls.includes(u) && allUrls.length < MAX_DEEP_SCAN_LIMIT) {
+            allUrls.push(u);
           }
+        });
+
+        updateState({
+          aiStatusText: `Şu ana kadar ${allUrls.length} ilan bulundu, sayfalar taranıyor...`,
+          analysisProgress: Math.min(4, 2 + Math.floor(allUrls.length / 250))
+        });
+
+        // Eğer sonraki sayfa varsa ve sınır dolmadıysa, sekmeyi oraya yönlendir
+        if (response.nextPageUrl && allUrls.length < MAX_DEEP_SCAN_LIMIT) {
+          pageCount++;
+          updateState({ aiStatusText: `${allUrls.length} ilan toplandı. Sayfa ${pageCount}'e geçiliyor...` });
           
-          const totalUrls = urls.length;
-          
-          updateState({
-            aiStatusText: `Sistem güvenliği için maksimum ${MAX_DEEP_SCAN_LIMIT} sınırıyla toplam ${totalUrls} ilan işleniyor...`,
-            analysisProgress: 5
+          await new Promise(resolve => {
+            chrome.tabs.update(currentScanTabId, { url: response.nextPageUrl }, () => {
+              const listener = (tabId, info) => {
+                if (tabId === currentScanTabId && info.status === 'complete') {
+                  chrome.tabs.onUpdated.removeListener(listener);
+                  resolve();
+                }
+              };
+              chrome.tabs.onUpdated.addListener(listener);
+            });
           });
 
-          // Hayalet Sekme İşçileri (Workers) Oluştur
+          // Sayfanın DOM ağacının ve resimlerin/JS'lerin oturması için 3 saniye insan molası
+          await new Promise(r => setTimeout(r, 3000));
+        } else {
+          hasNextPage = false;
+        }
+      }
+
+      if (allUrls.length === 0) {
+        updateState({
+          aiError: true,
+          isAnalyzing: false,
+          analysisProgress: 100,
+          aiStatusText: "Hiçbir sayfada ilan bulunamadı. Lütfen bir arama sonuç sayfasında deneyin."
+        });
+        return;
+      }
+
+      let urls = allUrls;
+      const totalUrls = urls.length;
+      
+      updateState({
+        aiStatusText: `Toplam ${pageCount} sayfadan ${totalUrls} ilan başarıyla toplandı. Hayalet tarayıcılar başlatılıyor...`,
+        analysisProgress: 5
+      });
+
+      // Hayalet Sekme İşçileri (Workers) Oluştur
           const MAX_CONCURRENT_TABS = 2;
           let currentIndex = 0;
           let successCount = 0;
@@ -755,8 +803,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             updateState({ trackedTabs: currentTrackedTabs });
             runFullAnalysis({ runData: true });
           });
-        });
-      });
     });
     
     sendResponse({ success: true });
