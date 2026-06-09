@@ -607,7 +607,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 
   if (request.action === 'start_deep_scan') {
-    chrome.storage.local.set({ autocar_running: false });
+    chrome.storage.local.set({ autocar_running: true });
     
     // Aktif sekmeyi bul
     chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
@@ -634,6 +634,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       let pageCount = 1;
 
       while (hasNextPage && allUrls.length < MAX_DEEP_SCAN_LIMIT) {
+        const isRunning = await new Promise(r => chrome.storage.local.get(['autocar_running'], res => r(res.autocar_running)));
+        if (!isRunning) return; // Kullanıcı iptal ettiyse sayfaları gezmeyi durdur
+
         // Eklenti scriptini sayfaya her ihtimale karşı inject et
         await new Promise(r => {
           chrome.scripting.executeScript({
@@ -682,8 +685,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             });
           });
 
-          // Sayfanın DOM ağacının ve resimlerin/JS'lerin oturması için 3 saniye insan molası
-          await new Promise(r => setTimeout(r, 3000));
+          // Bot korumasına takılmamak için 4 ila 7 saniye arası rastgele "insan" molası
+          const randomWait = Math.floor(Math.random() * 3000) + 4000;
+          await new Promise(r => setTimeout(r, randomWait));
         } else {
           hasNextPage = false;
         }
@@ -707,13 +711,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         analysisProgress: 5
       });
 
-      // Hayalet Sekme İşçileri (Workers) Oluştur
-          const MAX_CONCURRENT_TABS = 2;
+      // Hayalet Sekme İşçileri (Workers) Oluştur - BOT KORUMASI İÇİN 1'E DÜŞÜRÜLDÜ
+          const MAX_CONCURRENT_TABS = 1;
           let currentIndex = 0;
           let successCount = 0;
           let currentTrackedTabs = [];
 
           const processNextUrl = async (ghostTabId) => {
+            const isRunning = await new Promise(r => chrome.storage.local.get(['autocar_running'], res => r(res.autocar_running)));
+            if (!isRunning) return; // Kullanıcı iptal ettiyse ilan veri çekimini durdur
+            
             let i;
             // Lock index safely
             synchronized: {
@@ -767,8 +774,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
               successCount++;
             }
 
-            // Bot korumasına takılmamak için 2.5 saniye bekle
-            await new Promise(r => setTimeout(r, 2500));
+            // Bot korumasına takılmamak için her ilanda 4-8 saniye arası rastgele bekle
+            const randomGhostWait = Math.floor(Math.random() * 4000) + 4000;
+            await new Promise(r => setTimeout(r, randomGhostWait));
             
             // Sıradaki URL'ye geç
             await processNextUrl(ghostTabId);
