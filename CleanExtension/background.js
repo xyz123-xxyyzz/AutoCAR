@@ -1,22 +1,22 @@
-// ==========================================
-// AUTOCAR AI - EKLENTİ AYARLARI
-// ==========================================
+// AutoCAR Master AI - Background Script
+
 const CONFIG = {
-  PORTAL_URL: "https://auto-car-gold.vercel.app/analiz" 
+  PORTAL_URL: "https://auto-car-gold.vercel.app/analiz",
+  SUPABASE_URL: "https://jwffcfjuydjjzqtwjitn.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_ESKWW6qt0VZL9_GwNEM3Uw_Z8wUMnOM"
 };
-// ==========================================
 
 let trackedTabs = [];
 let isAnalyzing = false;
 let analysisProgress = 0;
-let aiStatusText = "Hazır";
+let aiStatusText = "";
 let finalReport = null;
 let aiError = false;
 let collectedVehicles = [];
 let isCollecting = false;
 
-// Initialize state from storage
-chrome.storage.local.get(['trackedTabs', 'isAnalyzing', 'analysisProgress', 'aiStatusText', 'finalReport', 'aiError', 'collectedVehicles'], (res) => {
+// Initialize state
+chrome.storage.local.get(['trackedTabs', 'isAnalyzing', 'analysisProgress', 'aiStatusText', 'finalReport', 'aiError', 'collectedVehicles', 'isCollecting'], (res) => {
   if (res.trackedTabs) trackedTabs = res.trackedTabs;
   if (res.isAnalyzing !== undefined) isAnalyzing = res.isAnalyzing;
   if (res.analysisProgress !== undefined) analysisProgress = res.analysisProgress;
@@ -39,13 +39,68 @@ function updateState(updates) {
   chrome.storage.local.set(updates);
 }
 
-// Eski sekme takip mekanizmaları kaldırılarak tamamen "passive_extract" (Pasif Toplayıcı) sistemine geçildi.
+function addTabToTrackingAndExtract(tabId, url, title) {
+  let existingUrl = trackedTabs.find(t => t.url === url || t.tabId === tabId);
+  if (existingUrl) return;
 
+  const newTab = {
+    tabId: tabId,
+    url: url,
+    title: title || url,
+    status: 'Yükleniyor...',
+    data: null
+  };
+  trackedTabs.push(newTab);
+  updateState({ trackedTabs });
+  
+  setTimeout(() => {
+    chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      files: ['content.js']
+    }, () => {
+      if (chrome.runtime.lastError) {
+        updateTabStatus(tabId, 'Hata Oluştu');
+      } else {
+        chrome.tabs.sendMessage(tabId, { action: "extract_data" }, (response) => {
+          if (chrome.runtime.lastError) {
+            updateTabStatus(tabId, 'Hata Oluştu');
+          } else if (response && response.title) {
+            updateTabStatus(tabId, 'Yüklendi', response);
+          } else {
+            updateTabStatus(tabId, 'Hata Oluştu');
+          }
+        });
+      }
+    });
+  }, 1500);
+}
 
-const SUPABASE_URL = "https://jwffcfjuydjjzqtwjitn.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_ESKWW6qt0VZL9_GwNEM3Uw_Z8wUMnOM";
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (!isCollecting || isAnalyzing) return;
+  const url = changeInfo.url || tab.url;
+  if (changeInfo.status === 'complete' && url) {
+    if (url.includes('sahibinden.com/ilan/') || url.includes('arabam.com/ilan/')) {
+      addTabToTrackingAndExtract(tabId, url, tab.title);
+    }
+  }
+});
 
-async function callOpenAI(systemPrompt, userContent, useVision = false, model = 'gpt-4o-mini', retries = 3) {
+function updateTabStatus(tabId, status, data = null) {
+  const t = trackedTabs.find(x => x.tabId === tabId);
+  if (t) {
+    t.status = status;
+    if (data) {
+      t.data = data;
+      t.title = data.title || t.url;
+    }
+    updateState({ trackedTabs });
+  }
+}
+
+// ------------------------------------------------------------------
+// OPENAI API CALL LOGIC
+// ------------------------------------------------------------------
+async function callOpenAI(systemPrompt, userContent, model = 'gpt-4o-mini', retries = 3) {
   return new Promise((resolve, reject) => {
     chrome.storage.local.get(['userEmail', 'deviceId'], async (resStorage) => {
       let email = resStorage.userEmail;
@@ -57,12 +112,12 @@ async function callOpenAI(systemPrompt, userContent, useVision = false, model = 
 
       let apiKey = '';
       try {
-        const supaRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/get_api_key_for_device`, {
+        const supaRes = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/rpc/get_api_key_for_device`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            'apikey': CONFIG.SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`
           },
           body: JSON.stringify({ p_email: email, p_device_id: deviceId })
         });
@@ -80,14 +135,9 @@ async function callOpenAI(systemPrompt, userContent, useVision = false, model = 
 
       try {
         let messages = [
-          { role: 'system', content: systemPrompt }
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: JSON.stringify(userContent) }
         ];
-        
-        if (useVision) {
-          messages.push({ role: 'user', content: userContent });
-        } else {
-          messages.push({ role: 'user', content: JSON.stringify(userContent) });
-        }
 
         const res = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
@@ -102,17 +152,15 @@ async function callOpenAI(systemPrompt, userContent, useVision = false, model = 
         
         const json = await res.json();
         if (!res.ok) {
-          if (res.status === 401) {
-            throw new Error('API Anahtarı eksik veya geçersiz. Lütfen Ayarlar (⚙️) kısmından geçerli bir OpenAI API Anahtarı girin.');
-          }
+          if (res.status === 401) throw new Error('API Anahtarı eksik veya geçersiz.');
           if (res.status === 429) {
             if (json.error && json.error.code === 'insufficient_quota') {
-              throw new Error('Yapay Zeka (OpenAI) Bakiyeniz Tükenmiştir. Lütfen Ayarlar panelindeki linkten bakiye yüklemesi yapın.');
+              throw new Error('Yapay Zeka (OpenAI) Bakiyeniz Tükenmiştir.');
             }
             if (retries > 0) {
-              console.warn(`429 Too Many Requests. Retrying in 6 seconds... (${retries} retries left)`);
+              console.warn(`429 Too Many Requests. Retrying in 6 seconds... (${retries} left)`);
               await new Promise(r => setTimeout(r, 6000));
-              return resolve(await callOpenAI(systemPrompt, userContent, useVision, model, retries - 1));
+              return resolve(await callOpenAI(systemPrompt, userContent, model, retries - 1));
             }
           }
           throw new Error(json.error ? json.error.message : 'Bilinmeyen API Hatası');
@@ -213,24 +261,24 @@ GENERAL CRITICAL RULES:
 }
 
 async function generateGlobalMasterReport(groupReports) {
-  const systemPrompt = `Sen sistemin 'Master AI' yöneticisisin. Tüm araç gruplarının analiz raporları sana geliyor. Bu grupları birbiriyle kıyasla, FİYAT-PERFORMANS ve SEGMENT mantığını dikkate alarak gelen araçları sırala ve sadece İLK 10 aracı belirle.
+  const systemPrompt = `Sen sistemin 'Master AI' yöneticisisin. Tüm araç gruplarının analiz raporları sana geliyor. Bu grupları birbiriyle kıyasla, FİYAT-PERFORMANS ve SEGMENT mantığını dikkate alarak gelen araçları sırala ve sana verilen tüm arabaların hepsini değerlendirerek listele. En iyi araçları belirle.
 SADECE GEÇERLİ BİR JSON DÖNDÜR.
 Format:
 {
-  "title": "Master AI Derinlemesine Kıyaslama Raporu (Top 10)",
+  "title": "Master AI Derinlemesine Kıyaslama Raporu (Top Seçimler)",
   "logic": "Bu liste neye göre hazırlandı? Kısaca açıkla.",
   "top_10": [
     { 
       "rank": 1,
       "title": "Volkswagen Passat 2015", 
       "score": 95, 
-      "comment": "Piyasanın en dolu paketi, fiyatı ise emsallerine göre %10 daha ucuz." 
+      "comment": "Piyasanın en dolu paketi, fiyatı ise emsallerine göre %10 daha ucuz. Neden birinci seçildiği detayı." 
     },
     { 
       "rank": 2,
       "title": "Skoda Superb 2018", 
       "score": 92, 
-      "comment": "Düşük kilometresi ve temiz ekspertizi ile uzun yıllar masrafsız binilecek bir araç." 
+      "comment": "Düşük kilometresi ve temiz ekspertizi ile uzun yıllar masrafsız binilecek bir araç. Neden ikinci seçildiği." 
     }
   ],
   "details": [
@@ -241,12 +289,10 @@ Format:
 Kurallar:
 - "score" alanlarına kafandan puan uydurma! Sana verilen verideki "overall_score" değeri neyse BİREBİR aynısını yaz.
 - "title" kısmına ASLA HAM İLAN BAŞLIĞINI KOPYALAMA! Sadece aracın MARKASI, MODELİ ve YILINI tertemiz bir şekilde yaz (Örn: "Volkswagen Passat 2015").
-- "comment" kısmı kesinlikle SADECE 1 CÜMLE olmalı. O aracın neden öne çıktığını çok vurucu, ilgi çekici ve galericiyi cezbedecek şekilde yaz.
-- Sadece top_10 listesi oluştur. Eğer 10'dan az araç varsa olanları sırala. 10'dan fazlaysa sadece en iyi 10'unu al.
+- "comment" kısmı kesinlikle SADECE 1 CÜMLE olmalı. O aracın neden o sıraya yerleştiğini ve öne çıktığını çok vurucu şekilde yaz.
+- Sana verilen araçların hepsini "top_10" dizisine sırasıyla ekle.
 `;
 
-  // Master AI'a giden veriden gereksiz yer kaplayan kısımları (url, boş özellikler vb.) silerek SIKIŞTIRIYORUZ.
-  // Bu sayede 1000 araç bile gönderilse OpenAI chat limiti şişmez.
   const cleanGroupReports = groupReports.map(g => ({
     groupName: g.groupName,
     cars: g.cars.map(c => ({
@@ -267,8 +313,11 @@ Kurallar:
   return await callOpenAI(systemPrompt, cleanGroupReports);
 }
 
-async function runFullAnalysis(options) {
-  const readyData = trackedTabs.filter(t => t.status === 'Yüklendi' && t.data).map(t => t.data);
+// ------------------------------------------------------------------
+// RUN FULL ANALYSIS (100 CHUNKS, 60s LIMIT, TIE BREAKER)
+// ------------------------------------------------------------------
+async function runFullAnalysis() {
+  const readyData = trackedTabs.map(t => t.data).filter(d => d !== null);
   
   if (readyData.length === 0) {
     updateState({
@@ -289,7 +338,6 @@ async function runFullAnalysis(options) {
     let totalCars = readyData.length;
     let processedCars = 0;
     
-    // Bütün araçları düzleştirilmiş bir listeye alalım
     const flatCarsList = [];
     for (let g = 0; g < groupNames.length; g++) {
       const gName = groupNames[g];
@@ -299,12 +347,12 @@ async function runFullAnalysis(options) {
       }
     }
 
-    // Arabaları 100'erli "Chunk" (Paketler) haline getirelim
+    // 100'erli Chunk Döngüsü
     const CHUNK_SIZE = 100;
     const allProcessedCars = [];
 
     for (let i = 0; i < flatCarsList.length; i += CHUNK_SIZE) {
-      const chunkStartTime = Date.now(); // Paketin API'ye gönderilmeye başladığı an
+      const chunkStartTime = Date.now(); 
       
       const chunk = flatCarsList.slice(i, i + CHUNK_SIZE);
       
@@ -314,7 +362,7 @@ async function runFullAnalysis(options) {
 
         processedCars++;
         updateState({ 
-          aiStatusText: `Araçlar 100'lü Paketler Halinde Analiz Ediliyor (${processedCars}/${totalCars})...`,
+          aiStatusText: `Araçlar analiz ediliyor (${processedCars}/${totalCars})...`,
           analysisProgress: 5 + Math.round((processedCars / totalCars) * 80)
         });
 
@@ -340,7 +388,7 @@ async function runFullAnalysis(options) {
             fair_price_score: finalReport.fair_price_score || null,
             condition_score: finalReport.condition_score || null,
             overall_score: finalReport.overall_score || null,
-            ai_report: finalReport.ai_report || finalReport.data_report || "Bu araç için özel analiz oluşturulamadı (AI zaman aşımı veya veri eksikliği).",
+            ai_report: finalReport.ai_report || "Analiz oluşturulamadı.",
             vision_report: null,
             defects: [],
             positives: [],
@@ -351,14 +399,14 @@ async function runFullAnalysis(options) {
         };
       });
 
-      // 100'lük paketi aynı anda çalıştır ve bitmesini bekle, sonraki 100'e geç
+      // Eşzamanlı başlat ve bekle
       const chunkResults = await Promise.all(chunkPromises);
       allProcessedCars.push(...chunkResults);
       
-      // Eğer bu son paket değilse, tam 60 saniyelik döngüyü tamamla.
+      // Eğer sıradaki paket varsa 60 saniye limitini tamamla
       if (i + CHUNK_SIZE < flatCarsList.length) {
         const elapsed = Date.now() - chunkStartTime;
-        const waitTime = Math.max(0, 60000 - elapsed); // 60 saniyeden kalanı hesapla
+        const waitTime = Math.max(0, 60000 - elapsed); 
         
         if (waitTime > 0) {
            updateState({ 
@@ -369,21 +417,14 @@ async function runFullAnalysis(options) {
       }
     }
 
-    // İşlenmiş araçları gruplarına göre tekrar ayır
+    // İşlenmiş araçları gruplarına göre paketle
     for (let g = 0; g < groupNames.length; g++) {
       const gName = groupNames[g];
-      const carsInGroup = allProcessedCars.filter(c => c.groupName === gName).map(c => {
-        let carDataCopy = { ...c.carData };
-        // YZ'nın kafasını karıştırmamak ve veri paketini şişirmemek için resimleri KOD ile 3'e düşür
-        if (carDataCopy.images && carDataCopy.images.length > 3) {
-          carDataCopy.images = carDataCopy.images.slice(0, 3);
-        }
-        return carDataCopy;
-      });
+      const carsInGroup = allProcessedCars.filter(c => c.groupName === gName).map(c => c.carData);
       
       const groupConsolidated = {
         groupName: gName,
-        group_logic: `${gName} grubu için eşzamanlı yapay zeka analizi tamamlandı.`,
+        group_logic: `${gName} analizi tamamlandı.`,
         cars: carsInGroup
       };
       allGroupReports.push(groupConsolidated);
@@ -391,7 +432,7 @@ async function runFullAnalysis(options) {
 
     updateState({ aiStatusText: `Master AI Tüm Grupları Kıyaslıyor...`, analysisProgress: 85 });
 
-    // YENİ MANTIK: Tüm arabaları alıp overall_score'a göre yüksekten düşüğe sırala ve en iyi 3 aracı seç.
+    // MASTER AI EŞİTLİK MANTIĞI
     let topCars = [];
     for (let g of allGroupReports) {
       for (let c of g.cars) {
@@ -399,6 +440,7 @@ async function runFullAnalysis(options) {
       }
     }
     
+    // Yüksek puandan düşüğe doğru sırala
     topCars.sort((a, b) => {
       let scoreA = parseInt(a.car.overall_score, 10) || 0;
       let scoreB = parseInt(b.car.overall_score, 10) || 0;
@@ -409,18 +451,21 @@ async function runFullAnalysis(options) {
     let topN = 10;
     if (topCars.length > 10) {
       let tenthScore = parseInt(topCars[9].car.overall_score, 10) || 0;
+      // 10. arabanın puanıyla aynı puanı alan diğer araçları da havuza dahil et
       while (topN < topCars.length && (parseInt(topCars[topN].car.overall_score, 10) || 0) >= tenthScore) {
          topN++;
       }
     }
-    const top10Cars = topCars.slice(0, topN);
     
-    // Master AI için bu en iyi 10 aracı grup formatına geri çevir
-    const masterGroupReports = top10Cars.map(item => ({
+    // Kesinleşmiş Master Havuzu
+    const masterHavuz = topCars.slice(0, topN);
+    
+    const masterGroupReports = masterHavuz.map(item => ({
       groupName: item.groupName,
       cars: [item.car]
     }));
 
+    // Master AI Raporunu oluştur
     const globalSummary = await generateGlobalMasterReport(masterGroupReports);
 
     updateState({
@@ -433,7 +478,7 @@ async function runFullAnalysis(options) {
   } catch (error) {
     updateState({
       aiError: true,
-      aiStatusText: `API Hatası: ${error.message}`,
+      aiStatusText: `Hata: ${error.message}`,
       analysisProgress: 100,
       isAnalyzing: false,
       finalReport: null
@@ -441,22 +486,10 @@ async function runFullAnalysis(options) {
   }
 }
 
+// ------------------------------------------------------------------
+// MESSAGE LISTENER
+// ------------------------------------------------------------------
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-// Eski start_system kodu tamamen passive_extract'e bırakıldığı için kaldırıldı.
-
-  if (request.action === 'stop_system') {
-    chrome.storage.local.set({ autocar_running: false });
-    updateState({
-      trackedTabs: [],
-      isAnalyzing: false,
-      analysisProgress: 0,
-      aiStatusText: "Hazır",
-      finalReport: null,
-      aiError: false
-    });
-    sendResponse({ success: true });
-    return true;
-  }
 
   if (request.action === 'get_state') {
     sendResponse({
@@ -466,8 +499,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       aiText: aiStatusText,
       hasReport: finalReport !== null,
       isError: aiError,
-      collectedCount: collectedVehicles.length,
-      collectedVehicles: collectedVehicles,
+      collectedCount: trackedTabs.length,
+      collectedVehicles: trackedTabs,
       isCollecting: isCollecting
     });
     return true;
@@ -475,6 +508,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === 'set_collecting') {
     updateState({ isCollecting: request.value });
+    
+    if (request.value === true) {
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach(tab => {
+          const url = tab.url;
+          if (url && (url.includes('sahibinden.com/ilan/') || url.includes('arabam.com/ilan/'))) {
+             addTabToTrackingAndExtract(tab.id, url, tab.title);
+          }
+        });
+      });
+    }
+
     sendResponse({ success: true });
     return true;
   }
@@ -485,8 +530,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ success: true });
     return true;
   }
-// Eski start_analysis kodu yerine sondaki versiyon kullanılıyor.
-  
+
+  if (request.action === 'reset_memory') {
+    updateState({
+      trackedTabs: [],
+      finalReport: null,
+      aiError: false,
+      isAnalyzing: false,
+      aiStatusText: '',
+      isCollecting: false
+    });
+    sendResponse({ success: true });
+    return true;
+  }
+
   if (request.action === 'show_report') {
     if (!finalReport) return;
     const portalUrl = CONFIG.PORTAL_URL;
@@ -503,90 +560,31 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             },
             args: [finalReport]
           });
-          
-          updateState({
-            trackedTabs: [],
-            analysisProgress: 0
-            // finalReport is NOT set to null here, so we remember it!
-          });
         }
       });
     });
     sendResponse({ success: true });
     return true;
   }
-  
-// Tekrar eden stop_system isteği silindi.
 
-  if (request.action === 'reset_memory') {
-    updateState({
-      collectedVehicles: [],
-      finalReport: null,
-      aiError: false,
-      isAnalyzing: false,
-      aiStatusText: 'Hafıza Sıfırlandı.'
-    });
-    sendResponse({ success: true });
-    return true;
-  }
-
-  if (request.action === 'passive_extract') {
-    if (!isCollecting) {
-      sendResponse({ success: false, reason: "not_collecting" });
-      return true;
-    }
-
-    const data = request.data;
-    // Eğer araç zaten hafızada yoksa ekle
-    if (!collectedVehicles.find(v => v.url === data.url)) {
-      collectedVehicles.push(data);
-      updateState({
-        collectedVehicles: collectedVehicles
-      });
-    }
-    sendResponse({ success: true });
-    return true;
-  }
-
-  if (request.action === 'remove_vehicle') {
-    const urlToRemove = request.url;
-    collectedVehicles = collectedVehicles.filter(v => v.url !== urlToRemove);
-    updateState({
-      collectedVehicles: collectedVehicles
-    });
+  if (request.action === 'remove_tab') {
+    trackedTabs = trackedTabs.filter(t => t.tabId !== request.tabId);
+    updateState({ trackedTabs: trackedTabs });
     sendResponse({ success: true });
     return true;
   }
 
   if (request.action === 'start_analysis') {
-    if (collectedVehicles.length === 0) {
-      updateState({
-        aiError: true,
-        aiStatusText: "Önce sayfa toplamalısınız!"
-      });
+    const readyData = trackedTabs.map(t => t.data).filter(d => d !== null);
+    if (readyData.length === 0) {
+      updateState({ aiError: true, aiStatusText: "Analiz edilecek araç verisi yok." });
       sendResponse({ success: false });
       return true;
     }
-
-    updateState({
-      isAnalyzing: true,
-      analysisProgress: 5,
-      aiStatusText: "Yapay Zeka Hazırlanıyor..."
-    });
-
-    let currentTrackedTabs = collectedVehicles.map((v, idx) => ({
-      tabId: `ghost_${idx}`,
-      url: v.url,
-      title: v.title,
-      status: 'Yüklendi',
-      data: v
-    }));
-
-    updateState({ trackedTabs: currentTrackedTabs });
-    runFullAnalysis({ runData: true });
-
+    updateState({ isAnalyzing: true, analysisProgress: 5, aiStatusText: "Yapay Zeka Hazırlanıyor..." });
+    runFullAnalysis();
     sendResponse({ success: true });
     return true;
   }
-});
 
+});

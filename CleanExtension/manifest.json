@@ -1,33 +1,30 @@
 {
   "manifest_version": 3,
-  "name": "AutoCAR Analiz Edici",
-  "version": "3.3",
-  "description": "Açık sekmelerdeki araç ilanlarını AutoCAR sistemiyle analiz et.",
+  "name": "AutoCAR Master AI",
+  "version": "1.0.2",
+  "description": "Araç ilanlarını Master AI sistemiyle (otomatik asenkron kuyruk ve eşitlik mantığıyla) analiz eder.",
   "permissions": [
     "tabs",
     "activeTab",
     "storage",
-    "scripting"
+    "scripting",
+    "unlimitedStorage"
   ],
   "host_permissions": [
     "*://*.sahibinden.com/*",
     "*://*.arabam.com/*",
-    "*://*.letgo.com/*",
-    "http://localhost:5173/*",
-    "http://localhost:5174/*",
-    "https://auto-car-gold.vercel.app/*",
     "https://api.openai.com/*"
   ],
   "content_scripts": [
     {
-      "matches": ["http://localhost/*", "https://*.vercel.app/*", "https://auto-car-gold.vercel.app/*", "*://*.sahibinden.com/*", "*://*.arabam.com/*"],
+      "matches": ["*://*.sahibinden.com/*", "*://*.arabam.com/*"],
       "js": ["content.js"],
       "run_at": "document_idle"
     }
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "AutoCAR",
+    "default_title": "AutoCAR Master AI",
     "default_icon": {
       "16": "icon16.png",
       "48": "icon48.png",
@@ -44,8 +41,11 @@
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "autocar@example.com",
-      "strict_min_version": "109.0"
+      "id": "autocar-final-v10@kzsystems.com",
+      "strict_min_version": "109.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
     }
   }
 }

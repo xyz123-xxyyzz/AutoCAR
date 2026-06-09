@@ -221,6 +221,13 @@ document.addEventListener('DOMContentLoaded', () => {
       title.className = 'tab-title';
       title.textContent = tab.title;
 
+      const statusBadge = document.createElement('div');
+      statusBadge.style.fontSize = '10px';
+      statusBadge.style.color = '#32D74B';
+      statusBadge.style.fontWeight = 'bold';
+      statusBadge.style.marginBottom = '2px';
+      statusBadge.textContent = '✓ Veri Yüklendi';
+
       const subtitle = document.createElement('div');
       subtitle.style.fontSize = '11px';
       subtitle.style.marginTop = '2px';
@@ -228,6 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
       subtitle.style.color = 'var(--accent)';
       subtitle.textContent = tab.price || "Fiyat Bekleniyor";
       
+      titleWrapper.appendChild(statusBadge);
       titleWrapper.appendChild(title);
       titleWrapper.appendChild(subtitle);
       
