@@ -3,8 +3,9 @@ let refreshInterval;
 document.addEventListener('DOMContentLoaded', () => {
   const tabList = document.getElementById('tab-list');
   const statusCounter = document.getElementById('status-counter');
-  const btnStart = document.getElementById('btn-start');
-  const btnDeepScan = document.getElementById('btn-deep-scan');
+  const btnCollect = document.getElementById('btn-collect-page');
+  const btnReset = document.getElementById('btn-reset-memory');
+  const collectedCounterText = document.getElementById('collected-counter-text');
   const btnAnalyze = document.getElementById('btn-analyze');
   const btnReport = document.getElementById('btn-report');
   const windowBtn = document.getElementById('window-btn');
@@ -46,20 +47,14 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshInterval = setInterval(checkState, 500);
   }
 
-  btnStart.addEventListener('click', () => {
-    if (btnStart.textContent === 'Manuel Çalıştır') {
-      chrome.runtime.sendMessage({ action: 'start_system' }, () => {
-        checkState();
-      });
-    } else {
-      chrome.runtime.sendMessage({ action: 'stop_system' }, () => {
-        checkState();
-      });
-    }
+  btnCollect.addEventListener('click', () => {
+    chrome.runtime.sendMessage({ action: 'collect_page' }, () => {
+      checkState();
+    });
   });
 
-  btnDeepScan.addEventListener('click', () => {
-    chrome.runtime.sendMessage({ action: 'start_deep_scan' }, () => {
+  btnReset.addEventListener('click', () => {
+    chrome.runtime.sendMessage({ action: 'reset_memory' }, () => {
       checkState();
     });
   });
@@ -107,59 +102,47 @@ document.addEventListener('DOMContentLoaded', () => {
         btnLastReport.style.display = 'none';
       }
 
-      if (isAnalyzing || isError) {
-        btnStart.style.display = 'none';
-        btnDeepScan.style.display = 'none';
-        tabList.style.display = 'none';
-        btnAnalyze.style.display = 'none';
-        
-        statusCounter.textContent = isError ? 'Sistem Hatası' : 'Yapay Zeka Devrede';
-        statusCounter.className = isError ? 'status' : 'status active';
-        
-        aiLoadingContainer.style.display = 'flex';
-        
-        if (isError) {
-          circularProgress.style.background = `conic-gradient(var(--danger) 360deg, var(--card-bg) 0deg)`;
-          progressValue.textContent = 'Hata';
-          aiText.textContent = statusText;
-          btnReport.style.display = 'none';
-          btnStart.textContent = 'Başa Dön';
-          btnStart.style.display = 'block';
+      if (response.collectedCount !== undefined) {
+        collectedCounterText.textContent = `Toplanan İlan: ${response.collectedCount}`;
+        if (response.collectedCount > 0) {
+          btnAnalyze.style.display = 'block';
         } else {
-          circularProgress.style.background = `conic-gradient(var(--accent) ${progress * 3.6}deg, var(--card-bg) 0deg)`;
-          progressValue.textContent = `${progress}%`;
-          aiText.textContent = statusText;
-          btnReport.style.display = 'none';
-          document.getElementById('btn-cancel-analysis').style.display = 'block';
-        }
-        return;
-      }
-
-      // Not analyzing, no error
-      aiLoadingContainer.style.display = 'none';
-      btnReport.style.display = 'none';
-      document.getElementById('btn-cancel-analysis').style.display = 'none';
-
-      chrome.storage.local.get(['autocar_running'], (res) => {
-        if (res.autocar_running) {
-          btnStart.textContent = 'Sistemi Durdur';
-          statusCounter.textContent = 'Bekleniyor...';
-          statusCounter.className = 'status active';
-          btnStart.style.display = 'block';
-          btnDeepScan.style.display = 'none';
-          tabList.style.display = 'block';
-          
-          renderTabs(tabs);
-        } else {
-          btnStart.textContent = 'Manuel Çalıştır';
-          statusCounter.textContent = 'Sistem Kapalı';
-          statusCounter.className = 'status';
-          btnStart.style.display = 'block';
-          btnDeepScan.style.display = 'block';
-          tabList.style.display = 'none';
           btnAnalyze.style.display = 'none';
         }
-      });
+      }
+
+      if (isAnalyzing) {
+        btnCollect.style.display = 'none';
+        btnReset.style.display = 'none';
+        btnAnalyze.style.display = 'none';
+        tabList.style.display = 'none';
+        
+        aiLoadingContainer.style.display = 'flex';
+        document.getElementById('btn-cancel-analysis').style.display = 'block';
+        
+        circularProgress.style.background = `conic-gradient(var(--accent) ${progress * 3.6}deg, var(--card-bg) 0deg)`;
+        progressValue.textContent = `${progress}%`;
+        
+        if (isError) {
+          aiText.textContent = statusText;
+          aiText.style.color = 'var(--danger)';
+          circularProgress.style.background = `conic-gradient(var(--danger) 360deg, var(--card-bg) 0deg)`;
+        } else {
+          aiText.textContent = statusText;
+          aiText.style.color = 'var(--text-muted)';
+        }
+      } else {
+        btnCollect.style.display = 'block';
+        btnReset.style.display = 'block';
+        aiLoadingContainer.style.display = 'none';
+        document.getElementById('btn-cancel-analysis').style.display = 'none';
+        
+        if (hasReport) {
+          btnReport.style.display = 'block';
+        } else {
+          btnReport.style.display = 'none';
+        }
+      }
     });
   }
 

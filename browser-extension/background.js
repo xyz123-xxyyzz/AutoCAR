@@ -12,15 +12,17 @@ let analysisProgress = 0;
 let aiStatusText = "Hazır";
 let finalReport = null;
 let aiError = false;
+let collectedVehicles = [];
 
 // Initialize state from storage
-chrome.storage.local.get(['trackedTabs', 'isAnalyzing', 'analysisProgress', 'aiStatusText', 'finalReport', 'aiError'], (res) => {
+chrome.storage.local.get(['trackedTabs', 'isAnalyzing', 'analysisProgress', 'aiStatusText', 'finalReport', 'aiError', 'collectedVehicles'], (res) => {
   if (res.trackedTabs) trackedTabs = res.trackedTabs;
   if (res.isAnalyzing !== undefined) isAnalyzing = res.isAnalyzing;
   if (res.analysisProgress !== undefined) analysisProgress = res.analysisProgress;
   if (res.aiStatusText) aiStatusText = res.aiStatusText;
   if (res.finalReport) finalReport = res.finalReport;
   if (res.aiError !== undefined) aiError = res.aiError;
+  if (res.collectedVehicles) collectedVehicles = res.collectedVehicles;
 });
 
 function updateState(updates) {
@@ -30,6 +32,7 @@ function updateState(updates) {
   if (updates.aiStatusText !== undefined) aiStatusText = updates.aiStatusText;
   if (updates.finalReport !== undefined) finalReport = updates.finalReport;
   if (updates.aiError !== undefined) aiError = updates.aiError;
+  if (updates.collectedVehicles !== undefined) collectedVehicles = updates.collectedVehicles;
   chrome.storage.local.set(updates);
 }
 
@@ -510,21 +513,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   if (request.action === 'get_state') {
     chrome.storage.local.get(['trackedTabs', 'isAnalyzing', 'analysisProgress', 'aiStatusText', 'finalReport', 'aiError'], (res) => {
-      const currentTabs = res.trackedTabs || trackedTabs;
-      const currentIsAnalyzing = res.isAnalyzing !== undefined ? res.isAnalyzing : isAnalyzing;
-      const currentProgress = res.analysisProgress !== undefined ? res.analysisProgress : analysisProgress;
-      const currentText = res.aiStatusText || aiStatusText;
-      const currentReport = res.finalReport || finalReport;
-      const currentError = res.aiError !== undefined ? res.aiError : aiError;
-      
-      sendResponse({
-        tabs: currentTabs,
-        isAnalyzing: currentIsAnalyzing,
-        progress: currentProgress,
-        aiText: currentText,
-        hasReport: currentReport !== null && currentReport !== undefined,
-        isError: currentError
-      });
+    sendResponse({
+      tabs: trackedTabs,
+      isAnalyzing: isAnalyzing,
+      progress: analysisProgress,
+      aiText: aiStatusText,
+      hasReport: finalReport !== null,
+      isError: aiError,
+      collectedCount: collectedVehicles.length
     });
     return true;
   }
@@ -606,213 +602,157 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
-  if (request.action === 'start_deep_scan') {
+  if (request.action === 'reset_memory') {
+    updateState({
+      collectedVehicles: [],
+      finalReport: null,
+      aiError: false,
+      isAnalyzing: false,
+      aiStatusText: 'Hafıza Sıfırlandı.'
+    });
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (request.action === 'collect_page') {
     chrome.storage.local.set({ autocar_running: true });
     
-    // Aktif sekmeyi bul
     chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
       if (tabs.length === 0) {
         sendResponse({ success: false, error: "Aktif sekme bulunamadı." });
         return;
       }
       
-      const activeTab = tabs[0];
+      const MAX_LIMIT = 1000;
+      let currentScanTabId = tabs[0].id;
       
       updateState({
         isAnalyzing: true,
-        aiError: false,
-        analysisProgress: 2,
-        aiStatusText: "Sayfalardaki ilanlar taranıyor (Sayfa 1)...",
-        finalReport: null,
-        trackedTabs: []
+        aiStatusText: "Sayfaya bağlanılıyor...",
+        analysisProgress: 5
       });
 
-      const MAX_DEEP_SCAN_LIMIT = 1000;
-      let allUrls = [];
-      let hasNextPage = true;
-      let currentScanTabId = activeTab.id;
-      let pageCount = 1;
+      await new Promise(r => {
+        chrome.scripting.executeScript({
+          target: { tabId: currentScanTabId },
+          files: ['content.js']
+        }, () => r());
+      });
 
-      while (hasNextPage && allUrls.length < MAX_DEEP_SCAN_LIMIT) {
-        const isRunning = await new Promise(r => chrome.storage.local.get(['autocar_running'], res => r(res.autocar_running)));
-        if (!isRunning) return; // Kullanıcı iptal ettiyse sayfaları gezmeyi durdur
-
-        // Eklenti scriptini sayfaya her ihtimale karşı inject et
-        await new Promise(r => {
-          chrome.scripting.executeScript({
-            target: { tabId: currentScanTabId },
-            files: ['content.js']
-          }, () => r());
+      const response = await new Promise(resolve => {
+        chrome.tabs.sendMessage(currentScanTabId, { action: "extract_urls" }, (res) => {
+          resolve(res);
         });
+      });
 
-        // Sayfadan URL'leri ve sonraki sayfa linkini iste
-        const response = await new Promise(resolve => {
-          chrome.tabs.sendMessage(currentScanTabId, { action: "extract_urls" }, (res) => {
-            resolve(res);
-          });
-        });
-
-        if (!response || !response.urls || response.urls.length === 0) {
-          break; // İlan bulunamadıysa döngüyü kır
-        }
-
-        // Bulunan eşsiz URL'leri ana havuza ekle
-        response.urls.forEach(u => {
-          if (!allUrls.includes(u) && allUrls.length < MAX_DEEP_SCAN_LIMIT) {
-            allUrls.push(u);
-          }
-        });
-
+      if (!response || !response.vehicles || response.vehicles.length === 0) {
         updateState({
-          aiStatusText: `Şu ana kadar ${allUrls.length} ilan bulundu, sayfalar taranıyor...`,
-          analysisProgress: Math.min(4, 2 + Math.floor(allUrls.length / 250))
-        });
-
-        // Eğer sonraki sayfa varsa ve sınır dolmadıysa, sekmeyi oraya yönlendir
-        if (response.nextPageUrl && allUrls.length < MAX_DEEP_SCAN_LIMIT) {
-          pageCount++;
-          updateState({ aiStatusText: `${allUrls.length} ilan toplandı. Sayfa ${pageCount}'e geçiliyor...` });
-          
-          await new Promise(resolve => {
-            chrome.tabs.update(currentScanTabId, { url: response.nextPageUrl }, () => {
-              const listener = (tabId, info) => {
-                if (tabId === currentScanTabId && info.status === 'complete') {
-                  chrome.tabs.onUpdated.removeListener(listener);
-                  resolve();
-                }
-              };
-              chrome.tabs.onUpdated.addListener(listener);
-            });
-          });
-
-          // Bot korumasına takılmamak için 4 ila 7 saniye arası rastgele "insan" molası
-          const randomWait = Math.floor(Math.random() * 3000) + 4000;
-          await new Promise(r => setTimeout(r, randomWait));
-        } else {
-          hasNextPage = false;
-        }
-      }
-
-      if (allUrls.length === 0) {
-        updateState({
-          aiError: true,
           isAnalyzing: false,
-          analysisProgress: 100,
-          aiStatusText: "Hiçbir sayfada ilan bulunamadı. Lütfen bir arama sonuç sayfasında deneyin."
+          aiError: true,
+          aiStatusText: "Bu sayfada ilan bulunamadı."
         });
         return;
       }
 
-      let urls = allUrls;
-      const totalUrls = urls.length;
-      
-      updateState({
-        aiStatusText: `Toplam ${pageCount} sayfadan ${totalUrls} ilan başarıyla toplandı. Hayalet tarayıcılar başlatılıyor...`,
-        analysisProgress: 5
-      });
+      const pageUrls = response.vehicles.map(v => v.url);
+      let newlyCollected = 0;
 
-      // Hayalet Sekme İşçileri (Workers) Oluştur - BOT KORUMASI İÇİN 1'E DÜŞÜRÜLDÜ
-          const MAX_CONCURRENT_TABS = 1;
-          let currentIndex = 0;
-          let successCount = 0;
-          let currentTrackedTabs = [];
+      for (let i = 0; i < pageUrls.length; i++) {
+        const isRun = await new Promise(r => chrome.storage.local.get(['autocar_running'], res => r(res.autocar_running)));
+        if (!isRun) {
+          updateState({ isAnalyzing: false, aiStatusText: "İşlem iptal edildi." });
+          return;
+        }
 
-          const processNextUrl = async (ghostTabId) => {
-            const isRunning = await new Promise(r => chrome.storage.local.get(['autocar_running'], res => r(res.autocar_running)));
-            if (!isRunning) return; // Kullanıcı iptal ettiyse ilan veri çekimini durdur
-            
-            let i;
-            // Lock index safely
-            synchronized: {
-              if (currentIndex >= urls.length) return;
-              i = currentIndex++;
+        const targetUrl = pageUrls[i];
+        if (collectedVehicles.find(c => c.url === targetUrl)) continue;
+        if (collectedVehicles.length >= MAX_LIMIT) break;
+
+        updateState({
+           aiStatusText: `Bu Sayfa Çekiliyor: ${i+1}/${pageUrls.length}... (Hafıza: ${collectedVehicles.length})`,
+           analysisProgress: Math.min(95, 5 + Math.floor(((i+1)/pageUrls.length) * 90))
+        });
+
+        const ghostTab = await new Promise(res => {
+          chrome.tabs.create({ url: targetUrl, active: false }, (tab) => res(tab));
+        });
+
+        await new Promise(res => {
+          let timeout = setTimeout(() => {
+            chrome.tabs.onUpdated.removeListener(listener);
+            res();
+          }, 15000);
+
+          const listener = (tabId, info) => {
+            if (tabId === ghostTab.id && info.status === 'complete') {
+              clearTimeout(timeout);
+              chrome.tabs.onUpdated.removeListener(listener);
+              res();
             }
-
-            const url = urls[i];
-            
-            updateState({
-              aiStatusText: `İlanlar Çekiliyor (${Math.min(successCount+1, totalUrls)} / ${totalUrls}). Lütfen bekleyin...`,
-              analysisProgress: 5 + Math.round((successCount/totalUrls) * 40)
-            });
-
-            // Ghost tabı yönlendir
-            await new Promise(resolve => {
-              chrome.tabs.update(ghostTabId, { url: url }, () => {
-                const listener = (tabId, info) => {
-                  if (tabId === ghostTabId && info.status === 'complete') {
-                    chrome.tabs.onUpdated.removeListener(listener);
-                    resolve();
-                  }
-                };
-                chrome.tabs.onUpdated.addListener(listener);
-              });
-            });
-
-            // Sayfa yüklendi, DOM'un oturması için 1 saniye bekle
-            await new Promise(r => setTimeout(r, 1000));
-
-            // Veriyi çek
-            const data = await new Promise(resolve => {
-              chrome.scripting.executeScript({
-                target: { tabId: ghostTabId },
-                files: ['content.js']
-              }, () => {
-                chrome.tabs.sendMessage(ghostTabId, { action: "extract_data" }, (res) => {
-                  resolve(res);
-                });
-              });
-            });
-
-            if (data && data.title) {
-              currentTrackedTabs.push({
-                tabId: `ghost_${i}`,
-                url: url,
-                title: data.title,
-                status: 'Yüklendi',
-                data: data
-              });
-              successCount++;
-            }
-
-            // Bot korumasına takılmamak için her ilanda 4-8 saniye arası rastgele bekle
-            const randomGhostWait = Math.floor(Math.random() * 4000) + 4000;
-            await new Promise(r => setTimeout(r, randomGhostWait));
-            
-            // Sıradaki URL'ye geç
-            await processNextUrl(ghostTabId);
           };
+          chrome.tabs.onUpdated.addListener(listener);
+        });
 
-          const workerPromises = [];
-          const numWorkers = Math.min(MAX_CONCURRENT_TABS, urls.length);
-          
-          for (let w = 0; w < numWorkers; w++) {
-            workerPromises.push(new Promise(resolveWorker => {
-              chrome.tabs.create({ url: "about:blank", active: false }, async (ghostTab) => {
-                await processNextUrl(ghostTab.id);
-                chrome.tabs.remove(ghostTab.id);
-                resolveWorker();
-              });
-            }));
-          }
+        await new Promise(r => setTimeout(r, 800));
 
-          // Bütün işçilerin (sekmelerin) bitmesini bekle
-          Promise.all(workerPromises).then(() => {
-            if (successCount === 0) {
-              updateState({
-                aiError: true,
-                isAnalyzing: false,
-                analysisProgress: 100,
-                aiStatusText: "İlan verileri çekilemedi. Sahibinden engeli olabilir."
-              });
-              return;
-            }
-
-            // Tracked tabs güncellendi, AI'ya yolla
-            updateState({ trackedTabs: currentTrackedTabs });
-            runFullAnalysis({ runData: true });
+        const data = await new Promise(resolve => {
+          chrome.scripting.executeScript({ target: { tabId: ghostTab.id }, files: ['content.js'] }, () => {
+            chrome.tabs.sendMessage(ghostTab.id, { action: "extract_data" }, (res) => {
+              resolve(res);
+            });
           });
+        });
+
+        if (data && data.title) {
+          collectedVehicles.push(data);
+          newlyCollected++;
+        }
+
+        chrome.tabs.remove(ghostTab.id);
+        await new Promise(r => setTimeout(r, 1200));
+      }
+
+      updateState({
+        isAnalyzing: false,
+        aiError: false,
+        aiStatusText: `${newlyCollected} ilan daha hafızaya eklendi. Toplam: ${collectedVehicles.length}`,
+        analysisProgress: 100,
+        collectedVehicles: collectedVehicles
+      });
+      
     });
     
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (request.action === 'start_analysis') {
+    if (collectedVehicles.length === 0) {
+      updateState({
+        aiError: true,
+        aiStatusText: "Önce sayfa toplamalısınız!"
+      });
+      sendResponse({ success: false });
+      return true;
+    }
+
+    updateState({
+      isAnalyzing: true,
+      analysisProgress: 5,
+      aiStatusText: "Yapay Zeka Hazırlanıyor..."
+    });
+
+    let currentTrackedTabs = collectedVehicles.map((v, idx) => ({
+      tabId: `ghost_${idx}`,
+      url: v.url,
+      title: v.title,
+      status: 'Yüklendi',
+      data: v
+    }));
+
+    updateState({ trackedTabs: currentTrackedTabs });
+    runFullAnalysis({ runData: true });
+
     sendResponse({ success: true });
     return true;
   }
