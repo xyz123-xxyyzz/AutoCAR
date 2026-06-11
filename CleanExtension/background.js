@@ -646,7 +646,7 @@ async function runFullAnalysis() {
       await new Promise(r => setTimeout(r, 3000));
 
       let retryProcessed = 0;
-      const RETRY_CHUNK_SIZE = 15; // Eşzamanlı limit
+      const RETRY_CHUNK_SIZE = 50; // Eşzamanlı limit
       
       for (let j = 0; j < failedItems.length; j += RETRY_CHUNK_SIZE) {
         if (isAnalysisCancelled) break;

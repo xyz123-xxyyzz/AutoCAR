@@ -14,5 +14,5 @@ def create_zip(zip_name, source_dir):
 
 if __name__ == '__main__':
     source = r'C:\Users\CASPER\Desktop\gunluk_program\projeler\AutoCAR\CleanExtension'
-    dest = r'C:\Users\CASPER\Desktop\gunluk_program\projeler\AutoCAR\AutoCAR-v1.4.5.zip'
+    dest = r'C:\Users\CASPER\Desktop\gunluk_program\projeler\AutoCAR\AutoCAR-v1.4.6.zip'
     create_zip(dest, source)
