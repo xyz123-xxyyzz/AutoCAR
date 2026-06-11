@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AutoCAR Master AI",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "description": "Araç ilanlarını Master AI sistemiyle (otomatik asenkron kuyruk ve eşitlik mantığıyla) analiz eder.",
   "permissions": [
     "tabs",
