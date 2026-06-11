@@ -262,7 +262,8 @@ async function callOpenAI(systemPrompt, userContent, apiKey, model = 'gpt-4o-min
         model: model,
         messages: messages,
         max_tokens: 4096,
-        response_format: { type: 'json_object' }
+        response_format: { type: 'json_object' },
+        temperature: 0.1
       }),
       signal: controller.signal
     });
@@ -508,19 +509,15 @@ async function runFullAnalysis() {
 
     updateState({ aiStatusText: `Analiz başladı. Yapay zeka yanıtları bekleniyor...`, analysisProgress: 5 });
     
-    const CHUNK_SIZE = 100;
-    const allProcessedCars = [];
+    const poolLimit = 15;
+    const executing = [];
+    const results = [];
 
-    for (let i = 0; i < flatCarsList.length; i += CHUNK_SIZE) {
+    for (const item of flatCarsList) {
       if (isAnalysisCancelled) break;
 
-      const chunkStartTime = Date.now();
-      const chunk = flatCarsList.slice(i, i + CHUNK_SIZE);
-      
-      const chunkPromises = chunk.map(async (item) => {
-        const { carData: cData } = item;
-        const finalReport = await analyzeCarData(cData, activeConfig.analyze_prompt, sessionApiKey);
-
+      const { carData: cData } = item;
+      const p = analyzeCarData(cData, activeConfig.analyze_prompt, sessionApiKey).then((finalReport) => {
         processedCars++;
         updateState({ 
           aiStatusText: `Araçlar analiz ediliyor (${processedCars}/${totalCars})...`,
@@ -562,20 +559,18 @@ async function runFullAnalysis() {
         };
       });
 
-      const chunkResults = await Promise.all(chunkPromises);
-      allProcessedCars.push(...chunkResults);
+      results.push(p);
 
-      if (i + CHUNK_SIZE < flatCarsList.length && !isAnalysisCancelled) {
-        const elapsed = Date.now() - chunkStartTime;
-        const waitTime = Math.max(0, 70000 - elapsed);
-        if (waitTime > 0) {
-          updateState({ 
-            aiStatusText: `API Limiti Güvenliği: Kalan ${(waitTime / 1000).toFixed(0)} saniye bekleniyor...`,
-          });
-          await new Promise(r => setTimeout(r, waitTime));
+      if (poolLimit <= flatCarsList.length) {
+        const e = p.then(() => executing.splice(executing.indexOf(e), 1));
+        executing.push(e);
+        if (executing.length >= poolLimit) {
+          await Promise.race(executing);
         }
       }
     }
+
+    const allProcessedCars = await Promise.all(results);
 
     if (isAnalysisCancelled) return;
 
