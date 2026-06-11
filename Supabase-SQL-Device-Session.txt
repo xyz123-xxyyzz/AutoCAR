@@ -50,3 +50,30 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION public.register_device_session(text, text) TO anon;
 GRANT EXECUTE ON FUNCTION public.register_device_session(text, text) TO authenticated;
+
+-- 4. KULLANICININ KENDİ APİ ANAHTARINI OKUMASINI SAĞLAYAN GÜVENLİ RPC FONKSİYONU
+CREATE OR REPLACE FUNCTION public.get_vip_api_key(p_email text)
+RETURNS json AS $$
+DECLARE
+  v_api_key text;
+BEGIN
+  SELECT openai_api_key INTO v_api_key FROM public.vip_users WHERE email = p_email;
+  RETURN json_build_object('api_key', COALESCE(v_api_key, ''));
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION public.get_vip_api_key(text) TO anon;
+GRANT EXECUTE ON FUNCTION public.get_vip_api_key(text) TO authenticated;
+
+-- 5. KULLANICININ KENDİ APİ ANAHTARINI GÜNCELLEMESİNİ SAĞLAYAN GÜVENLİ RPC FONKSİYONU
+CREATE OR REPLACE FUNCTION public.update_vip_api_key(p_email text, p_api_key text)
+RETURNS void AS $$
+BEGIN
+  UPDATE public.vip_users
+  SET openai_api_key = p_api_key
+  WHERE email = p_email;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION public.update_vip_api_key(text, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.update_vip_api_key(text, text) TO authenticated;

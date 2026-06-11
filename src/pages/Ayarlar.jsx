@@ -15,10 +15,12 @@ export default function Ayarlar() {
   
   useEffect(() => {
     const fetchProfile = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase.from('profiles').select('api_key').eq('id', user.id).single();
-        if (data && data.api_key) {
+      const email = localStorage.getItem('userEmail');
+      if (email) {
+        const { data, error } = await supabase.rpc('get_vip_api_key', { p_email: email });
+        if (error) {
+          console.error("API key loading error:", error);
+        } else if (data && data.api_key) {
           setApiKey(data.api_key);
         }
       }
@@ -40,13 +42,17 @@ export default function Ayarlar() {
     }
     setSavingKey(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { error } = await supabase.from('profiles').update({ api_key: apiKey }).eq('id', user.id);
+      const email = localStorage.getItem('userEmail');
+      if (email) {
+        const { error } = await supabase.rpc('update_vip_api_key', { p_email: email, p_api_key: apiKey });
         if (error) throw error;
+        localStorage.setItem('openai_api_key', apiKey);
         showToast('success', 'OpenAI API Anahtarı başarıyla kaydedildi!');
+      } else {
+        showToast('warning', 'Kullanıcı oturumu bulunamadı.');
       }
     } catch (err) {
+      console.error(err);
       showToast('warning', 'API anahtarı kaydedilirken hata oluştu.');
     } finally {
       setSavingKey(false);
@@ -180,6 +186,9 @@ export default function Ayarlar() {
             onClick={async () => {
               await supabase.auth.signOut();
               localStorage.removeItem('userRole');
+              localStorage.removeItem('userEmail');
+              localStorage.removeItem('openai_api_key');
+              localStorage.removeItem('autocar_isAuthenticated');
               navigate('/');
             }}
             className="group flex items-center gap-3 px-8 py-4 bg-white text-red-600 rounded-full shadow-embossed hover:shadow-embossed-hover transition-all duration-300 border border-transparent hover:border-red-100"
