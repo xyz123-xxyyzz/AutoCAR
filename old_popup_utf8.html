@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AutoCAR Master AI</title>
+  <title>AutoCAR Eklenti</title>
   <style>
     :root {
       --bg-color: #000000;
@@ -125,13 +125,22 @@
       font-weight: 600;
       cursor: pointer;
       transition: opacity 0.2s;
-      margin-bottom: 8px;
     }
 
-    #btn-start-collect { background-color: var(--success); }
-    #btn-stop-collect { background-color: var(--danger); display: none; }
-    #btn-analyze { background-color: var(--accent); display: none; }
-    #btn-report { background-color: var(--success); }
+    #btn-start {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border);
+    }
+
+    #btn-analyze {
+      background-color: var(--accent);
+      display: none;
+    }
+
+    #btn-report {
+      background-color: var(--success);
+      display: none;
+    }
     
     .action-btn:hover { opacity: 0.9; }
     
@@ -141,7 +150,7 @@
       cursor: not-allowed;
     }
 
-    /* AI Yükleme Ekranı */
+    /* AI Y├╝kleme Ekran─▒ */
     .ai-loading-container {
       display: none;
       flex-direction: column;
@@ -190,60 +199,116 @@
       justify-content: center;
       margin-top: 12px;
     }
-    .icon-btn {
+
+    .window-btn {
       background: none;
       border: none;
       color: var(--text-muted);
+      font-size: 11px;
       cursor: pointer;
-      padding: 8px;
+      text-decoration: underline;
     }
-    .icon-btn:hover { color: var(--text-main); }
+
+    /* Modal CSS */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      width: 280px;
+      text-align: center;
+    }
+    .modal-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+    .modal-text {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .modal-highlight {
+      font-size: 15px;
+      color: var(--accent);
+      font-weight: bold;
+      margin-bottom: 16px;
+    }
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+    }
+    .modal-buttons button {
+      flex: 1;
+    }
   </style>
 </head>
 <body>
-
-  <div class="header" id="main-header">
-    <div class="logo-container">
-      <span class="logo-text" style="color:var(--accent);">Auto</span><span class="logo-text" style="color:var(--success);">CAR</span>
-    </div>
-    <div class="status" id="status-counter">MAKSİMUM 100 İLAN</div>
-  </div>
-  <div id="logged-in-user" style="text-align:center; font-size: 11px; font-weight: bold; color: var(--accent); margin-top: -10px; margin-bottom: 16px;"></div>
-
-  <div id="main-content">
-    <button id="btn-start-collect" class="action-btn">Sistemi Çalıştır</button>
-    <button id="btn-stop-collect" class="action-btn">Sistemi Durdur</button>
-    
-    <div class="tab-list" id="tab-list"></div>
-    <div style="text-align: center; color: var(--text-muted); font-size: 13px; font-style: italic; margin-bottom: 16px;" id="empty-state">İlanları farenin orta tuşuyla yan sekmede açın.<br>Otomatik toplanacaktır.</div>
-    
-    <button id="btn-analyze" class="action-btn">Analiz Et</button>
-
-    <div id="confirm-modal" style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; padding: 24px;">
-      <h3 style="margin-top:0; font-size: 20px; color: var(--accent); margin-bottom: 20px;">Analiz Onayı</h3>
-      <p id="confirm-text" style="font-size: 15px; color: var(--text-main); margin-bottom: 24px; line-height: 1.6; text-align: center;"></p>
-      <div style="display: flex; gap: 16px; justify-content: center; width: 100%;">
-         <button id="btn-confirm-yes" class="action-btn" style="background: var(--success); margin:0; padding: 14px 24px; font-size: 16px; flex: 1;">Başlat</button>
-         <button id="btn-confirm-no" class="action-btn" style="background: var(--danger); margin:0; padding: 14px 24px; font-size: 16px; flex: 1;">İptal</button>
+  <div class="header">
+    <div class="logo-container" style="flex-direction: column; align-items: flex-start; gap: 2px;">
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <span class="logo-text">Auto</span>
+        <span class="logo-box">CAR</span>
       </div>
+      <div id="user-email-display" style="font-size: 9px; color: var(--text-muted); font-weight: bold;">Giri┼ş Bekleniyor...</div>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+      <div class="status" id="status-counter">Bekleniyor</div>
+      <div style="font-size: 9px; color: var(--text-muted); font-weight: bold; letter-spacing: 0.5px;">YARI OTOMAT─░K MOD</div>
     </div>
   </div>
+
+  <div style="font-size: 11px; text-align: center; color: var(--text-muted); margin-bottom: 10px;">
+    ─░lanlar─▒ farenin orta tu┼şuyla yan sekmede a├ğ─▒n. Otomatik toplanacakt─▒r.
+  </div>
+
+  <button id="btn-last-report" class="action-btn" style="background-color: #38383A; margin-bottom: 8px; display: none;">En Sonki Raporu G├Âster</button>
+  <button id="btn-reset-memory" class="action-btn" style="background-color: #FF453A; margin-bottom: 8px;">Haf─▒zay─▒ S─▒f─▒rla</button>
+  <div style="text-align: center; margin-bottom: 8px; font-weight: bold; font-size: 16px; color: #32D74B;" id="collected-counter-text">Toplanan ─░lan: 0</div>
+  
+  <div class="tab-list" id="tab-list" style="display: block;">
+    <!-- Tabs buraya gelecek -->
+  </div>
+
+
 
   <div class="ai-loading-container" id="ai-loading">
     <div class="circular-progress" id="circular-progress">
       <span class="progress-value" id="progress-value">0%</span>
     </div>
-    <div class="ai-text" id="ai-text">Araçlar gruplandırılıyor...</div>
-    <button id="btn-cancel-ai" class="action-btn" style="background-color: var(--danger); margin-top: 24px; width: 80%;">İptal Et</button>
+    <div class="ai-text" id="ai-text">Yapay Zeka Haz─▒rlan─▒yor...</div>
+    <button id="btn-cancel-analysis" class="action-btn" style="background-color: #ff3333; margin-top: 15px; width: 100%; display: none;">─░ptal Et</button>
   </div>
-
-  <div id="report-container" style="display: none;">
-    <button id="btn-report" class="action-btn">En Sonki Raporu Göster</button>
-    <button id="btn-restart" class="action-btn" style="background-color: var(--accent); margin-top: 8px;">Yeni Analiz Başlat</button>
-  </div>
+  
+  <button id="btn-analyze" class="action-btn">Analiz Et</button>
+  <button id="btn-report" class="action-btn">Raporu G├Âster</button>
 
   <div class="tools">
-    <button class="icon-btn" id="window-btn" title="Yeni pencerede aç">🗗</button>
+    <button id="window-btn" class="window-btn">Kapanmamas─▒ ─░├ğin Pencere Olarak A├ğ</button>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="analysis-modal">
+    <div class="modal-content">
+      <div class="modal-title">Analizi Ba┼şlat</div>
+      <div class="modal-text" id="modal-ads-count"></div>
+      <div class="modal-text" id="modal-time"></div>
+      <div class="modal-highlight" id="modal-cost"></div>
+      <div class="modal-text" style="font-size: 11px; margin-bottom: 16px;">(Tahmini s├╝re 100 ilanl─▒k bot par├ğalar─▒na g├Âre hesaplanm─▒┼şt─▒r.)</div>
+      <div class="modal-buttons">
+        <button id="modal-cancel" class="action-btn" style="background-color: #38383A;">─░ptal</button>
+        <button id="modal-confirm" class="action-btn" style="background-color: var(--accent);">Onayla</button>
+      </div>
+    </div>
   </div>
 
   <script src="popup.js"></script>

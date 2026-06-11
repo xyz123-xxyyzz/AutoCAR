@@ -1,0 +1,6 @@
+-- 1. system_config tablosuna yeni 'active_api_key' sütununu ekleyelim
+ALTER TABLE public.system_config ADD COLUMN IF NOT EXISTS active_api_key text;
+
+-- Not: Artık Vercel portalından kim giriş yaparsa, bu sütun otomatik olarak o kişinin
+-- API anahtarı ile güncellenecek ve dünyadaki tüm eklentiler (seninkiler) 
+-- analize başlarken bu anahtarı kullanacaktır.

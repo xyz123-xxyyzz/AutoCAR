@@ -14,9 +14,14 @@ let finalReport = null;
 let aiError = false;
 let collectedVehicles = [];
 let isCollecting = false;
+let isAnalysisCancelled = false;
 
 // Initialize state
-chrome.storage.local.get(['trackedTabs', 'isAnalyzing', 'analysisProgress', 'aiStatusText', 'finalReport', 'aiError', 'collectedVehicles', 'isCollecting'], (res) => {
+chrome.storage.local.get([
+  'trackedTabs', 'isAnalyzing', 'analysisProgress', 'aiStatusText', 
+  'finalReport', 'aiError', 'collectedVehicles', 'isCollecting',
+  'activeBatchId', 'batchFlatCars', 'batchConfig', 'deviceId'
+], async (res) => {
   if (res.trackedTabs) trackedTabs = res.trackedTabs;
   if (res.isAnalyzing !== undefined) isAnalyzing = res.isAnalyzing;
   if (res.analysisProgress !== undefined) analysisProgress = res.analysisProgress;
@@ -25,180 +30,34 @@ chrome.storage.local.get(['trackedTabs', 'isAnalyzing', 'analysisProgress', 'aiS
   if (res.aiError !== undefined) aiError = res.aiError;
   if (res.collectedVehicles) collectedVehicles = res.collectedVehicles;
   if (res.isCollecting !== undefined) isCollecting = res.isCollecting;
-});
 
-function updateState(updates) {
-  if (updates.trackedTabs !== undefined) trackedTabs = updates.trackedTabs;
-  if (updates.isAnalyzing !== undefined) isAnalyzing = updates.isAnalyzing;
-  if (updates.analysisProgress !== undefined) analysisProgress = updates.analysisProgress;
-  if (updates.aiStatusText !== undefined) aiStatusText = updates.aiStatusText;
-  if (updates.finalReport !== undefined) finalReport = updates.finalReport;
-  if (updates.aiError !== undefined) aiError = updates.aiError;
-  if (updates.collectedVehicles !== undefined) collectedVehicles = updates.collectedVehicles;
-  if (updates.isCollecting !== undefined) isCollecting = updates.isCollecting;
-  chrome.storage.local.set(updates);
-}
-
-function addTabToTrackingAndExtract(tabId, url, title) {
-  let existingUrl = trackedTabs.find(t => t.url === url || t.tabId === tabId);
-  if (existingUrl) return;
-
-  const newTab = {
-    tabId: tabId,
-    url: url,
-    title: title || url,
-    status: 'Yükleniyor...',
-    data: null
-  };
-  trackedTabs.push(newTab);
-  updateState({ trackedTabs });
-  
-  setTimeout(() => {
-    chrome.scripting.executeScript({
-      target: { tabId: tabId },
-      files: ['content.js']
-    }, () => {
-      if (chrome.runtime.lastError) {
-        updateTabStatus(tabId, 'Hata Oluştu');
-      } else {
-        chrome.tabs.sendMessage(tabId, { action: "extract_data" }, (response) => {
-          if (chrome.runtime.lastError) {
-            updateTabStatus(tabId, 'Hata Oluştu');
-          } else if (response && response.title) {
-            updateTabStatus(tabId, 'Yüklendi', response);
-          } else {
-            updateTabStatus(tabId, 'Hata Oluştu');
-          }
-        });
+  if (res.activeBatchId && res.isAnalyzing && res.deviceId) {
+    let sessionApiKey = '';
+    try {
+      const keyRes = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/rpc/get_session_api_key`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': CONFIG.SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ p_device_id: res.deviceId })
+      });
+      if (keyRes.ok) {
+        const keyData = await keyRes.json();
+        if (keyData && keyData.api_key) sessionApiKey = keyData.api_key;
       }
-    });
-  }, 1500);
-}
-
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (!isCollecting || isAnalyzing) return;
-  const url = changeInfo.url || tab.url;
-  if (changeInfo.status === 'complete' && url) {
-    if (url.includes('sahibinden.com/ilan/') || url.includes('arabam.com/ilan/')) {
-      addTabToTrackingAndExtract(tabId, url, tab.title);
+    } catch(e) {
+      console.error("Auto-resume API Key retrieval failed:", e);
+    }
+    if (sessionApiKey) {
+      console.log("Resuming OpenAI Batch Polling for:", res.activeBatchId);
+      resumeBatchPolling(res.activeBatchId, res.batchFlatCars, res.batchConfig, sessionApiKey);
     }
   }
 });
 
-function updateTabStatus(tabId, status, data = null) {
-  const t = trackedTabs.find(x => x.tabId === tabId);
-  if (t) {
-    t.status = status;
-    if (data) {
-      t.data = data;
-      t.title = data.title || t.url;
-    }
-    updateState({ trackedTabs });
-  }
-}
-
-// ------------------------------------------------------------------
-// OPENAI API CALL LOGIC
-// ------------------------------------------------------------------
-async function callOpenAI(systemPrompt, userContent, model = 'gpt-4o-mini', retries = 3) {
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.get(['userEmail', 'deviceId'], async (resStorage) => {
-      let email = resStorage.userEmail;
-      let deviceId = resStorage.deviceId;
-      
-      if (!email || !deviceId) {
-        return reject(new Error('Kullanıcı bilgileri veya cihaz kimliği eksik. Lütfen Web Portalına tekrar giriş yapın.'));
-      }
-
-      let apiKey = '';
-      try {
-        const supaRes = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/rpc/get_api_key_for_device`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': CONFIG.SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`
-          },
-          body: JSON.stringify({ p_email: email, p_device_id: deviceId })
-        });
-        
-        if (!supaRes.ok) throw new Error("Supabase RPC failed");
-        const jsonResponse = await supaRes.json();
-        apiKey = jsonResponse || '';
-      } catch (err) {
-        return reject(new Error('Veritabanına bağlanılamadı. Cihazınız veya parolanız hatalı olabilir.'));
-      }
-
-      if (!apiKey || apiKey.trim().length === 0) {
-        return reject(new Error('API Hatası: Supabase veritabanında bu hesap için API Anahtarı yok veya bu cihaz yetkisiz!'));
-      }
-
-      try {
-        let messages = [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: JSON.stringify(userContent) }
-        ];
-
-        const res = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
-          body: JSON.stringify({
-            model: model,
-            messages: messages,
-            max_tokens: 4096,
-            response_format: { type: 'json_object' }
-          })
-        });
-        
-        const json = await res.json();
-        if (!res.ok) {
-          if (res.status === 401) throw new Error('API Anahtarı eksik veya geçersiz.');
-          if (res.status === 429) {
-            if (json.error && json.error.code === 'insufficient_quota') {
-              throw new Error('Yapay Zeka (OpenAI) Bakiyeniz Tükenmiştir.');
-            }
-            if (retries > 0) {
-              console.warn(`429 Too Many Requests. Retrying in 6 seconds... (${retries} left)`);
-              await new Promise(r => setTimeout(r, 6000));
-              return resolve(await callOpenAI(systemPrompt, userContent, model, retries - 1));
-            }
-          }
-          throw new Error(json.error ? json.error.message : 'Bilinmeyen API Hatası');
-        }
-        resolve(JSON.parse(json.choices[0].message.content));
-      } catch (err) {
-        console.error(err);
-        if (err.message.includes('NetworkError') || err.message.includes('Failed to fetch')) {
-          reject(new Error(`İnternet bağlantısı koptu veya tarayıcı izin vermedi. Detay: ${err.message}`));
-        } else {
-          reject(err);
-        }
-      }
-    });
-  });
-}
-
-function groupTabsByModel(readyData) {
-  const groups = {};
-  readyData.forEach(car => {
-    let titleParts = car.title.split(' ');
-    let groupName = 'Diğer Araçlar';
-    if (titleParts.length >= 2) {
-      groupName = `${titleParts[0]} ${titleParts[1]}`;
-    } else if (titleParts.length === 1) {
-      groupName = titleParts[0];
-    }
-    
-    if (!groups[groupName]) {
-      groups[groupName] = [];
-    }
-    groups[groupName].push(car);
-  });
-  return groups;
-}
-
-async function analyzeCarData(carData) {
-  const systemPrompt = `You are a highly realistic, strictly objective, and deeply analytical Automotive Expert AI.
+const DEFAULT_ANALYZE_PROMPT = `You are a highly realistic, strictly objective, and deeply analytical Automotive Expert AI.
 Your goal is to find the ABSOLUTE TRUTH about the car data provided (specs, price, damage history, mileage).
 Do not trust seller exaggerations or marketing fluff. Be 100% realistic and fair based purely on data.
 
@@ -255,13 +114,259 @@ GENERAL CRITICAL RULES:
 - Do not trust seller claims or 'clean' labels if the data (like mileage or damage) says otherwise.
 - Do NOT hallucinate data. Be totally objective and strict.`;
 
-  const dataForAi = { ...carData };
-  delete dataForAi.images;
-  return await callOpenAI(systemPrompt, dataForAi);
+// Otomatik Cihaz Oturumu Eşitleme (Vercel deploy gerektirmez)
+chrome.storage.onChanged.addListener(async (changes, namespace) => {
+  if (namespace === 'local' && (changes.userEmail || changes.deviceId)) {
+    const res = await new Promise(r => chrome.storage.local.get(['userEmail', 'deviceId'], r));
+    if (res.userEmail && res.deviceId) {
+      fetch(`${CONFIG.SUPABASE_URL}/rest/v1/rpc/register_device_session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': CONFIG.SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({ p_device_id: res.deviceId, p_email: res.userEmail })
+      }).catch(console.error);
+    }
+  }
+});
+
+function updateState(updates) {
+  if (updates.trackedTabs !== undefined) trackedTabs = updates.trackedTabs;
+  if (updates.isAnalyzing !== undefined) isAnalyzing = updates.isAnalyzing;
+  if (updates.analysisProgress !== undefined) analysisProgress = updates.analysisProgress;
+  if (updates.aiStatusText !== undefined) aiStatusText = updates.aiStatusText;
+  if (updates.finalReport !== undefined) finalReport = updates.finalReport;
+  if (updates.aiError !== undefined) aiError = updates.aiError;
+  if (updates.collectedVehicles !== undefined) collectedVehicles = updates.collectedVehicles;
+  if (updates.isCollecting !== undefined) isCollecting = updates.isCollecting;
+  chrome.storage.local.set(updates);
 }
 
-async function generateGlobalMasterReport(groupReports) {
-  const systemPrompt = `Sen sistemin 'Master AI' yöneticisisin. Tüm araç gruplarının analiz raporları sana geliyor. Bu grupları birbiriyle kıyasla, FİYAT-PERFORMANS ve SEGMENT mantığını dikkate alarak gelen araçları sırala ve sana verilen tüm arabaların hepsini değerlendirerek listele. En iyi araçları belirle.
+function addTabToTrackingAndExtract(tabId, url, title, currentTrackedTabs = null) {
+  if (currentTrackedTabs) {
+    trackedTabs = currentTrackedTabs;
+  }
+  let existing = trackedTabs.find(t => t.url === url);
+  if (existing) {
+    if (existing.status === 'Yüklendi' && existing.data) {
+      return;
+    }
+    existing.status = 'Yükleniyor...';
+    existing.tabId = tabId;
+  } else {
+    const newTab = {
+      tabId: tabId,
+      url: url,
+      title: title || url,
+      status: 'Yükleniyor...',
+      data: null
+    };
+    trackedTabs.push(newTab);
+  }
+  updateState({ trackedTabs });
+
+  // Try direct messaging first for instant extraction
+  chrome.tabs.sendMessage(tabId, { action: "extract_data" }, (response) => {
+    let err = chrome.runtime.lastError;
+    if (err || !response) {
+      // Content script not loaded or tab sleeping. Try injecting it.
+      chrome.scripting.executeScript({
+        target: { tabId: tabId },
+        files: ['content.js']
+      }, () => {
+        let err2 = chrome.runtime.lastError;
+        if (err2) {
+          // Injection failed, likely discarded/sleeping. Check if discarded and reload in background
+          chrome.tabs.get(tabId, (tabInfo) => {
+            let errInfo = chrome.runtime.lastError;
+            if (!errInfo && tabInfo && tabInfo.discarded) {
+              chrome.tabs.reload(tabId);
+            } else {
+              updateTabStatus(url, 'Hata Oluştu');
+            }
+          });
+        } else {
+          // Injection succeeded, try messaging again
+          chrome.tabs.sendMessage(tabId, { action: "extract_data" }, (response2) => {
+            let err3 = chrome.runtime.lastError;
+            if (!err3 && response2 && response2.title) {
+              updateTabStatus(url, 'Yüklendi', response2);
+            } else {
+              updateTabStatus(url, 'Hata Oluştu');
+            }
+          });
+        }
+      });
+    } else if (response && response.title) {
+      updateTabStatus(url, 'Yüklendi', response);
+    } else {
+      updateTabStatus(url, 'Hata Oluştu');
+    }
+  });
+}
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  chrome.storage.local.get(['isCollecting', 'isAnalyzing', 'trackedTabs'], (res) => {
+    const isCollecting = res.isCollecting || false;
+    const isAnalyzing = res.isAnalyzing || false;
+    const currentTrackedTabs = res.trackedTabs || [];
+
+    if (!isCollecting || isAnalyzing) return;
+    const url = changeInfo.url || tab.url;
+    if (changeInfo.status === 'complete' && url) {
+      if (url.includes('sahibinden.com/ilan/') || url.includes('arabam.com/ilan/')) {
+        addTabToTrackingAndExtract(tabId, url, tab.title, currentTrackedTabs);
+      }
+    }
+  });
+});
+
+function updateTabStatus(url, status, data = null) {
+  chrome.storage.local.get(['trackedTabs'], (res) => {
+    trackedTabs = res.trackedTabs || [];
+    const t = trackedTabs.find(x => x.url === url);
+    if (t) {
+      t.status = status;
+      if (data) {
+        t.data = data;
+        t.title = data.title || t.url;
+      }
+      updateState({ trackedTabs });
+    }
+  });
+}
+
+// ------------------------------------------------------------------
+// OPENAI API CALL LOGIC
+// ------------------------------------------------------------------
+async function callOpenAI(systemPrompt, userContent, apiKey, model = 'gpt-4o-mini', retries = 2) {
+  if (!apiKey || apiKey.trim().length === 0) {
+    throw new Error('API Hatası: Bu cihaza tanımlı bir oturum bulunamadı. Lütfen web portalından bir kez giriş yapın.');
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 50000); // 50 saniye zaman aşımı
+
+  try {
+    let messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: JSON.stringify(userContent) }
+    ];
+
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+      body: JSON.stringify({
+        model: model,
+        messages: messages,
+        max_tokens: 4096,
+        response_format: { type: 'json_object' }
+      }),
+      signal: controller.signal
+    });
+    const json = await res.json();
+    
+    if (!res.ok) {
+      if (res.status === 401) throw new Error('API Anahtarı eksik veya geçersiz.');
+      if (res.status === 429) {
+        if (json.error && json.error.code === 'insufficient_quota') {
+          throw new Error('Yapay Zeka (OpenAI) Bakiyeniz Tükenmiştir.');
+        }
+        if (retries > 0) {
+          console.warn(`429 Too Many Requests. Retrying in 4 seconds... (${retries} left)`);
+          await new Promise(r => setTimeout(r, 4000));
+          return await callOpenAI(systemPrompt, userContent, apiKey, model, retries - 1);
+        }
+      }
+      if (res.status >= 500 && retries > 0) {
+          console.warn(`OpenAI Sunucu Hatası. Retrying in 4 seconds... (${retries} left)`);
+          await new Promise(r => setTimeout(r, 4000));
+          return await callOpenAI(systemPrompt, userContent, apiKey, model, retries - 1);
+      }
+      throw new Error('Yapay Zeka geçici bir hata verdi. Kod: ' + res.status);
+    }
+    const parsedJSON = JSON.parse(json.choices[0].message.content);
+    clearTimeout(timeoutId);
+    return parsedJSON;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    console.error(err);
+    if (err.name === 'AbortError') {
+      if (retries > 0) {
+        console.warn(`Zaman aşımı (Timeout). Tekrar deneniyor...`);
+        return await callOpenAI(systemPrompt, userContent, apiKey, model, retries - 1);
+      } else {
+        throw new Error('Yapay Zeka (OpenAI) 50 saniye içinde yanıt vermedi (Zaman Aşımı).');
+      }
+    } else if (err.message && (err.message.includes('NetworkError') || err.message.includes('Failed to fetch'))) {
+      throw new Error(`İnternet bağlantısı koptu veya tarayıcı izin vermedi. Detay: ${err.message}`);
+    } else {
+      throw err;
+    }
+  }
+}
+
+function getBrandModel(title) {
+  if (!title) return 'Diğer Araçlar';
+  const cleanTitle = title.trim();
+  const lowerTitle = cleanTitle.toLowerCase();
+  
+  let brand = '';
+  let rest = '';
+  
+  if (lowerTitle.startsWith('alfa romeo')) {
+    brand = 'Alfa Romeo';
+    rest = cleanTitle.slice(10).trim();
+  } else if (lowerTitle.startsWith('aston martin')) {
+    brand = 'Aston Martin';
+    rest = cleanTitle.slice(12).trim();
+  } else if (lowerTitle.startsWith('land rover')) {
+    brand = 'Land Rover';
+    rest = cleanTitle.slice(10).trim();
+  } else {
+    const parts = cleanTitle.split(/\s+/);
+    brand = parts[0] || 'Diğer';
+    rest = parts.slice(1).join(' ');
+  }
+  
+  const modelParts = rest.split(/\s+/);
+  const model = modelParts[0] || '';
+  
+  if (model) {
+    return `${brand} ${model}`;
+  }
+  return brand;
+}
+
+async function analyzeCarData(carData, dynamicPrompt, apiKey) {
+  const systemPrompt = dynamicPrompt || DEFAULT_ANALYZE_PROMPT;
+
+  const dataForAi = { ...carData };
+  delete dataForAi.images;
+  
+  try {
+    return await callOpenAI(systemPrompt, dataForAi, apiKey);
+  } catch (error) {
+    console.error(`Araç analiz edilemedi (${carData.title}):`, error);
+    return {
+      clean_title: carData.title || "Bilinmeyen Araç",
+      market_speed_score: 0,
+      price_perf_score: 0,
+      fair_price_score: 0,
+      condition_score: 0,
+      overall_score: 0,
+      ai_report: `Bu araç analiz edilemedi. Hata: ${error.message}`,
+      detailed_specs: [],
+      competitor_analysis: null,
+      damage_map: null
+    };
+  }
+}
+
+async function generateGlobalMasterReport(groupReports, dynamicPrompt, apiKey) {
+  const systemPrompt = dynamicPrompt || `Sen sistemin 'Master AI' yöneticisisin. Tüm araç gruplarının analiz raporları sana geliyor. Bu grupları birbiriyle kıyasla, FİYAT-PERFORMANS ve SEGMENT mantığını dikkate alarak gelen araçları sırala ve sana verilen tüm arabaların hepsini değerlendirerek listele. En iyi araçları belirle.
 SADECE GEÇERLİ BİR JSON DÖNDÜR.
 Format:
 {
@@ -298,19 +403,12 @@ Kurallar:
     cars: g.cars.map(c => ({
       title: c.title,
       price: c.price,
-      scores: {
-        ms: c.market_speed_score,
-        pp: c.price_perf_score,
-        fp: c.fair_price_score,
-        cs: c.condition_score,
-        total: c.overall_score
-      },
-      specs: (c.detailed_specs || []).map(s => `${s.name}: ${s.value}`),
-      competitors: c.competitor_analysis ? c.competitor_analysis.competitors : []
+      overall_score: c.overall_score,
+      ai_report: c.ai_report || ""
     }))
   }));
 
-  return await callOpenAI(systemPrompt, cleanGroupReports);
+  return await callOpenAI(systemPrompt, cleanGroupReports, apiKey);
 }
 
 // ------------------------------------------------------------------
@@ -330,35 +428,98 @@ async function runFullAnalysis() {
   }
 
   try {
-    updateState({ aiStatusText: "Araçlar gruplandırılıyor...", analysisProgress: 5 });
-    const groups = groupTabsByModel(readyData);
-    const groupNames = Object.keys(groups);
-    let allGroupReports = [];
+    updateState({ aiStatusText: "Sistem konfigürasyonu alınıyor...", analysisProgress: 2 });
     
-    let totalCars = readyData.length;
-    let processedCars = 0;
+    let activeConfig = { analyze_prompt: null, master_prompt: null };
+    try {
+      const configRes = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/rpc/get_system_config`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': CONFIG.SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`
+        }
+      });
+      if (configRes.ok) {
+        const configData = await configRes.json();
+        if (configData) {
+          activeConfig.analyze_prompt = configData.analyze_prompt;
+          activeConfig.master_prompt = configData.master_prompt;
+        }
+      }
+    } catch(e) {
+      console.warn("System config couldn't be fetched, using defaults.", e);
+    }
+
+    let sessionApiKey = '';
+    const storageRes = await new Promise(r => chrome.storage.local.get(['deviceId', 'userEmail'], r));
     
-    const flatCarsList = [];
-    for (let g = 0; g < groupNames.length; g++) {
-      const gName = groupNames[g];
-      const gCars = groups[gName];
-      for (let i = 0; i < gCars.length; i++) {
-        flatCarsList.push({ groupName: gName, carData: gCars[i] });
+    if (storageRes.deviceId && storageRes.userEmail) {
+      try {
+        await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/rpc/register_device_session`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': CONFIG.SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({ p_device_id: storageRes.deviceId, p_email: storageRes.userEmail })
+        });
+      } catch(e) {
+        console.error("Device session auto-register failed.", e);
       }
     }
 
-    // 100'erli Chunk Döngüsü
+    if (storageRes.deviceId) {
+      try {
+        const keyRes = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/rpc/get_session_api_key`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': CONFIG.SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({ p_device_id: storageRes.deviceId })
+        });
+        if (keyRes.ok) {
+          const keyData = await keyRes.json();
+          if (keyData && keyData.api_key) sessionApiKey = keyData.api_key;
+        }
+      } catch(e) {
+        console.error("API Key couldn't be fetched.", e);
+      }
+    }
+
+    if (!sessionApiKey) {
+      updateState({
+        aiStatusText: `Hata: Bu cihaz için oturum bulunamadı. Lütfen Vercel web portalına giriş yapın!`,
+        analysisProgress: 100,
+        isAnalyzing: false,
+        aiError: true
+      });
+      return;
+    }
+
+    updateState({ aiStatusText: "Hazırlanıyor...", analysisProgress: 5 });
+    const flatCarsList = readyData.map(carData => ({ carData }));
+
+    let totalCars = flatCarsList.length;
+    let processedCars = 0;
+
+    updateState({ aiStatusText: `Analiz başladı. Yapay zeka yanıtları bekleniyor...`, analysisProgress: 5 });
+    
     const CHUNK_SIZE = 100;
     const allProcessedCars = [];
 
     for (let i = 0; i < flatCarsList.length; i += CHUNK_SIZE) {
-      const chunkStartTime = Date.now(); 
-      
+      if (isAnalysisCancelled) break;
+
+      const chunkStartTime = Date.now();
       const chunk = flatCarsList.slice(i, i + CHUNK_SIZE);
       
       const chunkPromises = chunk.map(async (item) => {
-        const { groupName: gName, carData: cData } = item;
-        const finalReport = await analyzeCarData(cData);
+        const { carData: cData } = item;
+        const finalReport = await analyzeCarData(cData, activeConfig.analyze_prompt, sessionApiKey);
 
         processedCars++;
         updateState({ 
@@ -370,25 +531,27 @@ async function runFullAnalysis() {
         if (!finalReport.clean_title || finalReport.clean_title.length > 50) {
           const match = cData.title.match(/(?:[12][0-9]{3})/);
           if (match) {
-            cleanTitle = `${gName} ${match[0]} Model`;
+            cleanTitle = `${cData.title.split(' ')[0]} ${match[0]} Model`;
           } else {
-            cleanTitle = gName;
+            cleanTitle = cData.title.split(' ')[0];
           }
         }
 
+        const groupName = getBrandModel(cleanTitle);
+
         return {
-          groupName: gName,
+          groupName: groupName,
           carData: {
             title: cleanTitle,
             price: cData.price,
             url: cData.url,
             images: cData.images, 
-            market_speed_score: finalReport.market_speed_score || null,
-            price_perf_score: finalReport.price_perf_score || null,
-            fair_price_score: finalReport.fair_price_score || null,
-            condition_score: finalReport.condition_score || null,
-            overall_score: finalReport.overall_score || null,
-            ai_report: finalReport.ai_report || "Analiz oluşturulamadı.",
+            market_speed_score: (finalReport.market_speed_score !== undefined && finalReport.market_speed_score !== null) ? finalReport.market_speed_score : null,
+            price_perf_score: (finalReport.price_perf_score !== undefined && finalReport.price_perf_score !== null) ? finalReport.price_perf_score : null,
+            fair_price_score: (finalReport.fair_price_score !== undefined && finalReport.fair_price_score !== null) ? finalReport.fair_price_score : null,
+            condition_score: (finalReport.condition_score !== undefined && finalReport.condition_score !== null) ? finalReport.condition_score : null,
+            overall_score: (finalReport.overall_score !== undefined && finalReport.overall_score !== null) ? finalReport.overall_score : null,
+            ai_report: (finalReport.ai_report && finalReport.ai_report.trim().length > 0) ? finalReport.ai_report : "Bu araç için analiz oluşturulamadı (Veri eksikliği veya OpenAI yanıt vermedi).",
             vision_report: null,
             defects: [],
             positives: [],
@@ -399,97 +562,151 @@ async function runFullAnalysis() {
         };
       });
 
-      // Eşzamanlı başlat ve bekle
       const chunkResults = await Promise.all(chunkPromises);
       allProcessedCars.push(...chunkResults);
-      
-      // Eğer sıradaki paket varsa 60 saniye limitini tamamla
-      if (i + CHUNK_SIZE < flatCarsList.length) {
+
+      if (i + CHUNK_SIZE < flatCarsList.length && !isAnalysisCancelled) {
         const elapsed = Date.now() - chunkStartTime;
-        const waitTime = Math.max(0, 60000 - elapsed); 
-        
+        const waitTime = Math.max(0, 70000 - elapsed);
         if (waitTime > 0) {
-           updateState({ 
-             aiStatusText: `API Güvenliği: Kalan ${(waitTime / 1000).toFixed(0)} saniye bekleniyor...`,
-           });
-           await new Promise(r => setTimeout(r, waitTime));
+          updateState({ 
+            aiStatusText: `API Limiti Güvenliği: Kalan ${(waitTime / 1000).toFixed(0)} saniye bekleniyor...`,
+          });
+          await new Promise(r => setTimeout(r, waitTime));
         }
       }
     }
 
-    // İşlenmiş araçları gruplarına göre paketle
-    for (let g = 0; g < groupNames.length; g++) {
-      const gName = groupNames[g];
-      const carsInGroup = allProcessedCars.filter(c => c.groupName === gName).map(c => c.carData);
-      
-      const groupConsolidated = {
-        groupName: gName,
-        group_logic: `${gName} analizi tamamlandı.`,
-        cars: carsInGroup
-      };
-      allGroupReports.push(groupConsolidated);
-    }
+    if (isAnalysisCancelled) return;
 
-    updateState({ aiStatusText: `Master AI Tüm Grupları Kıyaslıyor...`, analysisProgress: 85 });
-
-    // MASTER AI EŞİTLİK MANTIĞI
-    let topCars = [];
-    for (let g of allGroupReports) {
-      for (let c of g.cars) {
-        topCars.push({ groupName: g.groupName, car: c });
+    const groupsMap = {};
+    allProcessedCars.forEach(item => {
+      const gName = item.groupName;
+      if (!groupsMap[gName]) {
+        groupsMap[gName] = [];
       }
-    }
-    
-    // Yüksek puandan düşüğe doğru sırala
-    topCars.sort((a, b) => {
-      let scoreA = parseInt(a.car.overall_score, 10) || 0;
-      let scoreB = parseInt(b.car.overall_score, 10) || 0;
-      if (scoreB !== scoreA) return scoreB - scoreA;
-      return (a.car.url || "").localeCompare(b.car.url || "");
+      let carDataCopy = { ...item.carData };
+      if (carDataCopy.images && carDataCopy.images.length > 3) {
+        carDataCopy.images = carDataCopy.images.slice(0, 3);
+      }
+      groupsMap[gName].push(carDataCopy);
     });
 
-    let topN = 10;
-    if (topCars.length > 10) {
-      let tenthScore = parseInt(topCars[9].car.overall_score, 10) || 0;
-      // 10. arabanın puanıyla aynı puanı alan diğer araçları da havuza dahil et
-      while (topN < topCars.length && (parseInt(topCars[topN].car.overall_score, 10) || 0) >= tenthScore) {
-         topN++;
-      }
-    }
-    
-    // Kesinleşmiş Master Havuzu
-    const masterHavuz = topCars.slice(0, topN);
-    
-    const masterGroupReports = masterHavuz.map(item => ({
-      groupName: item.groupName,
-      cars: [item.car]
+    const allGroupReports = Object.keys(groupsMap).map(gName => ({
+      groupName: gName,
+      group_logic: `${gName} analizi tamamlandı.`,
+      cars: groupsMap[gName]
     }));
 
-    // Master AI Raporunu oluştur
-    const globalSummary = await generateGlobalMasterReport(masterGroupReports);
-
-    updateState({
-      analysisProgress: 100,
-      aiStatusText: `Analiz Tamamlandı!`,
-      isAnalyzing: false,
-      finalReport: { groups: allGroupReports, summaryData: globalSummary }
-    });
+    await compileMasterReportAndComplete(allGroupReports, activeConfig, sessionApiKey);
 
   } catch (error) {
     updateState({
       aiError: true,
       aiStatusText: `Hata: ${error.message}`,
-      analysisProgress: 100,
-      isAnalyzing: false,
+      isAnalyzing: true,
       finalReport: null
     });
   }
+}
+
+async function compileMasterReportAndComplete(allGroupReports, activeConfig, sessionApiKey) {
+  updateState({ aiStatusText: `Master AI Tüm Grupları Kıyaslıyor...`, analysisProgress: 85 });
+
+  let topCars = [];
+  for (let g of allGroupReports) {
+    for (let c of g.cars) {
+      topCars.push({ groupName: g.groupName, car: c });
+    }
+  }
+  
+  topCars.sort((a, b) => {
+    let scoreA = parseInt(a.car.overall_score, 10) || 0;
+    let scoreB = parseInt(b.car.overall_score, 10) || 0;
+    if (scoreB !== scoreA) return scoreB - scoreA;
+    return (a.car.url || "").localeCompare(b.car.url || "");
+  });
+
+  let topN = 10;
+  if (topCars.length > 10) {
+    let tenthScore = parseInt(topCars[9].car.overall_score, 10) || 0;
+    while (topN < topCars.length && (parseInt(topCars[topN].car.overall_score, 10) || 0) >= tenthScore) {
+       topN++;
+    }
+  }
+  
+  const masterHavuz = topCars.slice(0, topN);
+  
+  const masterGroupReports = masterHavuz.map(item => ({
+    groupName: item.groupName,
+    cars: [item.car]
+  }));
+
+  updateState({ aiStatusText: "Büyük Master AI Raporu oluşturuluyor...", analysisProgress: 95 });
+  const globalSummary = await generateGlobalMasterReport(masterGroupReports, activeConfig.master_prompt, sessionApiKey);
+
+  updateState({
+    analysisProgress: 100,
+    aiStatusText: `Analiz Tamamlandı!`,
+    isAnalyzing: false,
+    finalReport: { groups: allGroupReports, summaryData: globalSummary },
+    activeBatchId: null,
+    batchFlatCars: null,
+    batchConfig: null
+  });
 }
 
 // ------------------------------------------------------------------
 // MESSAGE LISTENER
 // ------------------------------------------------------------------
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  chrome.storage.local.get([
+    'trackedTabs', 'isAnalyzing', 'analysisProgress', 'aiStatusText', 
+    'finalReport', 'aiError', 'collectedVehicles', 'isCollecting'
+  ], (res) => {
+    if (res.trackedTabs) trackedTabs = res.trackedTabs;
+    if (res.isAnalyzing !== undefined) isAnalyzing = res.isAnalyzing;
+    if (res.analysisProgress !== undefined) analysisProgress = res.analysisProgress;
+    if (res.aiStatusText) aiStatusText = res.aiStatusText;
+    if (res.finalReport) finalReport = res.finalReport;
+    if (res.aiError !== undefined) aiError = res.aiError;
+    if (res.collectedVehicles) collectedVehicles = res.collectedVehicles;
+    if (res.isCollecting !== undefined) isCollecting = res.isCollecting;
+
+    handleMessage(request, sender, sendResponse);
+  });
+  return true; // Asenkron yanıt kanalı açık kalsın
+});
+
+function handleMessage(request, sender, sendResponse) {
+  if (request.action === 'passive_extract') {
+    if (!isCollecting || isAnalyzing) {
+      sendResponse({ success: false });
+      return;
+    }
+    const data = request.data;
+    let existing = trackedTabs.find(t => t.url === data.url);
+    if (!existing) {
+      const newTab = {
+        tabId: sender.tab ? sender.tab.id : `passive_${Date.now()}_${Math.random()}`,
+        url: data.url,
+        title: data.title,
+        status: 'Yüklendi',
+        data: data
+      };
+      trackedTabs.push(newTab);
+      updateState({ trackedTabs });
+    } else {
+      if (!existing.data) {
+        existing.status = 'Yüklendi';
+        existing.data = data;
+        existing.title = data.title;
+        updateState({ trackedTabs });
+      }
+    }
+    sendResponse({ success: true });
+    return;
+  }
 
   if (request.action === 'get_state') {
     sendResponse({
@@ -497,13 +714,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       isAnalyzing: isAnalyzing,
       progress: analysisProgress,
       aiText: aiStatusText,
-      hasReport: finalReport !== null,
+      finalReport: finalReport,
       isError: aiError,
       collectedCount: trackedTabs.length,
       collectedVehicles: trackedTabs,
       isCollecting: isCollecting
     });
-    return true;
+    return;
   }
 
   if (request.action === 'set_collecting') {
@@ -511,27 +728,37 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     
     if (request.value === true) {
       chrome.tabs.query({}, (tabs) => {
-        tabs.forEach(tab => {
+        let matchedTabs = tabs.filter(tab => {
           const url = tab.url;
-          if (url && (url.includes('sahibinden.com/ilan/') || url.includes('arabam.com/ilan/'))) {
-             addTabToTrackingAndExtract(tab.id, url, tab.title);
-          }
+          return url && (url.includes('sahibinden.com/ilan/') || url.includes('arabam.com/ilan/'));
+        });
+        
+        let delay = 0;
+        matchedTabs.forEach(tab => {
+          setTimeout(() => {
+            chrome.storage.local.get(['trackedTabs'], (res) => {
+              const currentTabs = res.trackedTabs || [];
+              addTabToTrackingAndExtract(tab.id, tab.url, tab.title, currentTabs);
+            });
+          }, delay);
+          delay += 150;
         });
       });
     }
 
     sendResponse({ success: true });
-    return true;
+    return;
   }
 
   if (request.action === 'remove_vehicle') {
     collectedVehicles = collectedVehicles.filter(v => v.url !== request.url);
     updateState({ collectedVehicles: collectedVehicles });
     sendResponse({ success: true });
-    return true;
+    return;
   }
 
   if (request.action === 'reset_memory') {
+    isAnalysisCancelled = true;
     updateState({
       trackedTabs: [],
       finalReport: null,
@@ -541,11 +768,57 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       isCollecting: false
     });
     sendResponse({ success: true });
-    return true;
+    return;
+  }
+
+  if (request.action === 'cancel_analysis') {
+    isAnalysisCancelled = true;
+    
+    chrome.storage.local.get(['activeBatchId', 'deviceId'], async (res) => {
+      if (res.activeBatchId && res.deviceId) {
+        let sessionApiKey = '';
+        try {
+          const keyRes = await fetch(`${CONFIG.SUPABASE_URL}/rest/v1/rpc/get_session_api_key`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': CONFIG.SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${CONFIG.SUPABASE_ANON_KEY}`
+            },
+            body: JSON.stringify({ p_device_id: res.deviceId })
+          });
+          if (keyRes.ok) {
+            const keyData = await keyRes.json();
+            if (keyData && keyData.api_key) sessionApiKey = keyData.api_key;
+          }
+        } catch(e) {}
+        if (sessionApiKey) {
+          cancelOpenAIBatch(res.activeBatchId, sessionApiKey);
+        }
+      }
+    });
+
+    updateState({
+      trackedTabs: [],
+      finalReport: null,
+      aiError: false,
+      isAnalyzing: false,
+      aiStatusText: '',
+      isCollecting: false,
+      analysisProgress: 0,
+      activeBatchId: null,
+      batchFlatCars: null,
+      batchConfig: null
+    });
+    sendResponse({ success: true });
+    return;
   }
 
   if (request.action === 'show_report') {
-    if (!finalReport) return;
+    if (!finalReport) {
+      sendResponse({ success: false });
+      return;
+    }
     const portalUrl = CONFIG.PORTAL_URL;
     chrome.tabs.create({ url: portalUrl }, (tab) => {
       chrome.tabs.onUpdated.addListener(function listener(tabId, info) {
@@ -564,14 +837,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       });
     });
     sendResponse({ success: true });
-    return true;
+    return;
   }
 
   if (request.action === 'remove_tab') {
-    trackedTabs = trackedTabs.filter(t => t.tabId !== request.tabId);
+    trackedTabs = trackedTabs.filter(t => t.url !== request.url);
     updateState({ trackedTabs: trackedTabs });
     sendResponse({ success: true });
-    return true;
+    return;
   }
 
   if (request.action === 'start_analysis') {
@@ -579,12 +852,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (readyData.length === 0) {
       updateState({ aiError: true, aiStatusText: "Analiz edilecek araç verisi yok." });
       sendResponse({ success: false });
-      return true;
+      return;
     }
+    isAnalysisCancelled = false;
     updateState({ isAnalyzing: true, analysisProgress: 5, aiStatusText: "Yapay Zeka Hazırlanıyor..." });
     runFullAnalysis();
     sendResponse({ success: true });
-    return true;
+    return;
   }
-
-});
+}

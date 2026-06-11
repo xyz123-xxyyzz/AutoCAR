@@ -59,6 +59,8 @@ export default function AuthPage() {
       localStorage.setItem('userEmail', email);
       if (vipUser.openai_api_key) {
         localStorage.setItem('openai_api_key', vipUser.openai_api_key);
+        // Yeni Sistem: Bu Cihazı bu E-posta ile eşleştir
+        await supabase.from('device_sessions').upsert({ device_id: deviceId, email: email, updated_at: new Date().toISOString() }, { onConflict: 'device_id' });
       } else {
         localStorage.removeItem('openai_api_key');
       }

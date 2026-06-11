@@ -10,6 +10,7 @@ export default function AnalysisReport() {
   const [isLoading, setIsLoading] = useState(true);
   const [groups, setGroups] = useState([]);
   const [summaryData, setSummaryData] = useState(null);
+  const [flatCars, setFlatCars] = useState([]);
   const [aiLoadingText, setAiLoadingText] = useState('Veriler Yükleniyor...');
   
   // -1 = Summary (Master AI), 0, 1, 2... = Group index
@@ -36,10 +37,22 @@ export default function AnalysisReport() {
         const { data, error } = await supabase.from('analyses_history').select('report_json').eq('id', dbId).single();
         if (data && data.report_json) {
           const result = data.report_json;
-          setGroups(result.groups || []);
+          const fetchedGroups = result.groups || [];
+          setGroups(fetchedGroups);
           setSummaryData(result.summaryData || null);
+          
+          const cars = [];
+          fetchedGroups.forEach(g => {
+            if (g.cars) {
+              g.cars.forEach(c => {
+                cars.push({ ...c, groupName: g.groupName });
+              });
+            }
+          });
+          setFlatCars(cars);
+
           if (result.summaryData) setActiveTab(-1);
-          else if (result.groups && result.groups.length > 0) setActiveTab(0);
+          else if (cars.length > 0) setActiveTab(0);
           setIsLoading(false);
           return;
         } else {
@@ -58,12 +71,23 @@ export default function AnalysisReport() {
 
       try {
         const result = JSON.parse(storedData);
-        setGroups(result.groups || []);
+        const fetchedGroups = result.groups || [];
+        setGroups(fetchedGroups);
         setSummaryData(result.summaryData || null);
+        
+        const cars = [];
+        fetchedGroups.forEach(g => {
+          if (g.cars) {
+            g.cars.forEach(c => {
+              cars.push({ ...c, groupName: g.groupName });
+            });
+          }
+        });
+        setFlatCars(cars);
         
         if (result.summaryData) {
           setActiveTab(-1);
-        } else if (result.groups && result.groups.length > 0) {
+        } else if (cars.length > 0) {
           setActiveTab(0);
         }
         
@@ -145,23 +169,14 @@ export default function AnalysisReport() {
 
   const handleTabChange = (index) => {
     setActiveTab(index);
-    setCurrentCarIndex(0);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      document.documentElement.scrollTo({ top: 0, behavior: 'smooth' });
+      document.body.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 50);
   };
 
-  const activeGroup = activeTab >= 0 ? groups[activeTab] : null;
-  const currentCar = activeGroup?.cars?.[currentCarIndex];
-  const totalCarsInGroup = activeGroup?.cars?.length || 0;
-
-  const nextCar = () => {
-    setCurrentCarIndex(prev => (prev < totalCarsInGroup - 1 ? prev + 1 : prev));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-  
-  const prevCar = () => {
-    setCurrentCarIndex(prev => (prev > 0 ? prev - 1 : prev));
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const currentCar = activeTab >= 0 ? flatCars[activeTab] : null;
 
   const openLightbox = (images, index) => {
     const validImages = Array.isArray(images) ? images : [];
@@ -201,37 +216,61 @@ export default function AnalysisReport() {
               </button>
             )}
             
-            {activeTab !== -1 && (
-              <>
-                <button 
-                  onClick={() => handleTabChange(activeTab > 0 ? activeTab - 1 : groups.length - 1)}
-                  className="p-3 bg-[#F5F5F7] rounded-full hover:bg-black hover:text-white transition-all duration-300 ml-4"
-                >
-                  <ChevronLeft size={24} />
-                </button>
-                
-                <div className="px-6 text-[11px] md:text-xs font-bold tracking-[0.2em] uppercase text-black w-[250px] text-center">
-                  {groups.length} Gruptan {activeTab + 1}.
-                </div>
-
-                <button 
-                  onClick={() => handleTabChange(activeTab < groups.length - 1 ? activeTab + 1 : 0)}
-                  className="p-3 bg-[#F5F5F7] rounded-full hover:bg-black hover:text-white transition-all duration-300"
-                >
-                  <ChevronRight size={24} />
-                </button>
-              </>
-            )}
+            <button 
+               onClick={() => {
+                if (activeTab === -1) {
+                  handleTabChange(flatCars.length - 1);
+                } else if (activeTab === 0) {
+                  handleTabChange(-1);
+                } else {
+                  handleTabChange(activeTab - 1);
+                }
+              }}
+              className={`p-3 bg-[#F5F5F7] rounded-full hover:bg-black hover:text-white transition-all duration-300 ${activeTab !== -1 ? 'ml-4' : 'ml-2'}`}
+            >
+              <ChevronLeft size={24} />
+            </button>
             
-            {routeId && (
-              <button 
-                onClick={handleCopyLink}
-                className="ml-2 p-3 bg-[#FFCC00] text-black rounded-full hover:scale-105 transition-all duration-300 flex items-center gap-2 px-6 shadow-xl shadow-[#FFCC00]/20"
-              >
-                {copySuccess ? <CheckCircle size={18} /> : <Link size={18} />}
-                <span className="font-bold text-xs uppercase tracking-widest">{copySuccess ? 'Kopyalandı' : 'Linki Paylaş'}</span>
-              </button>
-            )}
+            <div className="px-6 text-[11px] md:text-xs font-bold tracking-[0.2em] uppercase text-black w-[250px] text-center">
+              {activeTab === -1 ? "MASTER AI KIYASLAMA" : `${flatCars.length} İlandan ${activeTab + 1}.`}
+            </div>
+ 
+            <button 
+              onClick={() => {
+                if (activeTab === -1) {
+                  handleTabChange(0);
+                } else if (activeTab === flatCars.length - 1) {
+                  handleTabChange(-1);
+                } else {
+                  handleTabChange(activeTab + 1);
+                }
+              }}
+              className="p-3 bg-[#F5F5F7] rounded-full hover:bg-black hover:text-white transition-all duration-300"
+            >
+              <ChevronRight size={24} />
+            </button>
+            
+            {/* Right side buttons container */}
+            <div className="flex items-center gap-2 ml-4">
+              {activeTab === -1 && (
+                <button 
+                  onClick={() => handleTabChange(0)}
+                  className="p-3 bg-black text-white rounded-full hover:scale-105 transition-all duration-300 flex items-center gap-2 px-6 font-bold text-xs uppercase tracking-widest"
+                >
+                  Tüm İlanları İncele
+                </button>
+              )}
+              
+              {routeId && (
+                <button 
+                  onClick={handleCopyLink}
+                  className="p-3 bg-[#FFCC00] text-black rounded-full hover:scale-105 transition-all duration-300 flex items-center gap-2 px-6 shadow-xl shadow-[#FFCC00]/20"
+                >
+                  {copySuccess ? <CheckCircle size={18} /> : <Link size={18} />}
+                  <span className="font-bold text-xs uppercase tracking-widest">{copySuccess ? 'Kopyalandı' : 'Linki Paylaş'}</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -259,9 +298,15 @@ export default function AnalysisReport() {
           <div className="w-full animation-fade-in">
             <div className="text-center mb-20 relative">
               <div className="bg-white rounded-[2.5rem] border border-black/5 shadow-embossed p-10 md:p-16 mb-12 inline-block mx-auto">
-                <h1 className="text-4xl md:text-6xl font-display font-black tracking-tighter leading-[1.1] text-black">
+                <h1 className="text-4xl md:text-6xl font-display font-black tracking-tighter leading-[1.1] text-black mb-6">
                   {summaryData.title}
                 </h1>
+                <button 
+                  onClick={() => handleTabChange(0)}
+                  className="bg-black text-white px-8 py-4 rounded-full font-bold tracking-widest text-[11px] uppercase hover:scale-105 transition-all duration-300 shadow-2xl flex items-center justify-center gap-2 mx-auto"
+                >
+                  İlanları İncele <ArrowRight size={14} />
+                </button>
               </div>
             </div>
 
@@ -270,9 +315,10 @@ export default function AnalysisReport() {
               {(() => {
                 // Tüm araçları puanına göre sırala
                 const allCarsFlat = [];
+                let flatIndex = 0;
                 groups.forEach((g, gIdx) => {
                   g.cars?.forEach((c, cIdx) => {
-                    allCarsFlat.push({ ...c, gIdx, cIdx });
+                    allCarsFlat.push({ ...c, flatIndex: flatIndex++ });
                   });
                 });
                 allCarsFlat.sort((a, b) => {
@@ -289,7 +335,7 @@ export default function AnalysisReport() {
                   return (
                     <div 
                       key={idx} 
-                      onClick={() => { setActiveTab(car.gIdx); setCurrentCarIndex(car.cIdx); }}
+                      onClick={() => { handleTabChange(car.flatIndex); }}
                       className="bg-white rounded-3xl p-6 border border-black/5 shadow-embossed hover:shadow-embossed-hover transition-all duration-300 cursor-pointer flex flex-col md:flex-row items-center gap-6 group"
                     >
                       <div className="w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center shrink-0 font-display font-black text-3xl shadow-lg">
@@ -326,7 +372,7 @@ export default function AnalysisReport() {
             {/* Tüm İlanları İncele Butonu */}
             <div className="mt-12 flex justify-center">
               <button 
-                onClick={() => { setActiveTab(0); setCurrentCarIndex(0); }}
+                onClick={() => { handleTabChange(0); }}
                 className="bg-black text-white px-10 py-5 rounded-full font-bold tracking-widest text-xs uppercase hover:scale-105 transition-all duration-300 shadow-2xl flex items-center justify-center gap-3"
               >
                 Tüm İlanları ({groups.reduce((acc, g) => acc + (g.cars?.length || 0), 0)}) Detaylı İncele <ArrowRight size={18} />
@@ -395,7 +441,7 @@ export default function AnalysisReport() {
               )}
             </div>
           </div>
-        ) : activeGroup && currentCar ? (
+        ) : activeTab >= 0 && currentCar ? (
           
           /* ====================================================
              GRUP İÇİ ARAÇ (AI-1 + AI-2 + AI-3) GÖRÜNÜMÜ
@@ -405,18 +451,16 @@ export default function AnalysisReport() {
             {/* Araç Navigasyonu (Slider) */}
             <div className="absolute -top-6 w-full flex justify-between items-center z-50 pointer-events-none">
               <button 
-                onClick={prevCar} 
-                disabled={currentCarIndex === 0}
+                onClick={() => handleTabChange(activeTab > 0 ? activeTab - 1 : -1)} 
                 className="p-4 bg-white/80 backdrop-blur-md rounded-full text-black hover:scale-110 disabled:opacity-0 transition-all duration-300 shadow-xl border border-black/5 pointer-events-auto"
               >
                 <ChevronLeft size={32} strokeWidth={2} />
               </button>
               <div className="text-[10px] font-bold tracking-[0.2em] text-black/60 uppercase bg-white/80 backdrop-blur-md px-6 py-2 rounded-full shadow-sm border border-black/5 pointer-events-auto">
-                {activeGroup.groupName} — {currentCarIndex + 1} / {totalCarsInGroup}
+                {currentCar.groupName} — {activeTab + 1} / {flatCars.length}
               </div>
               <button 
-                onClick={nextCar} 
-                disabled={currentCarIndex === totalCarsInGroup - 1}
+                onClick={() => handleTabChange(activeTab < flatCars.length - 1 ? activeTab + 1 : -1)} 
                 className="p-4 bg-white/80 backdrop-blur-md rounded-full text-black hover:scale-110 disabled:opacity-0 transition-all duration-300 shadow-xl border border-black/5 pointer-events-auto"
               >
                 <ChevronRight size={32} strokeWidth={2} />
@@ -676,28 +720,7 @@ export default function AnalysisReport() {
         ) : null}
       </div>
 
-      {/* Marketing CTA for Shared Viewers */}
-      {!isLoading && routeId && (
-        <div className="w-full max-w-4xl mx-auto px-4 mt-4 mb-12 relative z-10 animation-fade-in">
-          <div className="bg-gradient-to-r from-black to-gray-900 rounded-[2.5rem] p-10 md:p-14 shadow-2xl text-center border border-white/10 relative overflow-hidden group hover:shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500">
-            <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-700">
-              <Sparkles size={120} className="text-white" />
-            </div>
-            <h2 className="text-3xl md:text-5xl font-display font-black tracking-tighter text-white mb-6 relative z-10">
-              AutoCAR İlan Analiz Sistemi
-            </h2>
-            <p className="text-white/80 font-bold text-sm md:text-base leading-relaxed max-w-2xl mx-auto mb-8 relative z-10">
-              Siz de beğendiğiniz araçların tüm sırlarını saniyeler içinde çözün, zararına araç almayın. Sadece kurumsal işletmelere özel sınırsız ilan analizi sağlayan yapay zeka sistemini şimdi satın alın.
-            </p>
-            <div className="inline-flex items-center gap-4 bg-white/10 p-2 rounded-full border border-white/20 relative z-10">
-               <div className="bg-[#FFCC00] text-black px-8 py-3 rounded-full font-black text-lg">15.000 TL <span className="text-xs text-black/60">+KDV</span></div>
-               <a href="/" className="text-white font-bold text-sm uppercase tracking-widest px-6 hover:text-[#FFCC00] transition-colors flex items-center gap-2">
-                 Detaylı Bilgi <ArrowRight size={16} />
-               </a>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Marketing CTA Removed */}
 
       {/* Lightbox Modal */}
       {lightboxOpen && lightboxImages.length > 0 && (

@@ -1,0 +1,52 @@
+-- 1. Cihaz oturumlarını (Hangi cihaza en son kim girdi) tutacak tablo
+CREATE TABLE IF NOT EXISTS public.device_sessions (
+  device_id text PRIMARY KEY,
+  email text NOT NULL,
+  updated_at timestamp with time zone DEFAULT now()
+);
+
+-- 2. Cihaz kodunu alıp o cihaza ait en son giriş yapan e-postanın API anahtarını getiren özel fonksiyon
+CREATE OR REPLACE FUNCTION public.get_session_api_key(p_device_id text)
+RETURNS json AS $$
+DECLARE
+  v_email text;
+  v_api_key text;
+BEGIN
+  -- 1. Bu cihaz kodundan en son giriş yapan e-postayı bul
+  SELECT email INTO v_email FROM public.device_sessions WHERE device_id = p_device_id;
+  
+  -- Eğer e-posta yoksa (hiç giriş yapılmamışsa) boş dön
+  IF v_email IS NULL THEN
+    RETURN '{"api_key": ""}'::json;
+  END IF;
+
+  -- 2. Bulunan e-postanın API anahtarını vip_users tablosundan çek
+  SELECT openai_api_key INTO v_api_key FROM public.vip_users WHERE email = v_email;
+
+  -- Eğer API anahtarı yoksa boş dön
+  IF v_api_key IS NULL THEN
+    RETURN '{"api_key": ""}'::json;
+  END IF;
+
+  -- 3. API Anahtarını JSON olarak eklentiye gönder
+  RETURN json_build_object('api_key', v_api_key);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION public.get_session_api_key(text) TO anon;
+GRANT EXECUTE ON FUNCTION public.get_session_api_key(text) TO authenticated;
+
+-- 3. EKLENTİNİN OTOMATİK OLARAK CİHAZ BİLGİSİNİ SUPABASE'E YAZMASINI SAĞLAYAN FONKSİYON
+-- (Bunun sayesinde Vercel siteni güncellemene gerek kalmaz!)
+CREATE OR REPLACE FUNCTION public.register_device_session(p_device_id text, p_email text)
+RETURNS void AS $$
+BEGIN
+  INSERT INTO public.device_sessions (device_id, email, updated_at)
+  VALUES (p_device_id, p_email, now())
+  ON CONFLICT (device_id) DO UPDATE 
+  SET email = EXCLUDED.email, updated_at = now();
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION public.register_device_session(text, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.register_device_session(text, text) TO authenticated;

@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnStop = document.getElementById('btn-stop-collect');
   const btnAnalyze = document.getElementById('btn-analyze');
   const btnReport = document.getElementById('btn-report');
+  const btnRestart = document.getElementById('btn-restart');
   
   const confirmModal = document.getElementById('confirm-modal');
   const confirmText = document.getElementById('confirm-text');
@@ -59,33 +60,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let currentAdsCount = 0;
 
+  let isConfirming = false;
+
   btnAnalyze.addEventListener('click', () => {
     if (currentAdsCount === 0) return;
     
+    isConfirming = true;
     btnAnalyze.style.display = 'none';
     
     chrome.storage.local.get(['trackedTabs'], (res) => {
       const tabs = res.trackedTabs || [];
       const extractedCount = tabs.filter(t => t.data !== null).length;
       
-      const chunkCount = Math.ceil(extractedCount / 100);
-      const estimatedMinutes = chunkCount * 2;
-      const estimatedCost = (extractedCount * 0.001).toFixed(3);
+      let estimatedTimeStr = '';
+      let estimatedCost = 0;
+
+      if (extractedCount >= 200) {
+        estimatedTimeStr = '3 - 5 dk (Toplu Batch Modu)';
+        estimatedCost = (extractedCount * 0.0005).toFixed(3); // 50% Batch discount
+      } else {
+        // Direct parallel mod will process ~1 listing per 1.2 seconds (50 listings / min)
+        const seconds = Math.round(extractedCount * 1.0);
+        if (seconds < 60) {
+          estimatedTimeStr = `${seconds} sn (Hızlı Doğrudan Mod)`;
+        } else {
+          const minutes = (seconds / 60).toFixed(1);
+          estimatedTimeStr = `${minutes} dk (Hızlı Doğrudan Mod)`;
+        }
+        estimatedCost = (extractedCount * 0.001).toFixed(3);
+      }
       
-      confirmText.innerHTML = `Analiz edilecek ilan sayısı: <b>${extractedCount}</b><br>
-                               Tahmini işlem süresi: <b>${estimatedMinutes} dk</b><br>
+      confirmText.innerHTML = `Analiz edilecek ilan sayısı: <b style="color:var(--success)">${extractedCount}</b><br><br>
+                               Tahmini işlem süresi: <b>${estimatedTimeStr}</b><br>
                                Tahmini API Maliyeti: <b>$${estimatedCost}</b><br><br>
                                Onaylıyor musunuz?`;
-      confirmModal.style.display = 'block';
+      confirmModal.style.display = 'flex';
     });
   });
 
   btnConfirmYes.addEventListener('click', () => {
+    isConfirming = false;
     confirmModal.style.display = 'none';
     chrome.runtime.sendMessage({ action: 'start_analysis', options: { runData: true } }, () => { checkState(); });
   });
 
   btnConfirmNo.addEventListener('click', () => {
+    isConfirming = false;
     confirmModal.style.display = 'none';
     btnAnalyze.style.display = 'block';
   });
@@ -96,73 +116,114 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  btnRestart.addEventListener('click', () => {
+    chrome.runtime.sendMessage({ action: 'reset_memory' }, () => { checkState(); });
+  });
+
+  chrome.storage.local.get(['userEmail'], (res) => {
+    if (res.userEmail) {
+      document.getElementById('logged-in-user').innerText = res.userEmail;
+    } else {
+      document.getElementById('logged-in-user').innerText = "Portal'dan giriş yapın.";
+    }
+  });
+
   function checkState() {
-    chrome.storage.local.get(['trackedTabs', 'isAnalyzing', 'analysisProgress', 'aiStatusText', 'finalReport', 'isCollecting'], (res) => {
-      const tabs = res.trackedTabs || [];
-      currentAdsCount = tabs.length;
-      const isCollecting = res.isCollecting || false;
-
-      // Handle main buttons
-      if (isCollecting) {
-        btnStart.style.display = 'none';
-        btnStop.style.display = 'block';
-        if (currentAdsCount > 0) {
-          btnAnalyze.style.display = 'block';
-        } else {
-          btnAnalyze.style.display = 'none';
-        }
+    chrome.runtime.sendMessage({ action: 'get_state' }, (res) => {
+      let err = chrome.runtime.lastError;
+      if (err || !res) {
+        chrome.storage.local.get(['trackedTabs', 'isAnalyzing', 'analysisProgress', 'aiStatusText', 'finalReport', 'isCollecting', 'aiError'], (res2) => {
+          updateUI(res2);
+        });
       } else {
-        btnStart.style.display = 'block';
-        btnStop.style.display = 'none';
-        btnAnalyze.style.display = 'none';
-      }
-
-      // Handle Views (Main vs Loading vs Report)
-      if (res.isAnalyzing) {
-        mainContent.style.display = 'none';
-        reportContainer.style.display = 'none';
-        aiLoadingContainer.style.display = 'flex';
-        
-        let p = res.analysisProgress || 0;
-        progressValue.textContent = `${p}%`;
-        circularProgress.style.background = `conic-gradient(var(--accent) ${p * 3.6}deg, var(--card-bg) 0deg)`;
-        aiText.textContent = res.aiStatusText || 'Araçlar analiz ediliyor...';
-      } else {
-        aiLoadingContainer.style.display = 'none';
-        
-        if (res.finalReport) {
-          mainContent.style.display = 'none';
-          reportContainer.style.display = 'block';
-        } else {
-          mainContent.style.display = 'block';
-          reportContainer.style.display = 'none';
-          
-          if (tabs.length === 0) {
-            tabList.style.display = 'none';
-            emptyState.style.display = 'block';
-            statusCounter.textContent = 'SİSTEM BEKLİYOR';
-            statusCounter.classList.remove('active');
-            if (res.aiError) {
-              emptyState.innerHTML = `<span style="color:var(--danger)">${res.aiStatusText || "Bir hata oluştu."}</span>`;
-            } else {
-              emptyState.innerHTML = `İlanları farenin orta tuşuyla yan sekmede açın.<br>Otomatik toplanacaktır.`;
-            }
-          } else {
-            tabList.style.display = 'block';
-            emptyState.style.display = res.aiError ? 'block' : 'none';
-            
-            if (res.aiError) {
-               emptyState.innerHTML = `<span style="color:var(--danger); margin-top: 10px; display: block;">${res.aiStatusText || "Bir hata oluştu."}</span>`;
-            }
-
-            const extractedCount = tabs.filter(t => t.data !== null).length;
-            statusCounter.textContent = `Veri: ${extractedCount} / ${tabs.length} İlan`;
-            statusCounter.classList.add('active');
-            renderTabs(tabs);
-          }
-        }
+        updateUI(res);
       }
     });
+  }
+
+  function updateUI(res) {
+    const tabs = res.trackedTabs || res.tabs || [];
+    currentAdsCount = tabs.length;
+    const isCollecting = res.isCollecting || false;
+    const isAnalyzing = res.isAnalyzing !== undefined ? res.isAnalyzing : (res.isAnalyzing || false);
+    const aiError = res.aiError || res.isError || false;
+    const progress = res.analysisProgress !== undefined ? res.analysisProgress : (res.progress !== undefined ? res.progress : 0);
+    const aiStatusText = res.aiStatusText || res.aiText || '';
+    const finalReport = res.finalReport || null;
+
+    // Handle main buttons
+    if (isCollecting) {
+      btnStart.style.display = 'none';
+      btnStop.style.display = 'block';
+      const extractedCountForBtn = tabs.filter(t => t.data !== null).length;
+      if (extractedCountForBtn > 0 && !isConfirming) {
+        btnAnalyze.style.display = 'block';
+      } else {
+        btnAnalyze.style.display = 'none';
+      }
+    } else {
+      btnStart.style.display = 'block';
+      btnStop.style.display = 'none';
+      btnAnalyze.style.display = 'none';
+    }
+
+    // If we are confirming, don't re-render tabs and break layout
+    if (isConfirming) return;
+
+    // Handle Views (Main vs Loading vs Report)
+    if (isAnalyzing) {
+      mainContent.style.display = 'none';
+      reportContainer.style.display = 'none';
+      aiLoadingContainer.style.display = 'flex';
+      
+      if (aiError) {
+        aiText.textContent = aiStatusText || 'Bir hata oluştu!';
+        aiText.style.color = "var(--danger)";
+        circularProgress.style.background = `var(--card-bg)`;
+        btnCancelAi.textContent = "Kapat";
+      } else {
+        let p = progress;
+        progressValue.textContent = `${p}%`;
+        circularProgress.style.background = `conic-gradient(var(--accent) ${p * 3.6}deg, var(--card-bg) 0deg)`;
+        aiText.textContent = aiStatusText || 'Araçlar analiz ediliyor...';
+        aiText.style.color = "var(--text)";
+        btnCancelAi.textContent = "İptal Et";
+      }
+    } else {
+      aiLoadingContainer.style.display = 'none';
+      
+      if (finalReport) {
+        mainContent.style.display = 'none';
+        reportContainer.style.display = 'block';
+      } else {
+        mainContent.style.display = 'block';
+        reportContainer.style.display = 'none';
+        
+        if (tabs.length === 0) {
+          tabList.style.display = 'none';
+          emptyState.style.display = 'block';
+          statusCounter.textContent = 'SİSTEM BEKLİYOR';
+          statusCounter.classList.remove('active');
+          if (aiError) {
+            emptyState.innerHTML = `<span style="color:var(--danger)">${aiStatusText || "Bir hata oluştu."}</span>`;
+          } else {
+            emptyState.innerHTML = `İlanları farenin orta tuşuyla yan sekmede açın.<br>Otomatik toplanacaktır.`;
+          }
+        } else {
+          tabList.style.display = 'block';
+          emptyState.style.display = aiError ? 'block' : 'none';
+          
+          if (aiError) {
+             emptyState.innerHTML = `<span style="color:var(--danger); margin-top: 10px; display: block;">${aiStatusText || "Bir hata oluştu."}</span>`;
+          }
+
+          const extractedCount = tabs.filter(t => t.data !== null).length;
+          statusCounter.textContent = `Veri: ${extractedCount} / ${tabs.length} İlan`;
+          statusCounter.classList.add('active');
+          renderTabs(tabs);
+        }
+      }
+    }
   }
 
   function renderTabs(tabs) {
@@ -180,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.className = 'remove-btn';
       btn.innerHTML = '×';
       btn.onclick = () => {
-        chrome.runtime.sendMessage({ action: 'remove_tab', tabId: t.tabId }, () => checkState());
+        chrome.runtime.sendMessage({ action: 'remove_tab', url: t.url }, () => checkState());
       };
 
       d.appendChild(info);
