@@ -542,15 +542,18 @@ async function runFullAnalysis() {
 
     updateState({ aiStatusText: `Analiz başladı. Yapay zeka yanıtları bekleniyor...`, analysisProgress: 5 });
     
-    const poolLimit = 15;
-    const executing = [];
-    const results = [];
+    const CHUNK_SIZE = 50;
+    const allProcessedCars = [];
 
-    for (const item of flatCarsList) {
+    for (let i = 0; i < flatCarsList.length; i += CHUNK_SIZE) {
       if (isAnalysisCancelled) break;
 
-      const { carData: cData } = item;
-      const p = analyzeCarData(cData, activeConfig.analyze_prompt, sessionApiKey).then((finalReport) => {
+      const chunk = flatCarsList.slice(i, i + CHUNK_SIZE);
+      
+      const chunkPromises = chunk.map(async (item) => {
+        const { carData: cData } = item;
+        const finalReport = await analyzeCarData(cData, activeConfig.analyze_prompt, sessionApiKey);
+
         processedCars++;
         updateState({ 
           aiStatusText: `Araçlar analiz ediliyor (${processedCars}/${totalCars})...`,
@@ -592,18 +595,16 @@ async function runFullAnalysis() {
         };
       });
 
-      results.push(p);
+      const chunkResults = await Promise.all(chunkPromises);
+      allProcessedCars.push(...chunkResults);
 
-      if (poolLimit <= flatCarsList.length) {
-        const e = p.then(() => executing.splice(executing.indexOf(e), 1));
-        executing.push(e);
-        if (executing.length >= poolLimit) {
-          await Promise.race(executing);
-        }
+      if (i + CHUNK_SIZE < flatCarsList.length && !isAnalysisCancelled) {
+        updateState({ 
+          aiStatusText: `Limit koruması: 5 saniye bekleniyor...`,
+        });
+        await new Promise(r => setTimeout(r, 5000));
       }
     }
-
-    const allProcessedCars = await Promise.all(results);
 
     if (isAnalysisCancelled) return;
 
