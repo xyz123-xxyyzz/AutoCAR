@@ -41,7 +41,7 @@
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "autocar-pro-premium-system@kzsystems.com",
+      "id": "autocar-master-ai-system@kzsystems.com",
       "strict_min_version": "109.0",
       "data_collection_permissions": {
         "required": ["none"]
