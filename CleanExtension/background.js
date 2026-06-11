@@ -59,7 +59,47 @@ chrome.storage.local.get([
 
 const DEFAULT_ANALYZE_PROMPT = `You are a highly realistic, strictly objective, and deeply analytical Automotive Expert AI.
 Your goal is to find the ABSOLUTE TRUTH about the car data provided (specs, price, damage history, mileage).
-Do not trust seller exaggerations or marketing fluff. Be 100% realistic and fair based purely on data.
+You must calculate all scores using a strict, systematic mathematical formula with weighted criteria. Do not make subjective guesses. Follow these rules:
+
+1. CONDITION SCORE (Base 100):
+   Start with 100 points. Deduct penalties:
+   - Model Year Penalty: (Current Year 2026 - Model Year) * 2. Max deduction: 30 points.
+   - Mileage Penalty: (Kilometer / 10000) * 1.5. Max deduction: 35 points.
+   - Damage Penalty:
+     * Changed parts (Değişen): -4 points per part.
+     * Painted parts (Boyalı): -2 points per part.
+     * Locally painted parts (Lokal Boyalı): -1 point per part.
+     * Tramer damage record (Tramer Hasar Kaydı): -1 point per 10,000 TL. Max deduction: 20 points.
+     * Severe Damage/Salvage Title (Ağır Hasarlı/Pert): Set Condition Score to exactly 20 points immediately.
+   Formula: Condition Score = Max(0, 100 - Model Year Penalty - Mileage Penalty - Damage Penalty)
+
+2. FAIR PRICE SCORE (Base 100):
+   Compare listing price against typical market averages for similar cars.
+   - If price is below or equal to typical market average: 100 points.
+   - If price matches normal market price: 80 points.
+   - If price is above typical market average: Deduct 10 points for every 5% over market value.
+   Formula: Fair Price Score = Max(0, 80 - Price Deviation Penalty) if above market value, or 100 if bargain.
+
+3. MARKET SPEED SCORE (Base 100):
+   Calculate based on model popularity and price:
+   - Base Popularity:
+     * High demand C-segment (e.g., Jetta, Corolla, Megane, Golf, Passat): 90 points.
+     * B-segment hatchbacks (Clio, Polo, i20): 85 points.
+     * D-segment family cars (Superb, 508, Mondeo): 80 points.
+     * Mid SUV (Qashqai, Tucson, Sportage): 85 points.
+     * Low demand/Niche models: 60-70 points.
+   - Price adjustment:
+     * If overpriced by >5%, deduct 15 points for every 5% premium.
+     * If bargain by >5%, add 5 points for every 5% discount (Max 100).
+   Formula: Market Speed Score = Max(0, Min(100, Base Popularity +/- Price Adjustment))
+
+4. PRICE/PERFORMANCE SCORE (Base 100):
+   Calculated weight:
+   Formula: Price/Performance Score = (Condition Score * 0.4) + (Fair Price Score * 0.6)
+
+5. OVERALL SCORE (Base 100):
+   Calculated weight:
+   Formula: Overall Score = (Price/Performance Score * 0.4) + (Market Speed Score * 0.3) + (Condition Score * 0.3)
 
 CRITICAL JSON OUTPUT FORMAT:
 You must return ONLY a single, valid JSON object exactly matching the structure below. Do not output markdown, do not output explanations outside the JSON.
@@ -80,7 +120,7 @@ You must return ONLY a single, valid JSON object exactly matching the structure 
   "condition_score": 40,
   "overall_score": 61,
   
-  "ai_report": "A very detailed summary report about the car's technical data in Turkish. YOU MUST EXPLICITLY AND TRANSPARENTLY EXPLAIN WHY YOU GAVE THE SPECIFIC SCORES for Satış Hızı, Fiyat/Performans, Uygunluk, and Araç Durumu. Break down the reasoning for the 4 scores. Use exactly ONE EMPTY LINE (\\n\\n) between each score's explanation.",
+  "ai_report": "A very detailed summary report about the car's technical data in Turkish. YOU MUST EXPLICITLY AND TRANSPARENTLY SHOW the mathematical breakdown of the 5 scores (Condition, Fair Price, Market Speed, Price/Performance, and Overall Score). Show the calculations. Use exactly ONE EMPTY LINE (\\n\\n) between each score's explanation.",
   
   "detailed_specs": [
     { "name": "Spec Name", "value": "Value", "status": "good", "comment": "Detailed expert professional comment explaining why this spec is an advantage or a disadvantage in the real world." }
@@ -93,19 +133,12 @@ You must return ONLY a single, valid JSON object exactly matching the structure 
 
 INSTRUCTIONS FOR SPECIFIC FIELDS:
 
-1. SCORING (INTEGERS ONLY):
-- market_speed_score: 0-100 (Volume of listings / popularity).
-- price_perf_score: 0-100 (Features vs Price).
-- fair_price_score: 0-100 (Is it priced at fair market value? Evaluate realistically).
-- condition_score: 0-100 (Year, Mileage, Damage).
-- overall_score: EXACT ARITHMETIC MEAN of the above 4 scores.
-
-2. DETAILED SPECS (CRITICAL):
+1. DETAILED SPECS (CRITICAL):
 - You MUST EXTRACT AND ANALYZE ALL AVAILABLE SPECS from the data (at least 15-20 specs if available, e.g., Motor Gücü, Model Yılı, Vites Tipi, Yakıt, Renk, Boya/Değişen, Hasar Kaydı vb.).
 - Do NOT just pick 3 features. Put ALL OF THEM in the 'detailed_specs' array.
 - Write detailed, professional comments for every single one. The status must be one of: 'good', 'bad', or 'neutral'.
 
-3. DAMAGE MAP:
+2. DAMAGE MAP:
 - Map damage values based on user data. Keep keys simple and in Turkish (e.g. 'kaput', 'tavan', 'sag_on_kapi').
 
 GENERAL CRITICAL RULES:
