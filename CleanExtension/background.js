@@ -615,6 +615,97 @@ async function runFullAnalysis() {
 
     if (isAnalysisCancelled) return;
 
+    // -------------------------------------------------------------
+    // SISTEM KONTROL AŞAMASI (HATA ALAN ARAÇLARI YENİDEN ANALİZ ETME)
+    // -------------------------------------------------------------
+    if (!isAnalysisCancelled) {
+      const failedItems = [];
+      allProcessedCars.forEach((item, index) => {
+        if (
+          !item.carData.overall_score || 
+          item.carData.overall_score === 0 || 
+          (item.carData.ai_report && item.carData.ai_report.includes("analiz edilemedi"))
+        ) {
+          failedItems.push({
+            index: index,
+            carData: flatCarsList[index].carData
+          });
+        }
+      });
+
+      if (failedItems.length > 0) {
+        updateState({ 
+          aiStatusText: `Sistem Kontrolü: Hata alan ${failedItems.length} araç tespit edildi. Yeniden analiz ediliyor...`,
+          analysisProgress: 80
+        });
+        await new Promise(r => setTimeout(r, 3000));
+
+        let retryProcessed = 0;
+        const RETRY_CHUNK_SIZE = 15; // Eşzamanlı limit
+        
+        for (let j = 0; j < failedItems.length; j += RETRY_CHUNK_SIZE) {
+          if (isAnalysisCancelled) break;
+          
+          const retryChunk = failedItems.slice(j, j + RETRY_CHUNK_SIZE);
+          const retryPromises = retryChunk.map(async (failedItem) => {
+            const { index, carData: cData } = failedItem;
+            
+            const finalReport = await analyzeCarData(cData, activeConfig.analyze_prompt, sessionApiKey);
+            retryProcessed++;
+            updateState({
+              aiStatusText: `Tekrar deneniyor (${retryProcessed}/${failedItems.length})...`
+            });
+
+            if (finalReport.overall_score > 0 && (!finalReport.ai_report || !finalReport.ai_report.includes("analiz edilemedi"))) {
+              let cleanTitle = finalReport.clean_title || cData.title;
+              if (!finalReport.clean_title || finalReport.clean_title.length > 50) {
+                const match = cData.title.match(/(?:[12][0-9]{3})/);
+                if (match) {
+                  cleanTitle = `${cData.title.split(' ')[0]} ${match[0]} Model`;
+                } else {
+                  cleanTitle = cData.title.split(' ')[0];
+                }
+              }
+              const groupName = getBrandModel(cleanTitle);
+
+              allProcessedCars[index] = {
+                groupName: groupName,
+                carData: {
+                  title: cleanTitle,
+                  price: cData.price,
+                  url: cData.url,
+                  images: cData.images, 
+                  market_speed_score: (finalReport.market_speed_score !== undefined && finalReport.market_speed_score !== null) ? finalReport.market_speed_score : null,
+                  price_perf_score: (finalReport.price_perf_score !== undefined && finalReport.price_perf_score !== null) ? finalReport.price_perf_score : null,
+                  fair_price_score: (finalReport.fair_price_score !== undefined && finalReport.fair_price_score !== null) ? finalReport.fair_price_score : null,
+                  condition_score: (finalReport.condition_score !== undefined && finalReport.condition_score !== null) ? finalReport.condition_score : null,
+                  overall_score: (finalReport.overall_score !== undefined && finalReport.overall_score !== null) ? finalReport.overall_score : null,
+                  ai_report: (finalReport.ai_report && finalReport.ai_report.trim().length > 0) ? finalReport.ai_report : "Bu araç için analiz oluşturulamadı (Veri eksikliği veya OpenAI yanıt vermedi).",
+                  vision_report: null,
+                  defects: [],
+                  positives: [],
+                  competitor_analysis: finalReport.competitor_analysis || null,
+                  detailed_specs: finalReport.detailed_specs || [],
+                  damage_map: finalReport.damage_map || null
+                }
+              };
+            }
+          });
+
+          await Promise.all(retryPromises);
+
+          if (j + RETRY_CHUNK_SIZE < failedItems.length && !isAnalysisCancelled) {
+            updateState({ 
+              aiStatusText: `Tekrar deneme limit koruması: 3 saniye bekleniyor...`,
+            });
+            await new Promise(r => setTimeout(r, 3000));
+          }
+        }
+      }
+    }
+
+    if (isAnalysisCancelled) return;
+
     const groupsMap = {};
     allProcessedCars.forEach(item => {
       const gName = item.groupName;
