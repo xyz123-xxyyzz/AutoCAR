@@ -281,7 +281,7 @@ function updateTabStatus(url, status, data = null) {
 // ------------------------------------------------------------------
 // OPENAI API CALL LOGIC
 // ------------------------------------------------------------------
-async function callOpenAI(systemPrompt, userContent, apiKey, model = 'gpt-4o-mini', retries = 2) {
+async function callOpenAI(systemPrompt, userContent, apiKey, model = 'gpt-4o-mini', retries = 3) {
   if (!apiKey || apiKey.trim().length === 0) {
     throw new Error('API Hatası: Bu cihaza tanımlı bir oturum bulunamadı. Lütfen web portalından bir kez giriş yapın.');
   }
@@ -316,8 +316,9 @@ async function callOpenAI(systemPrompt, userContent, apiKey, model = 'gpt-4o-min
           throw new Error('Yapay Zeka (OpenAI) Bakiyeniz Tükenmiştir.');
         }
         if (retries > 0) {
-          console.warn(`429 Too Many Requests. Retrying in 4 seconds... (${retries} left)`);
-          await new Promise(r => setTimeout(r, 4000));
+          const waitTime = (4 - retries) * 4000; // Progressive: 4s, 8s, 12s
+          console.warn(`429 Too Many Requests. Retrying in ${waitTime / 1000} seconds... (${retries} left)`);
+          await new Promise(r => setTimeout(r, waitTime));
           return await callOpenAI(systemPrompt, userContent, apiKey, model, retries - 1);
         }
       }
@@ -774,7 +775,37 @@ async function compileMasterReportAndComplete(allGroupReports, activeConfig, ses
   }));
 
   updateState({ aiStatusText: "Büyük Master AI Raporu oluşturuluyor...", analysisProgress: 95 });
-  const globalSummary = await generateGlobalMasterReport(masterGroupReports, activeConfig.master_prompt, sessionApiKey);
+  
+  let globalSummary;
+  try {
+    globalSummary = await generateGlobalMasterReport(masterGroupReports, activeConfig.master_prompt, sessionApiKey);
+  } catch (masterError) {
+    console.error("Master AI report generation failed, attempting retry in 8s...", masterError);
+    try {
+      await new Promise(r => setTimeout(r, 8000));
+      globalSummary = await generateGlobalMasterReport(masterGroupReports, activeConfig.master_prompt, sessionApiKey);
+    } catch (retryError) {
+      console.error("Master AI retry failed, generating local fallback report...", retryError);
+      globalSummary = {
+        title: "AutoCAR Hızlı Karşılaştırma Raporu (Sistem Özeti)",
+        logic: "Yapay zeka yoğunluğu nedeniyle yerel sistem tarafından en yüksek puanlı araçlar sıralanarak otomatik derlenmiştir.",
+        top_10: masterHavuz.map((item, idx) => ({
+          rank: idx + 1,
+          title: item.car.title,
+          score: item.car.overall_score,
+          comment: `${item.car.title} - F/P Skoru: ${item.car.price_perf_score}, Kondisyon: ${item.car.condition_score}, Fiyat: ${item.car.price}.`
+        })),
+        details: [
+          { 
+            icon: "info", 
+            title: "Yapay Zeka Limiti Bildirimi", 
+            desc: "OpenAI limit aşımı (429) nedeniyle karşılaştırma metinleri yapay zekayla üretilemedi ancak araç analizleriniz ve puan sıralamalarınız başarıyla kurtarıldı." 
+          }
+        ],
+        tableData: []
+      };
+    }
+  }
 
   updateState({
     analysisProgress: 100,
