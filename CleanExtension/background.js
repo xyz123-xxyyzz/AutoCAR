@@ -63,43 +63,50 @@ You must calculate all scores using a strict, systematic mathematical formula wi
 
 1. CONDITION SCORE (Base 100):
    Start with 100 points. Deduct penalties:
-   - Model Year Penalty: (Current Year 2026 - Model Year) * 2. Max deduction: 30 points.
-   - Mileage Penalty: (Kilometer / 10000) * 1.5. Max deduction: 35 points.
+   - Model Year Penalty: (Current Year 2026 - Model Year) * 2. Max deduction: 25 points.
+   - Mileage Penalty: (Kilometer / 15000) * 2. Max deduction: 30 points.
    - Damage Penalty:
      * Changed parts (Değişen): -4 points per part.
      * Painted parts (Boyalı): -2 points per part.
      * Locally painted parts (Lokal Boyalı): -1 point per part.
-     * Tramer damage record (Tramer Hasar Kaydı): -1 point per 10,000 TL. Max deduction: 20 points.
-     * Severe Damage/Salvage Title (Ağır Hasarlı/Pert): Set Condition Score to exactly 20 points immediately.
-   Formula: Condition Score = Max(0, 100 - Model Year Penalty - Mileage Penalty - Damage Penalty)
+     * Tramer damage record ratio (Tramer Record / Price): ratio <= 5%: -3 points; 5% < ratio <= 15%: -8 points; ratio > 15%: -15 points.
+     * Severe Damage/Salvage Title (Ağır Hasarlı/Pert): -30 points (this penalty is cumulative with other paint/changed penalties, do not lock score to 20).
+   - Warranty/Maintenance Bonus: +5 points for cars with active warranty or full dealer service history.
+   Formula: Condition Score = Max(0, Min(100, 100 - Model Year Penalty - Mileage Penalty - Damage Penalty + Warranty/Maintenance Bonus))
 
 2. FAIR PRICE SCORE (Base 100):
    Compare listing price against typical market averages for similar cars.
-   - If price is below or equal to typical market average: 100 points.
-   - If price matches normal market price: 80 points.
-   - If price is above typical market average: Deduct 10 points for every 5% over market value.
-   Formula: Fair Price Score = Max(0, 80 - Price Deviation Penalty) if above market value, or 100 if bargain.
+   Calculate the deviation percentage: Deviation = ((Market Average - Listing Price) / Market Average) * 100
+   - If listing price is exactly equal to the market average (Deviation = 0): 50 points.
+   - If cheaper than average (Deviation > 0): Score = Min(100, 50 + Deviation * 2.5) (Scale from 51 to 100).
+   - If more expensive than average (Deviation < 0): Score = Max(0, 50 - Abs(Deviation) * 2.5) (Scale from 0 to 49).
+   Formula: Fair Price Score = Calculated Score based on the linear deviation above.
 
 3. MARKET SPEED SCORE (Base 100):
-   Calculate based on model popularity and price:
+   Calculate based on how common/popular the model is in the Turkish used car market (market presence / listing volume in Turkey, not strictly by segment name) and price/damage adjustments:
    - Base Popularity:
-     * High demand C-segment (e.g., Jetta, Corolla, Megane, Golf, Passat): 90 points.
-     * B-segment hatchbacks (Clio, Polo, i20): 85 points.
-     * D-segment family cars (Superb, 508, Mondeo): 80 points.
-     * Mid SUV (Qashqai, Tucson, Sportage): 85 points.
-     * Low demand/Niche models: 60-70 points.
+     * Extremely common / highly popular models (e.g., Golf, Passat, Megane, Jetta, Egea, Clio, Focus, Corolla, Polo, Astra): 90 points.
+     * Common models / SUV & D segment (e.g., Superb, Tucson, Qashqai, Civic, C-Elysee, Symbol, Fluence, 301, Corsa, Fiesta): 80 points.
+     * Rare, niche, or premium special models (e.g., Alfa Romeo, Jaguar, Subaru, Volvo S60, sports cars): 65 points.
    - Price adjustment:
-     * If overpriced by >5%, deduct 15 points for every 5% premium.
-     * If bargain by >5%, add 5 points for every 5% discount (Max 100).
-   Formula: Market Speed Score = Max(0, Min(100, Base Popularity +/- Price Adjustment))
+     * If cheap (Fair Price Score >= 55), add 10 points (Max 100).
+     * If expensive (Fair Price Score <= 45 and > 30), deduct 20 points.
+     * If overpriced / fahiş (Fair Price Score <= 30), deduct 40 points.
+   - Damage adjustment:
+     * If Severe Damage/Salvage Title (Ağır Hasarlı/Pert), deduct 15 points.
+   Formula: Market Speed Score = Max(0, Min(100, Base Popularity + Price Adjustment - Damage Adjustment))
 
 4. PRICE/PERFORMANCE SCORE (Base 100):
-   Calculated weight:
-   Formula: Price/Performance Score = (Condition Score * 0.4) + (Fair Price Score * 0.6)
+   Evaluate whether the car offers good features/trim value and condition relative to its price:
+   - Trim Value Score (Package Features):
+     * Fully loaded / High-end trims (Highline, Elite, Icon, Titanium, plus premium features like Sunroof/Panoramic Roof, Heated Seats, Leather, LED headlights, ADAS lane keep, etc.): 100 points.
+     * Mid-range trims (Comfortline, Touch, Style): 80 points.
+     * Base/Entry level trims (Trendline, Joy, Active, empty packages): 50 points.
+   Formula: Price/Performance Score = (Condition Score * 0.3) + (Trim Value Score * 0.2) + (Fair Price Score * 0.5)
 
 5. OVERALL SCORE (Base 100):
-   Calculated weight:
-   Formula: Overall Score = (Price/Performance Score * 0.4) + (Market Speed Score * 0.3) + (Condition Score * 0.3)
+   This must be the EXACT ARITHMETIC MEAN of the 4 scores above.
+   Formula: Overall Score = (Market Speed Score + Price/Performance Score + Fair Price Score + Condition Score) / 4
 
 CRITICAL JSON OUTPUT FORMAT:
 You must return ONLY a single, valid JSON object exactly matching the structure below. Do not output markdown, do not output explanations outside the JSON.
