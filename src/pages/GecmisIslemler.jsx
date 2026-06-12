@@ -21,7 +21,7 @@ export default function GecmisIslemler() {
       
       let query = supabase
         .from('analyses_history')
-        .select('id, created_at, user_email, role, car_details, score')
+        .select('id, created_at, user_email, role, car_details, score, report_json')
         .order('created_at', { ascending: false })
         .limit(200); // Kasmayı önlemek için son 200 analizi getirir
 
@@ -38,14 +38,57 @@ export default function GecmisIslemler() {
         const formattedData = data.map(item => {
           const dateObj = new Date(item.created_at);
           const dateStr = dateObj.toLocaleDateString('tr-TR') + ' ' + dateObj.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+          
+          let totalAds = 0;
+          let topCarName = item.car_details || 'Analiz Raporu';
+          let topCarScore = item.score || 0;
+
+          if (item.report_json) {
+            // Toplam İlan Sayısı Hesaplama
+            if (Array.isArray(item.report_json.groups)) {
+              item.report_json.groups.forEach(g => {
+                if (Array.isArray(g.cars)) {
+                  totalAds += g.cars.length;
+                }
+              });
+            }
+
+            // En Yüksek Puanlı Araç Bilgilerini Alma
+            if (item.report_json.summaryData && Array.isArray(item.report_json.summaryData.top_10) && item.report_json.summaryData.top_10.length > 0) {
+              const top1 = item.report_json.summaryData.top_10[0];
+              topCarName = top1.title || topCarName;
+              topCarScore = top1.score || topCarScore;
+            } else if (Array.isArray(item.report_json.groups)) {
+              let maxScore = -1;
+              let bestCar = null;
+              item.report_json.groups.forEach(g => {
+                if (Array.isArray(g.cars)) {
+                  g.cars.forEach(c => {
+                    let s = parseInt(c.overall_score, 10) || 0;
+                    if (s > maxScore) {
+                      maxScore = s;
+                      bestCar = c;
+                    }
+                  });
+                }
+              });
+              if (bestCar) {
+                topCarName = bestCar.title || topCarName;
+                topCarScore = maxScore || topCarScore;
+              }
+            }
+          }
+
+          if (totalAds === 0) totalAds = 1;
+
           return {
             id: item.id,
             type: 'Analiz',
             date: dateStr,
-            detail: item.car_details || 'Analiz Raporu',
+            topCarName: topCarName,
+            topCarScore: topCarScore,
+            totalAds: totalAds,
             icon: Car,
-            score: item.score || 0,
-            report_json: item.report_json,
             ownerEmail: item.user_email
           };
         });
@@ -113,11 +156,12 @@ export default function GecmisIslemler() {
                 <islem.icon size={20} className="text-black" />
               </div>
               <div>
-                <div className="font-display font-black tracking-tight text-xl text-black mb-1">{islem.detail}</div>
-                <div className="flex items-center gap-4 text-[10px] text-black/40 font-bold tracking-[0.2em] uppercase">
+                <div className="font-display font-black tracking-tight text-xl text-black mb-1">{islem.topCarName}</div>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-black/40 font-bold tracking-[0.2em] uppercase">
                   <span className="flex items-center gap-1"><Clock size={10} /> {islem.date}</span>
+                  <span className="bg-black/5 text-black px-2 py-0.5 rounded-full">{islem.totalAds} İlan Analiz Edildi</span>
                   {role === 'Sahip' && (
-                    <span className="flex items-center gap-1 text-blue-600 bg-blue-50 px-2 py-1 rounded-full"><User size={10} /> {islem.ownerEmail}</span>
+                    <span className="flex items-center gap-1 text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full"><User size={10} /> {islem.ownerEmail}</span>
                   )}
                 </div>
               </div>
@@ -125,8 +169,8 @@ export default function GecmisIslemler() {
             
             {islem.type === 'Analiz' && (
               <div className="flex items-center gap-6 mt-4 md:mt-0">
-                <span className="text-[10px] text-black/30 font-bold uppercase tracking-[0.2em]">Puan</span>
-                <div className="text-5xl font-display font-black text-black tracking-tighter">{islem.score}</div>
+                <span className="text-[10px] text-black/30 font-bold uppercase tracking-[0.2em]">En Yüksek Puan</span>
+                <div className="text-5xl font-display font-black text-black tracking-tighter">{islem.topCarScore}</div>
                 <ArrowRight size={24} className="text-black/20 group-hover:text-black group-hover:translate-x-2 transition-all hidden md:block" />
               </div>
             )}

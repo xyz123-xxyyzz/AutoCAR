@@ -172,10 +172,30 @@ export default function Ayarlar() {
                 href="https://platform.openai.com/account/billing" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-3 px-6 py-3 bg-[#FFCC00] text-black font-bold tracking-[0.2em] text-[10px] uppercase rounded-full hover:scale-105 transition-transform"
+                className="inline-flex items-center gap-3 px-6 py-3 bg-[#FFCC00] text-black font-bold tracking-[0.2em] text-[10px] uppercase rounded-full hover:scale-105 transition-transform mb-2"
               >
                 OpenAI Bakiye Yükleme Sayfasına Git <Globe size={16} />
               </a>
+            </div>
+
+            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/10">
+              <h3 className="text-[#FFCC00] font-bold text-lg mb-3 tracking-wide">4. Eklentiyle Hızlı ve Toplu Tarama Taktikleri (Fare Tekerleği Metodu)</h3>
+              <p className="text-sm text-white/80 leading-relaxed font-medium">
+                • <strong>Taramayı Başlatın:</strong> Arama sonuçları listesinde eklenti popup'ından <strong>"Taramayı Başlat"</strong> butonuna basın.<br/>
+                • <strong>İlanları Sekmede Açın:</strong> Fare tekerleğine (orta tuşa) basarak ilan başlıklarını hızlıca yeni sekmelerde açın. Tek seferde bilgisayarınızın gücüne göre <strong>20, 50 veya 100 ilanı</strong> sekmelerde açabilirsiniz.<br/>
+                • <strong>Sekmeleri Kapatın:</strong> Popup penceresinde ilanların karşısında <strong>"Yüklendi"</strong> yazdığını ve sayacın arttığını gördüğünüzde o ilan sekmelerini kapatabilirsiniz. Hafızaya alınan sekmeleri kapatmak tarayıcınızın RAM tüketimini azaltır.<br/>
+                • <strong>Analizi Başlatın:</strong> Toplama bittiğinde <strong>"Analizi Başlat"</strong> diyerek işlemi tamamlayın.
+              </p>
+            </div>
+
+            <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm border border-white/10">
+              <h3 className="text-[#FFCC00] font-bold text-lg mb-3 tracking-wide">5. Sahibinden "Olağan Dışı Durum" (Robot Kontrolü) Engelini Aşma Rehberi</h3>
+              <p className="text-sm text-white/80 leading-relaxed font-medium">
+                İlan siteleri hızlı ve çoklu taramalarda güvenlik sebebiyle robot kontrolü (Captcha) ekranı açabilir. Bu sekmeler için eklentide "Hata Oluştu" yazar. Bunu aşmak son derece pratiktir:<br/>
+                • <strong>Robot Doğrulamasını Çözün:</strong> Uyarı veren sekmelerden <strong>sadece bir tanesine</strong> geçerek robot doğrulamasını elinizle çözüp ilan detayına ulaşın.<br/>
+                • <strong>Diğer Sayfaları Yenileyin:</strong> Tarayıcı bir kez doğrulandıktan sonra, uyarı veren diğer sekmelere giderek <strong>Ctrl + R</strong> (Sayfayı Yenile) yapın.<br/>
+                • Yenilenen sekmeler çerezler aktif olduğu için normal açılacak ve eklenti verileri saniyeler içinde otomatik olarak hafızaya alacaktır.
+              </p>
             </div>
           </div>
         </div>
